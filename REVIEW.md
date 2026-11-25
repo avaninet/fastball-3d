@@ -34,7 +34,7 @@ Times are rounded and describe the first nominal route found by the same planner
 
 The rack reports inventory and remaining delta-v. The selected tool reports its weight class and recoil at the current power. Each release reduces suit mass, so the same tool delivers slightly more recoil later in a flight.
 
-An empty rack with no predicted intersection during the remaining oxygen time opens **Out of tools** at the last release. The debrief explains the forecast and the log ends at the actual decision time, with oxygen remaining. If a crossing lies ahead, the sim flies to it. A final over-speed soft entry is recorded at its actual time. The coast continues if another entry or an in-volume slowdown can still produce a grab. A brake inside the bars can earn an immediate grab, including on the last throw.
+After the last release the full remaining forecast decides whether a grab is possible. A miss ends as **Out of tools** and an unavoidable fast approach under soft capture ends as **Too fast to grab**. The log stops at the release with the actual oxygen remaining. A later safe entry or an Orbital slowdown inside the bars keeps the coast live, with fast entries recorded as they occur. Both visors fade on a loss and the debrief follows after 1.35 seconds. A brake inside the bars can earn an immediate grab, including on the last throw.
 
 ## Random reachability and difficulty
 
@@ -76,4 +76,4 @@ Browser checks verify that miss hints follow the forward visor in both flight mo
 
 The browser suite exercises all nine keyboard slots, early debrief, a valid last-tool intercept, a final fast pass, the shared ten-minute reserve, slider timing, gauge states, signed velocity, Story lessons, release history and backdrop dismissal, including the nested flight log. It also checks the core cockpit controls against four actual CSS viewports, including 390 × 844 portrait and 844 × 390 landscape. The browser suite also checks tablet rack labels at 768 and 1024 px and header bounds down to 320 px. Follow the [README](README.md) to run the balance and browser checks.
 
-All 42 browser checks passed in Chromium on the four cockpit viewports. The legacy tap checks exercise mouse and touch releases followed by a plain mouse click. Physical iPhone and iPad taps still need a device test. An Orbital regression crosses the bars too fast and slows to capture speed inside at 43.847572 s on both the 1× and 30× clocks.
+All 43 browser checks passed in Chromium on the four cockpit viewports. The legacy tap checks exercise mouse and touch releases followed by a plain mouse click. Physical iPhone and iPad taps still need a device test. Two last-tool Orbital tests coast to a soft grab at 1× and 30×. One slows before entry. The other enters fast and slows to capture speed inside at 43.847572 s.

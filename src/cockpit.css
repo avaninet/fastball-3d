@@ -18,6 +18,21 @@
 .pauseFlag small{font:700 clamp(10px,1.3vw,14px)/1.15 var(--mono);letter-spacing:.07em;text-transform:uppercase}
 .is-paused #pause{background:#ffd18b;color:#201809;border-color:#ffdfa9;box-shadow:0 0 0 2px #ffca723d,0 0 14px 3px #f7bc6280}
 .is-paused #pause:hover{background:#ffe2b3}
+.gameOverFlag{display:none}
+.is-lost .view{container-type:inline-size;background:#0b0c0e}
+.is-lost .view canvas{animation:visor-power-down .85s ease-out both}
+.is-lost .gameOverFlag{
+  position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+  color:#e2e5e6;text-shadow:0 2px 6px #000;font:800 clamp(14px,9cqw,76px)/1 var(--sans);
+  letter-spacing:.065em;animation:game-over-title .8s ease-out both
+}
+.is-lost :is(.rack,.throwPanel,.aimControls,.lesson,.clockSlider,#pause:disabled){filter:grayscale(1) brightness(.45)}
+@keyframes visor-power-down{from{filter:grayscale(0) brightness(1)}to{filter:grayscale(1) brightness(.18)}}
+@keyframes game-over-title{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  .is-lost .view canvas{animation:none;filter:grayscale(1) brightness(.18)}
+  .is-lost .gameOverFlag{animation:none}
+}
 #flightLog{width:min(1020px,97vw);max-height:94dvh;background:#101a20}#flightLog .dialogBody{padding:clamp(14px,2vw,27px)}
 .logPanes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.logPanes figure{margin:0;background:#0b141b;border:1px solid var(--line);border-radius:5px;padding:7px}
 .logPanes figcaption{font-size:13px;font-weight:bold}.logPanes svg{display:block;width:100%;height:auto}.logPanes text{font-family:var(--mono)}

@@ -46,6 +46,8 @@ function updateLessonCue(){
       'Repeat the first rescue’s Face away battery pitch at 95%. Watch the coast bend in the rotating frame and compare its nearest pass with the straight return.'
     ];
     cue=cues[i];if(i===2){label='Line up practice pitch';if(flight.linedUp)cue='The 95% battery is lined up. Press Throw, then read the predicted entry speed.';}
+  }else if(!flight.mask){
+    cue='The rack is empty. Watch Current coast as you drift toward the grab bars.';
   }else if(!flight.checked){
     cue='Find the station in the aft camera. Read Current coast to see where your recoil leads. The clock pauses for one course check.';
     label='Coast to check';

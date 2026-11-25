@@ -5,6 +5,7 @@ const clockSpeeds=[1,10,20,30];
 const clock=Visor.clockText, visor=el('forward'), aft=el('aft');
 let flight, yaw=0,pitch=0,selected=5,power=95,running=false,started=false,dirty=true,drag=null;
 let lastTime=performance.now(),lastPaint=0,lastText=0,rate=1;
+let lossDebriefAt=null;
 const hex=n=>(n>>>0).toString(16).toUpperCase().padStart(8,'0');
 const seedLabel=seed=>typeof seed==='number'?hex(seed):seed;
 const weightClass=g=>g.mass<1?'Light':g.mass<3?'Medium':'Heavy';
@@ -18,6 +19,7 @@ function reseat(skipInitial=false) {
 }
 function start(index,mode,soft,seed=0,story=false,lesson=null) {
   const initial=Flight.opening(index,seed,story);
+  lossDebriefAt=null;
   invalidateInput();
   flight={index,mode,soft,seed,story,limit:Flight.oxygenReserve,lesson,skippedGuidance:false,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:'',dragging:false,keyAiming:false};
   selected=5;power=95;el('power').value=power;setClockStop(0);
@@ -31,24 +33,21 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   setMsg(story?'Story flight. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
   updateRack();instruments();dirty=true;
 }
-const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools'};
+const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools',overspeed:'Too fast to grab'};
 function finish(result) {
   running=false;flight.done=result;flight.finishedAt=new Date();invalidateInput();dirty=true;
   el('retry').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
   const won=result==='capture',drill=!!(flight.mask&(1<<4));
-  el('endTitle').textContent=outcomes[result];
+  el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
   el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”')+' — Commander Julian Bern':'The reserve ran out before a successful grab. Retry to test a different pitch.';
   if(result==='stranded'){
-    const lastFast=flight.log.fast.at(-1);
-    if(lastFast && Math.abs(lastFast.time-flight.time)<1e-7){
-      el('endCopy').textContent='The final pass was too fast to grab. The empty rack leaves no way back before oxygen expiry.';
-    }else if(Flight.inside(flight.pos.p)){
-      el('endCopy').textContent='The rack is empty. The suit is moving too fast for a grab anywhere on the remaining coast.';
-    }else{
-      const distance=flight.forecast.near.d;
-      const clearance=distance<.05?'less than 0.1':distance.toFixed(1);
-      el('endCopy').textContent='The rack is empty. The remaining coast misses the bars by '+clearance+' m before oxygen expiry.';
-    }
+    const distance=flight.forecast.near.d;
+    const clearance=distance<.05?'less than 0.1':distance.toFixed(1);
+    el('endCopy').textContent='The rack is empty. The remaining coast misses the bars by '+clearance+' m before oxygen expiry.';
+  }else if(result==='overspeed'){
+    const approach=Flight.inside(flight.pos.p)?'You are inside the bars at '+Readout.speed(norm(flight.pos.v)):
+      'Projected speed at the bars is '+Readout.speed(flight.forecast.hits[0].speed);
+    el('endCopy').textContent=approach+' m/s. With the rack empty, the remaining coast offers no grab at or below '+Flight.limit.toFixed(3)+' m/s before oxygen runs out.';
   }
   const {budget,speed}=FlightLog.resultReadout(flight);
   el('endBudget').textContent=budget;
@@ -57,7 +56,15 @@ function finish(result) {
   el('debriefShare').hidden=flight.index!==3;
   el('endSeed').textContent=flight.index===3?seedLabel(flight.seed):'';
   el('endShareStatus').textContent='';
-  updateLessonEnd();instruments();updateRack();el('debrief').showModal();
+  if(!won)lossDebriefAt=performance.now()+1350;
+  updateLessonEnd();instruments();updateRack();
+  if(won)el('debrief').showModal();
+}
+function updateLossDebrief(now){
+  if(lossDebriefAt===null || now<lossDebriefAt)return;
+  lossDebriefAt=null;
+  el('pause').disabled=false;
+  if(!document.querySelector('dialog[open]'))el('debrief').showModal();
 }
 function advance(dt) {
   if(flight.done || dt<=0)return;
@@ -71,11 +78,7 @@ function advance(dt) {
     }
     flight.log.fast.push({time:flight.time-flight.age+h.t,p:h.p.slice(),speed:h.speed});
     flight.misses++;
-    if(!flight.mask && flight.hitIndex===hits.length){
-      flight.time+=Math.max(0,h.t-flight.age);flight.age=h.t;flight.pos=Flight.motion(flight.anchor,h.t,flight.mode);
-      finish('stranded');return;
-    }
-    setMsg('Fast pass at '+Readout.speed(h.speed)+' m/s. Brake while within reach, or circle back for a slower grab.');
+    setMsg('Fast pass at '+Readout.speed(h.speed)+' m/s. '+(flight.mask?'Brake while within reach, or circle back for a slower grab.':'Keep coasting. A slower grab is still ahead.'));
   }
   flight.time+=step;flight.age=end;flight.pos=Flight.motion(flight.anchor,end,flight.mode);
   if(flight.time>=flight.limit-1e-8)finish('oxygen');
@@ -121,11 +124,19 @@ function throwTool() {
   setMsg(g.name+' released at '+power+'%. Read the committed coast before spending another tool.');
   selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
   reseat(Flight.inside(old.p)&&flight.misses>0);
-  const contact=flight.forecast.hits[0];
-  if(contact?.t===0 && (!flight.soft||Flight.softEnough(contact.speed))){finish('capture');return;}
-  if(!flight.mask && !flight.forecast.hits.length){finish('stranded');return;}
+  setClockStop(0);
+  // The forecast includes later entries and Orbital slowdowns inside the bars.
+  const hits=flight.forecast.hits;
+  const grab=hits.find(hit=>!flight.soft || Flight.softEnough(hit.speed));
+  if(grab?.t===0){finish('capture');return;}
+  if(!flight.mask && !grab){
+    const reachesBars=hits.length>0 || Flight.inside(old.p);
+    finish(reachesBars?'overspeed':'stranded');return;
+  }
   if(!running)invalidateInput();
-  flight.noTrim=false;started=true;running=true;scheduleLessonCheck();setClockStop(0);lastTime=performance.now();dirty=true;updateRack();instruments();
+  flight.noTrim=false;started=true;running=true;
+  if(flight.mask)scheduleLessonCheck();else flight.checkAt=null;
+  lastTime=performance.now();dirty=true;updateRack();instruments();
 }
 function describeSide(point,bar) {
   const diff=sub(point,bar),side=['radially inward','radially outward','behind the station','ahead along-track','below the orbital plane','above the orbital plane'];
@@ -158,7 +169,7 @@ function nav() {
     const tooFast=s.soft&&!Flight.softEnough(h.speed);
     c.textContent=(tooFast?'Fast contact in ':'Contact in ')+clock(Math.ceil(Math.max(0,h.t-s.age)));c.classList.add(tooFast?'warn':'good');
     if(tooFast){
-      a.textContent='Projected '+Readout.speed(h.speed)+' m/s. '+(s.mask?'Throw along measured drift to brake before reaching the bars.':'The rack is empty. Coast to the bars.');
+      a.textContent='Projected '+Readout.speed(h.speed)+' m/s. '+(s.mask?'Throw along measured drift to brake before reaching the bars.':'Stay on this coast. Orbital drift will bring you within reach at a safe speed.');
     }else{
       a.textContent='Grab bars on course. Projected grab speed '+Readout.speed(h.speed)+' m/s. You can advance the clock.';
     }
@@ -201,6 +212,11 @@ function instruments() {
   el('driftAngles').textContent=sp<.00001?'Stationary':'HDG '+Readout.heading(az,0)+'° / EL '+Readout.signed(elv,0)+'°';
   el('oxygen').textContent=clock(Math.ceil(flight.limit-flight.time));
   el('flightDeck').classList.toggle('is-paused',started&&!running&&!flight.done);
+  el('flightDeck').classList.toggle('is-lost',!!flight.done&&flight.done!=='capture');
+  el('assists').inert=!!flight.done;
+  el('lesson').inert=!!flight.done;
+  el('clockRate').disabled=!!flight.done;
+  el('pause').disabled=lossDebriefAt!==null;
   el('pause').textContent=flight.done?'Debrief':running?'Pause':started?'Resume':'Begin flight';
   el('pausedLineup').hidden=!flight.story;
   updateLessonCue();
@@ -213,13 +229,14 @@ function freezeClock(){
 function pause(){
   if(document.hidden||document.querySelector('dialog[open]'))return;
   if(!sync())return;
-  if(flight.done){el('debrief').showModal();return;}
+  if(flight.done){if(lossDebriefAt===null)el('debrief').showModal();return;}
   if(running){freezeClock();return;}
   invalidateInput();started=true;running=true;lastTime=performance.now();dirty=true;updateRack();instruments();
   setMsg(flight.story?'Clock running. Aim, throw, or pause to line up.':'Clock running. Drag or tap the visor, choose power, then throw.');
 }
 function frame(now) {
   sync(now);
+  updateLossDebrief(now);
   if(dirty || running&&now-lastPaint>=32) {
     if(dirty && !running){nav();updateLessonCue();}
     Visor.render(visor,yaw,pitch,flight);Visor.render(aft,yaw+180,-pitch,flight,true);lastPaint=now;dirty=false;
@@ -252,7 +269,7 @@ function setClockStop(index){
   rate=clockSpeeds[index];el('clockRate').value=String(index);el('rateLabel').textContent=rate+'×';
   el('clockRate').setAttribute('aria-valuetext',rate+' times real time');
 }
-el('clockRate').oninput=()=>{sync();setClockStop(el('clockRate').valueAsNumber);};
+el('clockRate').oninput=()=>{sync();if(!flight.done)setClockStop(el('clockRate').valueAsNumber);};
 el('power').oninput=()=>changePower(sliderPress && sliderPress.epoch!==inputEpoch?power:Number(el('power').value));
 
 // Tie browser-generated activation to the press that began it. Pause, dialogs,

@@ -21,7 +21,7 @@ The crew would like their drill back. It’s the only one aboard until resupply,
 1. For a manual flight, leave **Tether separation**, **Straight-Line** and the default any-speed grab selected. **Begin flight** starts the clock and unlocks aiming. For a guided pitch with time to line up, choose **First rescue** in the header instead.
 2. Turn the forward visor, choose a tool beneath it, set the power and press **Throw**. Turning your head only changes where the next tool will go. Your existing drift carries on.
 3. Read **Current coast** after each throw. **Contact in** means your present path reaches the bars. You can keep the tools you have left and advance the clock. **Miss by** gives the clearance at the nearest pass and a direction for a correction. Try a light tool while the pass is still ahead.
-4. Reach any part of the outlined **14 × 14 × 3.2 m** volume, including the gaps between panels. The grab happens automatically. You have **10:00** in every mode. If you spend your last tool on a coast that misses the bars before oxygen runs out, the debrief opens immediately.
+4. Reach any part of the outlined **14 × 14 × 3.2 m** volume, including the gaps between panels. The grab happens automatically. You have **10:00** in every mode. After your last throw, a miss or an unavoidable overspeed ends the flight at release. Both visors fade to **GAME OVER**, then the debrief explains why. In Orbital, even a fast entry can still lead to a soft grab if you slow enough inside the bars. Let that coast play out.
 
 ## Choose the challenge
 

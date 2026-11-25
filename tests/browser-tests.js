@@ -13,6 +13,13 @@
   function enterLesson(id){
     click(id);if(el('confirmRescue').open)click('replaceFlight');
   }
+  function completeLossTransition(){
+    const due=lossDebriefAt;
+    eq(due!==null&&!el('debrief').open,'loss starts on the visors');
+    eq(due-performance.now()<=2000,'fade uses at most two real seconds');
+    updateLossDebrief(due-1);eq(!el('debrief').open,'debrief waits for the fade');
+    updateLossDebrief(due);eq(el('debrief').open&&!el('pause').disabled,'debrief ready');
+  }
   function configure(index,mode,soft=false,story=false){
     click('new');el('scenario').value=index;el('scenario').dispatchEvent(new Event('change'));
     document.querySelector('input[name=model][value="'+mode+'"]').checked=true;
@@ -149,7 +156,7 @@
 
   test('Seed reuse and expiry',()=>{
     configure(3,'Orbital',true);const p=flight.pos.p.join(',');advance(flight.limit);
-    eq(flight.done==='oxygen','expiry');click('viewLog');eq(el('logSummary').textContent.includes('00019919')&&el('logThrows').textContent.includes('No tools'),'seeded log');
+    eq(flight.done==='oxygen','expiry');completeLossTransition();click('viewLog');eq(el('logSummary').textContent.includes('00019919')&&el('logThrows').textContent.includes('No tools'),'seeded log');
     el('flightLog').querySelector('.close').click();click('retry');eq(flight.pos.p.join(',')===p,'retry seed');
     configure(3,'Straight-Line');eq(flight.pos.p.join(',')===p,'same model-independent start');
   });
@@ -165,7 +172,7 @@
     advance(flight.limit);const {segments,closest}=FlightLog.reconstruct(flight),grid=FlightLog.layout(segments);
     close(closest,3);const crossing=[0,0,10];close(grid.project(crossing,0)[1],grid.cy);
     eq(grid.project(crossing,2)[1]<grid.cy-7*grid.scale,'cross-track trace clears projected envelope');
-    click('viewLog');eq(el('logPanes').querySelectorAll('svg').length===2&&el('logSummary').textContent.includes('3.00 m'),'log rendered');
+    completeLossTransition();click('viewLog');eq(el('logPanes').querySelectorAll('svg').length===2&&el('logSummary').textContent.includes('3.00 m'),'log rendered');
   });
   test('Step through four playable lessons, with a light trim and a brake',()=>{
     enterLesson('storyEntry');scrollTo(0,0);
@@ -235,14 +242,19 @@
       el('flightLog').close();el('debrief').close();
     }
   });
-  test('Orbital coast slows inside the bars at the same instant on either clock',()=>{
-    for(const speed of [1,30]){
-      fixture('Orbital',true,[0,-1.61,1],[0,.005,.08]);flight.mask=0;
-      const [entry,grab]=flight.forecast.hits;
-      eq(entry.speed>.0801&&grab.t>40&&grab.t<45,'distinct fast entry and later grab');
-      tick(10,speed);eq(flight.misses===1&&!flight.done,'empty rack can still coast to a grab');
-      tick(50,speed);eq(flight.done==='capture','coast captured');
-      close(flight.time,43.847571664,1e-6);close(norm(flight.pos.v),Flight.limit);
+  test('The last tool leaves Orbital live when a safe grab is ahead or inside the bars',()=>{
+    for(const speed of [1,30])for(const [y,fast] of [[-1.61,true],[-1.85,false]]){
+      configure(0,'Orbital',true,true);
+      const tool=6,mask=1<<tool;
+      flight.pos={p:[0,y,1],v:[Flight.impulse(tool,mask)*.1,.005,.08]};
+      flight.mask=mask;choose(tool);setView([1,0,0]);set('power',10);click('throw');
+      eq(!flight.mask&&!flight.done&&running&&!Flight.softEnough(norm(flight.pos.v)),'empty rack, initially above limit');
+      const grab=flight.forecast.hits.at(-1);
+      eq(Flight.softEnough(grab.speed)&&grab.t>40,'forecast sees a safe grab');
+      tick(10,speed);eq(flight.misses===Number(fast)&&!flight.done,'coasting after last release');
+      tick(60,speed);eq(flight.done==='capture'&&el('debrief').open&&!el('flightDeck').classList.contains('is-lost'),'normal rescue debrief');
+      close(flight.time,grab.t,1e-6);close(norm(flight.pos.v),grab.speed);
+      if(fast)close(flight.time,43.847571664,1e-6);
       el('debrief').close();
     }
   });
@@ -317,6 +329,7 @@
           const path=segments.at(-1),mid=path[Math.floor(path.length/2)].p;
           eq(norm(sub(mid,Flight.scale(Flight.add(path[0].p,path.at(-1).p),.5)))>.4,'visible orbital curvature');
         }
+        if(scenario==='expiry')completeLossTransition();
         click('viewLog');eq(el('logThrows').children.length===flight.throws,'readable release list');
         records.push([flight.time,...flight.log.releases.map(k=>k.time),...flight.log.fast.map(k=>k.time)]);
         el('flightLog').querySelector('.close').click();click('retry');
@@ -391,14 +404,18 @@
     for(const value of ['G','D-','D-123456789','#seed=','https://example.test/#seed=3&level=Typo'])eq(!Replays.parse(value),'invalid '+value);
   });
   test('Every random outcome offers a dated single-chart flight card',()=>{
-    for(const ending of ['capture','oxygen','stranded']){
+    for(const ending of ['capture','oxygen','stranded','overspeed']){
       configure(3,'Straight-Line',true,true);
       if(ending==='capture'){
         const c=storyCorrection();eq(!!c,'test route available');
         setView(Flight.direction(c.az,c.el));choose(c.tool);changePower(c.power);click('throw');advance(600);
       }else if(ending==='stranded'){
         click('toStation');for(const tool of rackOrder){choose(tool);click('throw');}
+      }else if(ending==='overspeed'){
+        flight.pos={p:[0,-8,0],v:[0,.12,0]};flight.mask=1<<6;
+        choose(6);setView([0,-1,0]);set('power',10);click('throw');
       }else{click('pause');advance(600);}
+      if(ending!=='capture')completeLossTransition();
       eq(flight.done===ending&&el('debrief').open&&!el('debriefShare').hidden,'share after '+ending);
       eq(el('endSeed').textContent==='00019919','debrief seed');
       const recovered=ending==='capture'?Flight.budgets[flight.mask]:0;
@@ -467,22 +484,53 @@
         eq(selected===i&&el('tool'+i).querySelector('.hotkey').textContent===key,'number key selects displayed tool');
         click('throw');eq(flight.log.releases.at(-1).tool===i,'record preserves physical item');
       }
-      eq(flight.mask===0&&flight.throws===9&&flight.done==='stranded'&&el('debrief').open,'immediate debrief on ninth throw');
+      eq(flight.mask===0&&flight.throws===9&&flight.done==='stranded','flight ends on ninth throw');
+      completeLossTransition();
       close(flight.time,flight.log.releases.at(-1).time);eq(flight.time<10,'no expiry wait');
       click('viewLog');eq(el('logSummary').textContent.includes('Out of tools')&&el('logSummary').textContent.includes('0/9'),'stranded log');
       eq(el('logThrows').children.length===9,'all releases in log');
       el('flightLog').close();click('retry');eq(flight.mask===Flight.fullRack&&!flight.done,'retry restores all nine');
     }
   });
-  test('Last tool preserves a valid coast and records a final fast contact',()=>{
-    for(const [soft,velocity,result] of [[true,.05,'capture'],[false,.12,'capture'],[true,.12,'stranded']]){
-      fixture('Straight-Line',soft,[0,-8,0],[0,velocity,0]);
+  test('Last tool preserves a safe coast and ends unavoidable overspeed at release',()=>{
+    for(const mode of ['Straight-Line','Orbital'])for(const [soft,velocity,result] of [[true,.05,'capture'],[false,.12,'capture'],[true,.12,'overspeed']]){
+      fixture(mode,soft,[0,-8,0],[0,velocity,0]);
       flight.mask=1<<6;choose(6);setView([0,-1,0]);set('power',10);click('throw');
-      eq(!flight.done&&flight.forecast.hits.length===1,'crossing stays live');
-      const at=flight.forecast.hits[0].t;advance(flight.limit);eq(flight.done===result,'actual crossing');
-      close(flight.time,flight.log.releases[0].time+at,.00001);
-      eq(flight.misses===(soft&&velocity>.08?1:0),'fast entry retained');el('debrief').close();
+      const hit=flight.forecast.hits[0];eq(hit.t>40,'intercept still in the future');
+      if(result==='overspeed'){
+        eq(flight.done===result&&!running&&flight.log.fast.length===0,'no waiting or invented impact');
+        close(flight.time,flight.log.releases[0].time);
+        eq(el('endCopy').textContent.includes(Readout.speed(hit.speed)+' m/s')&&el('endTitle').textContent.includes('Too fast to grab'),'explains projected overspeed');
+        completeLossTransition();
+      }else{
+        eq(!flight.done&&running,'reachable coast stays live');
+        advance(flight.limit);eq(flight.done===result,'actual grab');
+        close(flight.time,flight.log.releases[0].time+hit.t,.00001);
+      }
+      el('debrief').close();
     }
+  });
+  test('Game over darkens both views, locks controls and clears on a new flight',()=>{
+    configure(0,'Straight-Line',true,true);click('pause');advance(flight.limit);
+    const deck=el('flightDeck'),due=lossDebriefAt;
+    eq(deck.classList.contains('is-lost')&&!deck.classList.contains('is-paused'),'distinct loss state');
+    for(const canvas of [visor,aft]){
+      const flag=canvas.parentElement.querySelector('.gameOverFlag'),style=getComputedStyle(flag);
+      const bounds=flag.getBoundingClientRect(),view=canvas.getBoundingClientRect();
+      eq(style.display==='grid'&&style.placeItems==='center'&&flag.textContent==='GAME OVER','centered title');
+      close(bounds.left+bounds.width/2,view.left+view.width/2,.5);
+      close(bounds.top+bounds.height/2,view.top+view.height/2,.5);
+      const visual=getComputedStyle(canvas);
+      eq(visual.animationName==='visor-power-down'||visual.filter.includes('brightness(0.18)'),'camera power-down');
+    }
+    eq(el('clockRate').disabled&&el('throw').disabled&&el('power').disabled&&el('assists').inert,'flight controls locked');
+    eq(getComputedStyle(deck.querySelector('.rack')).filter.includes('brightness'),'rack darkened');
+    keys('p');keys('Enter');eq(!running&&!el('debrief').open&&flight.throws===0,'keys cannot bypass the transition');
+    completeLossTransition();el('debrief').close();click('pause');eq(el('debrief').open,'can reopen mission debrief');
+    click('retry');eq(!deck.classList.contains('is-lost')&&!el('clockRate').disabled&&!el('assists').inert,'retry restores cockpit');
+    click('pause');advance(flight.limit);eq(lossDebriefAt!==null,'another loss scheduled');
+    click('storyEntry');updateLossDebrief(Math.max(due,performance.now())+2000);
+    eq(flight.lesson===0&&!flight.done&&!el('debrief').open,'new flight cancels old reveal');
   });
   test('Ten-minute oxygen supply across flight modes, lessons and retries',()=>{
     for(const mode of ['Straight-Line','Orbital'])for(const story of [false,true])for(const soft of [false,true]){
@@ -493,7 +541,7 @@
     eq(!flight.done&&el('oxygen').textContent==='2:30','First rescue continues past its former deadline');
     advance(150);
     eq(flight.done==='oxygen'&&flight.time===600&&el('oxygen').textContent==='0:00','Story expires at ten minutes');
-    click('retry');
+    completeLossTransition();click('retry');
     eq(flight.lesson===0&&el('oxygen').textContent==='10:00','retry starts First rescue with full oxygen');
     click('pause');advance(60);click('skipLesson');
     eq(!flight.story&&el('oxygen').textContent==='9:00','manual handover preserves remaining oxygen');
@@ -525,7 +573,7 @@
       pointer(d,'pointerdown',15,r.left+4,r.top+4);pointer(d,'click',15,r.left-1,r.top+3);
       eq(d.open,'inside press dragging out stays open');backdrop(d);eq(!d.open&&!running,'close while paused');
     }
-    click('pause');advance(flight.limit);click('viewLog');backdrop(el('flightLog'));
+    click('pause');advance(flight.limit);completeLossTransition();click('viewLog');backdrop(el('flightLog'));
     eq(!el('flightLog').open&&el('debrief').open,'back to debrief');backdrop(el('debrief'));eq(!el('debrief').open,'back to cockpit');
   });
 
@@ -553,7 +601,7 @@
         if(n&&!coincident)advance(n<=3?30:1);
         choose(tool);click('throw');
       }
-      eq(flight.done==='stranded','nine real releases');click('viewLog');
+      eq(flight.done==='stranded','nine real releases');completeLossTransition();click('viewLog');
       for(const svg of el('logPanes').querySelectorAll('svg')){
         const marks=[...svg.querySelectorAll('.releaseMark')];
         const traces=[...svg.querySelectorAll('polyline')].map(p=>Array.from(p.points,v=>[v.x,v.y]));
