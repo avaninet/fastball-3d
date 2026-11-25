@@ -94,10 +94,14 @@ const Visor = (() => {
     bc.putImageData(im,0,0);skyCache.set(canvas,{key,c});ctx.drawImage(c,0,0,w,h);
   }
   const near=.09;
-  function camera(p,az,el,w,h,small) {
+  function orientation(az,el){
     const forward=direction(az,el),right=direction(az-90,0),up=direction(az,el+90);
-    const f=Math.min(w*(small?.64:.75),h*(small?.87:1.05));
     const local=q=>[dot(q,right),dot(q,up),dot(q,forward)];
+    return {forward,right,up,local};
+  }
+  function camera(p,az,el,w,h,small) {
+    const {forward,right,up,local}=orientation(az,el);
+    const f=Math.min(w*(small?.64:.75),h*(small?.87:1.05));
     const world=q=>local(sub(q,p));
     const screen=q=>[w/2+f*q[0]/q[2],h/2-f*q[1]/q[2]];
     return {az,el,forward,right,up,f,local,world,screen};
@@ -259,5 +263,5 @@ const Visor = (() => {
     }
   }
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-  return {render,camera,courseGlyphs,loadEarth,toolArt,clockText};
+  return {render,camera,orientation,courseGlyphs,loadEarth,toolArt,clockText};
 })();

@@ -18,7 +18,7 @@
 @media(max-width:1000px){.topbar,main{padding-inline:12px}.descriptor{display:none}.deck{grid-template-columns:minmax(0,1.65fr) minmax(235px,1fr);gap:8px}.tool b{font-size:11px}.tool{padding:4px}.metric label{font-size:9px}}
 @media(max-width:740px) and (min-height:501px), (max-width:599px){
 .topbar{height:46px}.brand{gap:4px}.brand img{width:27px;height:27px}.wordmark,.wordmark i{font-size:17px}.headerActions{gap:4px}.headerActions button{font-size:11px;padding:4px 6px;min-height:32px}.headerActions #new span{display:none}
-.flightHead{display:block;margin:7px 0}.flightHead h1{font-size:23px}.flightHead p{font-size:12px;margin:2px 0}.tags{justify-content:flex-start;gap:4px;margin-top:4px}.tag{padding:1px 5px;font-size:10px}
+.flightHead{display:block;margin:4px 0}.flightHead h1{font-size:23px}.flightHead p{font-size:12px;margin:2px 0}.tags{justify-content:flex-start;gap:4px;margin-top:4px}.tag{padding:1px 5px;font-size:10px}
 .deck{grid-template-columns:minmax(0,1fr);gap:6px}.forward{height:clamp(132px,23dvh,212px)}.side{display:grid;grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr);align-items:stretch;gap:6px}.metrics,.lesson{grid-column:1/-1}
 .aft{height:114px}.side .cameraMeta,.camTitle .cameraMeta{display:none}.coastPanel{padding:7px;gap:3px;min-height:0}.coastPanel p{font-size:12px}.readout{font-size:17px}.driftData{padding-top:3px;gap:2px;margin:0}.side h2{font-size:12px}
 .metrics{grid-template-columns:repeat(4,1fr);padding:5px 0;min-height:46px}.metric{padding:0 4px}.metric label{letter-spacing:0;font-size:8px}.metric strong{font-size:15px}.metric small{font-size:9px;margin-left:2px}
@@ -95,3 +95,8 @@
 @media(min-width:600px) and (max-height:500px){
   .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.metric small{font-size:8px}#speedRef{font-size:8px}
 }
+
+.clockSlider .rateStops{display:flex;justify-content:space-between;margin:-5px 2px 0;pointer-events:none;color:var(--mute);font:9px/1 var(--mono)}
+.rateStops i{font-style:normal}
+.credits{border-top:1px solid var(--line);margin-top:16px;padding-top:2px}
+.credits p{font-size:12px;color:var(--mute)}

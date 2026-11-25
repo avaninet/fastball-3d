@@ -8,7 +8,6 @@ function beginLesson(i){
   const lesson=lessons[i];
   for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
   start(lesson.index,lesson.mode,lesson.soft,0,true,i);
-  if(i===0)el('brief').textContent='Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. Today their tether parted and the prototype suit’s thruster valves stuck closed.';
   visor.focus({preventScroll:true});
 }
 function scheduleLessonCheck(){
@@ -41,7 +40,7 @@ function updateLessonCue(){
   let cue='',label='';
   if(!flight.throws){
     const cues=[
-      'Choose Face away, then throw the 95% battery. Its heavier recoil covers this gap. Watch the tool leave the crosshair and the station approach in the aft camera. Saturday pitching practice finally pays off.',
+      'Without a tether or thrusters, a drifting astronaut is presumed lost. Newton’s third law gives Tommi one last pitch. Fling a wrench away from the station as hard as you can and it pushes you back. For this gap, choose Face away and throw the heavier battery at 95%.',
       'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss before the course check.',
       'This approach crosses the bars above the soft limit. Line up the practice pitch, then press Throw. Compare range rate with relative speed.',
       'Repeat the first rescue’s Face away battery pitch at 95%. Watch the coast bend in the rotating frame and compare its nearest pass with the straight return.'
@@ -58,7 +57,9 @@ function updateLessonCue(){
   }else if(Flight.inside(flight.pos.p)&&flight.misses){
     cue='Still flying through the bars. Resume to clear the envelope before setting up another grab.';
   }else{
-    cue='Read which side you will miss on and compare the two views. A light pitch toward the miss can move your suit back toward the bars. Line up a correction, inspect its tool and power, then throw.';
+    const near=flight.forecast.near;
+    const miss=near.t>flight.age?sub(near.p,near.bar):sub(flight.pos.p,Flight.nearest(flight.pos.p));
+    cue=trimHint(miss,yaw,pitch)+' A light pitch that way pushes your suit back toward the bars. Line up a correction and check its tool and power.';
     label='Line up correction';
   }
   if(!running && flight.prepared===flight.throws && flight.throws){cue='Correction staged. Read the selected tool, bearing and recoil, then press Throw to resume at 1×.';label='';}
@@ -69,7 +70,7 @@ function updateLessonCue(){
 function storyCorrection(){
   const s=flight.pos,left=flight.limit-flight.time;
   const hit=flight.forecast.hits[flight.hitIndex];
-  for(const [i] of Flight.gear.entries()){
+  for(const i of rackOrder){
     if(!(flight.mask&(1<<i)))continue;
     const candidates=[];
     if(hit && flight.soft && hit.speed>Flight.limit){

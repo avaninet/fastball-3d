@@ -15,9 +15,9 @@ New random seeds begin with `D-` and include faster sideways crossings. Plain he
 ## In the cockpit
 
 - Arrow keys turn the visor 2°. Hold Shift for 0.25° adjustments. Keys 1–9 select equipment and [ or ] changes power. Enter throws when the visor has focus. P starts, pauses or resumes the clock.
-- Slots 7–9 add a light tether clip, a medium inspection lamp and a heavy camera housing. The rack shows the available change in velocity and the selected pitch shows its recoil.
-- Drag **Play speed** between 1× and 30×. A release resets the clock to 1×. The speedometer marks 0.080 m/s, the entry limit under soft capture and a reference under any-speed capture. The velocity panel gives signed radial, along-track and cross-track components in m/s and the current suit-plus-gear mass.
-- Negative range rate means the suit is closing on the nearest part of the grab volume. The committed path and coast instruments show contact, a fast entry, or the side, distance and time of a miss. A ring identifies a coast viewed end-on. Sparse arrowheads mark bends with visible separation.
+- The rack and keys 1–9 run from lightest to heaviest. The tether clip is in slot 1, the inspection lamp in slot 5 and the spare battery in slot 9. The rack shows the available change in velocity and the selected pitch shows its recoil.
+- Drag **Play speed** to 1×, 10×, 20× or 30×. A release resets the clock to 1×. The speedometer marks 0.080 m/s, the entry limit under soft capture and a reference under any-speed capture. The velocity panel gives signed radial, along-track and cross-track components in m/s and the current suit-plus-gear mass.
+- Negative range rate means the suit is closing on the nearest part of the grab volume. The committed path and coast instruments show contact, a fast entry, or the side, distance and time of a miss. On a miss, the hint tells you which way to aim from the forward visor, including up, down, left, right or behind you. The wording follows your view as you turn. A ring identifies a coast viewed end-on. Sparse arrowheads mark bends with visible separation.
 - **View flight log** in the debrief reconstructs the flown segments and actual entries. Read both equal-scale projections to distinguish a crossing in the orbital plane from a cross-track miss. The release record below gives time, tool, power, bearing, position and resulting velocity. [Example Orbital flight log](reference/orbital-flight-log.png)
 
 ## Build and check

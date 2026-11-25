@@ -12,7 +12,7 @@ The cockpit now keeps the pitch controls together and describes the committed co
 | --- | --- | --- |
 | 1. Teach the first turn before oxygen starts | The visor opens facing the station. A pitch directly at it pushes Tommi farther away. On a phone, turning around can take several drags and the player temporarily loses sight of the target. | Preview one throw and its opposite recoil in the briefing. Point out the aft camera before asking the pilot to turn. Then ask a new pilot to explain where the battery and suit will go before pressing Throw. |
 | 2. Explain the difference between getting closer and getting a grab | Negative range rate means the gap is shrinking. Sideways velocity can still carry Tommi past the station, and total speed at entry determines a soft grab. The amber gauge mark is a reference during an any-speed flight. | Show a side-by-side example of a clean entry and a near miss with the same closing rate. Ask the pilot to predict each outcome from Current coast and explain when the 0.080 m/s mark matters. |
-| 3. Connect the miss report to one affordable correction | A report such as “above the orbital plane” names the miss in station coordinates. The pilot must translate that into a visor bearing, a tool and a power setting. The aft view changes the apparent screen direction. | At the first oblique miss, annotate the predicted pass side in both cameras and explain how a light pitch toward that side moves the suit away from it. Record the pilot’s chosen bearing, remaining delta-v and time to the first useful trim. |
+| 3. Connect the miss report to one affordable correction | A report such as “above the orbital plane” now includes a coarse pitch direction relative to the forward visor. The pilot still needs to recognize that direction, choose a tool and set power. The aft view changes the apparent screen direction. | At the first oblique miss, annotate the predicted pass side in both cameras and explain how a light pitch toward that side moves the suit away from it. Record the pilot’s chosen bearing, remaining delta-v and time to the first useful trim. |
 
 ## Clock, rack and endings
 
@@ -26,11 +26,11 @@ The gap from the nearest point of the capture envelope increases by one third fo
 
 Times are rounded and describe the first nominal route found by the same planner. Wide separation still uses two throws under both models. Each named soft route uses about the same fraction of the available clock as before.
 
-| New slot | Item | Mass | Full-power recoil from a full rack | Use |
+| Rack slot | Item | Mass | Full-power recoil from a full rack | Use |
 | --- | --- | ---: | ---: | --- |
-| 7 · Light | Tether clip | 0.4 kg | 0.0147 m/s | Small late trim |
-| 8 · Medium | Inspection lamp | 1.5 kg | 0.0425 m/s | Sideways correction or modest brake |
-| 9 · Heavy | Camera housing | 3.2 kg | 0.0673 m/s | Larger change of course |
+| 1 · Light | Tether clip | 0.4 kg | 0.0147 m/s | Small late trim |
+| 5 · Medium | Inspection lamp | 1.5 kg | 0.0425 m/s | Sideways correction or modest brake |
+| 7 · Heavy | Camera housing | 3.2 kg | 0.0673 m/s | Larger change of course |
 
 The rack reports inventory and remaining delta-v. The selected tool reports its weight class and recoil at the current power. Each release reduces suit mass, so the same tool delivers slightly more recoil later in a flight.
 
@@ -70,6 +70,8 @@ At 0° every generated opening had a winning plan under either rule and model. T
 
 ## Cockpit and verification
 
-The aft view is taller and takes a larger share of the desktop camera width. The play-speed slider covers 1× to 30× in one-unit steps. A release returns the clock to 1×. The relative-speed bar marks 0.080 m/s and identifies whether the mark is a reference or an active soft limit. The instruments show signed radial, along-track and cross-track velocity in m/s, and the mass of the suit and remaining gear.
+The aft view is taller and takes a larger share of the desktop camera width. The play-speed slider has four stops at 1×, 10×, 20× and 30×. A release returns the clock to 1×. The relative-speed bar marks 0.080 m/s and identifies whether the mark is a reference or an active soft limit. The instruments show signed radial, along-track and cross-track velocity in m/s, and the mass of the suit and remaining gear.
+
+Browser checks verify that miss hints follow the forward visor in both flight models. Two nine-release flights test the spacing of numbered callouts in both log projections, including throws made at almost the same position.
 
 The browser suite exercises all nine keyboard slots, early debrief, a valid last-tool intercept, a final fast pass, both reserve lengths, slider timing, gauge states, signed velocity, Story lessons, release history and backdrop dismissal, including the nested flight log. It also checks the core cockpit controls against four actual CSS viewports, including 390 × 844 portrait and 844 × 390 landscape. The balance harness and browser runner can be reproduced from the [README](README.md).

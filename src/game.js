@@ -1,4 +1,7 @@
 const el=id=>document.getElementById(id), {scale,unit,norm,dot,sub,clamp}=Flight;
+// Gear indices identify physical items in flight records and inventory masks.
+const rackOrder=Flight.gear.map((_,i)=>i).sort((a,b)=>Flight.gear[a].mass-Flight.gear[b].mass);
+const clockSpeeds=[1,10,20,30];
 const clock=Visor.clockText, visor=el('forward'), aft=el('aft');
 let flight, yaw=0,pitch=0,selected=5,power=95,running=false,started=false,dirty=true,drag=null;
 let lastTime=performance.now(),lastPaint=0,lastText=0,rate=1;
@@ -21,9 +24,9 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,storyOpening=story
   const initial=Flight.opening(index,seed,storyOpening);
   invalidateInput();
   flight={index,mode,soft,seed,story,storyOpening,limit:story?Flight.storyReserve:Flight.manualReserve,lesson,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:'',dragging:false};
-  selected=5;power=95;el('power').value=power;setClockRate(1);
+  selected=5;power=95;el('power').value=power;setClockStop(0);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
-  el('name').textContent=initial.name;el('brief').textContent=initial.brief;el('modeTag').textContent=mode;
+  el('name').textContent=initial.name;el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays she pitches with friends. Today her tether snaps and her suit thrusters jam.':initial.brief;el('modeTag').textContent=mode;
   el('captureTag').textContent=soft?'Soft capture ≤ 0.080 m/s':'Any-speed capture';
   el('seedTag').hidden=index!==3;el('seedTag').textContent='Seed '+seedLabel(seed);
   el('assists').hidden=!story;el('storyTag').hidden=!story;
@@ -99,16 +102,29 @@ function throwTool() {
   flight.objects.push({time:flight.time,start:{p:old.p.slice(),v:Flight.add(flight.pos.v,scale(dir,g.speed*power/100))}});
   flight.mask^=1<<selected;flight.throws++;
   setMsg(g.name+' released at '+power+'%. Read the committed coast before spending another tool.');
-  selected=Flight.gear.findIndex((g,i)=>!!(flight.mask&(1<<i)));
+  selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
   reseat(Flight.inside(old.p)&&flight.misses>0);
   if(!flight.mask && !flight.forecast.hits.length){finish('stranded');return;}
   if(!running)invalidateInput();
-  flight.noTrim=false;started=true;running=true;scheduleLessonCheck();setClockRate(1);lastTime=performance.now();dirty=true;updateRack();instruments();
+  flight.noTrim=false;started=true;running=true;scheduleLessonCheck();setClockStop(0);lastTime=performance.now();dirty=true;updateRack();instruments();
 }
 function describeSide(point,bar) {
   const diff=sub(point,bar),side=['radially inward','radially outward','behind the station','ahead along-track','below the orbital plane','above the orbital plane'];
   const axis=diff.reduce((a,b,i,arr)=>Math.abs(b)>Math.abs(arr[a])?i:a,0);
   return side[2*axis+(diff[axis]>0?1:0)];
+}
+// The displacement runs from the nearest grab bar to the predicted miss.
+// Point the tool to that side so recoil pushes the suit back toward the bars.
+function trimHint(displacement,az,elevation){
+  if(norm(displacement)<1e-7)return '';
+  const [right,up,forward]=Visor.orientation(az,elevation).local(unit(displacement));
+  if(forward>.94)return 'Pitch straight ahead along the forward crosshair.';
+  if(forward<-.94)return 'Aim almost straight behind your current view.';
+  const threshold=.42*Math.max(Math.abs(right),Math.abs(up)),parts=[];
+  if(Math.abs(up)>=threshold)parts.push(up>0?'up':'down');
+  if(Math.abs(right)>=threshold)parts.push(right>0?'right':'left');
+  const side=parts.join(' and ');
+  return forward<-.25?'Turn '+side+' toward the space behind you.':'Aim '+side+' in the forward visor.';
 }
 function nav() {
   const c=el('coast'),a=el('advice'),s=flight;
@@ -137,9 +153,9 @@ function nav() {
     a.textContent='Turn the visor away from the station. Throw along the crosshair to push yourself back. Watch the aft camera.';
     c.classList.add('warn');return;
   }
-  if(n.t<=s.age+.03){c.textContent='Opening the gap';a.textContent='Closest pass '+n.d.toFixed(1)+' m '+describeSide(n.p,n.bar)+', '+clock(s.age-n.t)+' ago. Account for sideways drift on the return.';}
-  else if(n.t>=s.forecast.path.at(-1).t-.03){c.textContent=n.d.toFixed(1)+' m short at expiry';a.textContent='Closest at oxygen expiry in '+clock(Math.ceil(n.t-s.age))+', '+describeSide(n.p,n.bar)+'.';}
-  else{c.textContent='Miss by '+n.d.toFixed(1)+' m';a.textContent='Nearest pass '+describeSide(n.p,n.bar)+' in '+clock(Math.ceil(n.t-s.age))+'. Throw toward the side of the miss to trim.';}
+  if(n.t<=s.age+.03){c.textContent='Opening the gap';a.textContent='Closest pass '+n.d.toFixed(1)+' m '+describeSide(n.p,n.bar)+', '+clock(s.age-n.t)+' ago. '+trimHint(sub(s.pos.p,Flight.nearest(s.pos.p)),yaw,pitch);}
+  else if(n.t>=s.forecast.path.at(-1).t-.03){c.textContent=n.d.toFixed(1)+' m short at expiry';a.textContent='Closest at oxygen expiry in '+clock(Math.ceil(n.t-s.age))+', '+describeSide(n.p,n.bar)+'. '+trimHint(sub(n.p,n.bar),yaw,pitch);}
+  else{c.textContent='Miss by '+n.d.toFixed(1)+' m';a.textContent='Nearest pass '+describeSide(n.p,n.bar)+' in '+clock(Math.ceil(n.t-s.age))+'. '+trimHint(sub(n.p,n.bar),yaw,pitch);}
   c.classList.add('warn');
 }
 function instruments() {
@@ -180,14 +196,16 @@ function pause(){
 function frame(now) {
   sync(now);
   if(dirty || running&&now-lastPaint>=32) {
+    if(dirty && !running){nav();updateLessonCue();}
     Visor.render(visor,yaw,pitch,flight);Visor.render(aft,yaw+180,-pitch,flight,true);lastPaint=now;dirty=false;
   }
   if(running && now-lastText>=135){instruments();lastText=now;}
   requestAnimationFrame(frame);
 }
-for(const [i,g] of Flight.gear.entries()) {
-  const b=document.createElement('button');b.id='tool'+i;b.className='tool';b.title=g.name+' · '+weightClass(g)+' · '+g.mass.toFixed(1)+' kg · key '+(i+1);
-  const key=document.createElement('span');key.className='hotkey';key.textContent=i+1;
+for(const [slot,i] of rackOrder.entries()) {
+  const g=Flight.gear[i],keyNumber=slot+1;
+  const b=document.createElement('button');b.id='tool'+i;b.className='tool';b.title=g.name+' · '+weightClass(g)+' · '+g.mass.toFixed(1)+' kg · key '+keyNumber;
+  const key=document.createElement('span');key.className='hotkey';key.textContent=keyNumber;
   const img=document.createElement('canvas');img.setAttribute('aria-hidden','true');const name=document.createElement('b');name.textContent=g.name;
   const size=document.createElement('small');b.append(key,img,name,size);el('tools').append(b);Visor.toolArt(img,i);b.onclick=()=>choose(i);
 }
@@ -203,11 +221,11 @@ function changePower(value){if(canPitch())power=clamp(value,10,100);el('power').
 function snap(vector){if(flight.story&&canPitch())setView(vector);}
 el('toStation').onclick=()=>snap(stationDirection());el('away').onclick=()=>snap(flight.pos.p);el('prograde').onclick=()=>snap(flight.pos.v);
 el('throw').onclick=throwTool;el('pause').onclick=pause;
-function setClockRate(value){
-  rate=value;el('clockRate').value=String(value);el('rateLabel').textContent=value+'×';
-  el('clockRate').setAttribute('aria-valuetext',value+' times real time');
+function setClockStop(index){
+  rate=clockSpeeds[index];el('clockRate').value=String(index);el('rateLabel').textContent=rate+'×';
+  el('clockRate').setAttribute('aria-valuetext',rate+' times real time');
 }
-el('clockRate').oninput=()=>{sync();setClockRate(Number(el('clockRate').value));};
+el('clockRate').oninput=()=>{sync();setClockStop(el('clockRate').valueAsNumber);};
 el('power').oninput=()=>changePower(sliderPress && sliderPress.epoch!==inputEpoch?power:Number(el('power').value));
 
 // Tie browser-generated activation to the press that began it. Pause, dialogs,
@@ -285,7 +303,7 @@ document.addEventListener('keydown',e=>{
   if(target===el('power'))sliderPress=null;
   if(target.matches('input,select,textarea'))return;
   const step=e.shiftKey?.25:2;
-  if(/^[1-9]$/.test(key)){choose(Number(key)-1);return;}
+  if(/^[1-9]$/.test(key)){choose(rackOrder[Number(key)-1]);return;}
   if(key==='['||key===']'){e.preventDefault();changePower(power+(key==='['?-1:1));return;}
   if(key==='enter'&&target===visor){e.preventDefault();if(!e.repeat)throwTool();return;}
   if(!key.startsWith('arrow'))return;

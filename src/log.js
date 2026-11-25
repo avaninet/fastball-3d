@@ -23,12 +23,48 @@ const FlightLog = (() => {
     const cx=222-(left+right)*scale/2,cy=126+(top+bottom)*scale/2;
     return {scale,cx,cy,project:(p,axis)=>[cx-p[1]*scale,cy-p[axis]*scale]};
   }
+  function distanceToSegment(p,a,b){
+    const dx=b[0]-a[0],dy=b[1]-a[1],length2=dx*dx+dy*dy;
+    const t=length2?Flight.clamp(((p[0]-a[0])*dx+(p[1]-a[1])*dy)/length2,0,1):0;
+    return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);
+  }
+  function releaseLabels(anchors,trace){
+    const placed=[];
+    const traceGap=p=>{
+      let gap=Infinity;
+      for(let j=1;j<trace.length;j++)gap=Math.min(gap,distanceToSegment(p,trace[j-1],trace[j]));
+      return gap;
+    };
+    for(const anchor of anchors){
+      const [x,y]=anchor;
+      let best,lowest=Infinity;
+      // Try several rings so even nine pitches at the same spot can fan out.
+      for(const radius of [25,36,48,64])for(let j=0;j<16;j++){
+        const angle=(j-4)*Math.PI/8;
+        const lx=x+radius*Math.cos(angle),ly=y+radius*Math.sin(angle);
+        if(lx<38||lx>400||ly<23||ly>228)continue;
+        const center=[lx,ly];
+        let cost=radius+16*Math.max(0,12-traceGap(center));
+        // Favor leaders that leave the path sideways instead of following it.
+        cost+=3*Math.max(0,8-traceGap([(x+lx)/2,(y+ly)/2]));
+        for(const old of placed){
+          const gap=Math.hypot(lx-old.center[0],ly-old.center[1]);
+          cost+=100*Math.max(0,16-gap);
+          cost+=5*Math.max(0,8-distanceToSegment(old.center,anchor,center));
+          cost+=5*Math.max(0,8-distanceToSegment(center,old.anchor,old.center));
+        }
+        if(cost<lowest){lowest=cost;best=center;}
+      }
+      placed.push({anchor,center:best});
+    }
+    return placed;
+  }
   function pane(flight,segments,grid,axis){
     const {scale,cx,cy,project}=grid;
     const point=p=>project(p,axis), color=flight.done==='capture'?'#acdcb6':'#ffaa95';
-    const svg=[],labels=[];
+    const svg=[];
     const line=(x1,y1,x2,y2,stroke,width=1)=>'<line x1="'+num(x1)+'" y1="'+num(y1)+'" x2="'+num(x2)+'" y2="'+num(y2)+'" stroke="'+stroke+'" stroke-width="'+width+'"/>';
-    const label=(x,y,value,anchor='middle',fill='#afbfc4')=>'<text x="'+num(x)+'" y="'+num(y)+'" text-anchor="'+anchor+'" font-size="11" fill="'+fill+'">'+value+'</text>';
+    const label=(x,y,value,anchor='middle',fill='#afbfc4',size=11)=>'<text x="'+num(x)+'" y="'+num(y)+'" text-anchor="'+anchor+'" font-size="'+size+'" fill="'+fill+'">'+value+'</text>';
     const step=[1,2,5,10,20,50,100,200].find(s=>s*scale>=38)??500;
     for(let i=Math.ceil((30-cx)/(step*scale));cx+i*step*scale<407;i++){
       const x=cx+i*step*scale;svg.push(line(x,14,x,236,i?'#25323a':'#637782'),label(x,251,-i*step));
@@ -38,8 +74,10 @@ const FlightLog = (() => {
     }
     const half=Flight.half;
     svg.push('<rect x="'+num(cx-half[1]*scale)+'" y="'+num(cy-half[axis]*scale)+'" width="'+num(2*half[1]*scale)+'" height="'+num(2*half[axis]*scale)+'" fill="#29493d" stroke="#91c4a4"/>');
-    for(const seg of segments){
-      const xy=seg.map(k=>point(k.p));
+    const projected=segments.map(seg=>seg.map(k=>point(k.p)));
+    const callouts=releaseLabels(flight.log.releases.map(r=>point(r.p)),projected.flat());
+    for(const {anchor:[x,y],center:[lx,ly]} of callouts)svg.push(line(x,y,lx,ly,'#b3976c',.8));
+    for(const xy of projected){
       svg.push('<polyline fill="none" stroke="#99e1cc" stroke-width="2" points="'+xy.map(p=>p.map(num).join(',')).join(' ')+'"/>');
       let last=xy[0],distance=0;
       for(const next of xy.slice(1)){
@@ -54,13 +92,10 @@ const FlightLog = (() => {
     }
     const [startX,startY]=point(flight.initial.p);
     svg.push('<rect x="'+num(startX-4)+'" y="'+num(startY-4)+'" width="8" height="8" fill="#0b141b" stroke="#e9eada" stroke-width="2"/>');
-    for(const [i,r] of flight.log.releases.entries()){
-      const [x,y]=point(r.p);
-      // Move coincident release labels off the trace, preserving their precise anchors.
-      const offsets=[[-10,-13],[12,-13],[-13,13],[13,13],[-29,0],[29,0],[-24,-23],[24,23]];
-      const [dx,dy]=offsets.find(([a,b])=>labels.every(([u,v])=>Math.hypot(x+a-u,y+b-v)>16))??[0,-24];
-      const lx=x+dx,ly=y+dy;labels.push([lx,ly]);
-      svg.push(line(x,y,lx,ly,'#e6b771'),'<circle cx="'+num(lx)+'" cy="'+num(ly)+'" r="8" fill="#eac383"/>',label(lx,ly+4,i+1,'middle','#112027'));
+    for(const [i,{anchor:[x,y],center:[lx,ly]}] of callouts.entries()){
+      svg.push('<g class="releaseMark"><circle cx="'+num(x)+'" cy="'+num(y)+'" r="1.6" fill="#f2cc8e"/>',
+        '<circle cx="'+num(lx)+'" cy="'+num(ly)+'" r="6" fill="#eac383"/>',
+        label(lx,ly+3.2,i+1,'middle','#112027',9.5),'</g>');
     }
     for(const pass of flight.log.fast){
       const [x,y]=point(pass.p);svg.push(line(x-5,y-5,x+5,y+5,'#ffae74',2),line(x-5,y+5,x+5,y-5,'#ffae74',2));

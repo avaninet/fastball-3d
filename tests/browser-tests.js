@@ -133,7 +133,7 @@
       if(i===0)close(Flight.clearance(flight.pos.p),Flight.clearance(flight.initial.p)/2,.0001);
       if(i>0){
         click('lessonAction');eq(flight.prepared===flight.throws,'staged correction '+i);
-        if(i===1)eq(selected<=2,'light correction');
+        if(i===1)eq(Flight.gear[selected].mass<=1.2,'light correction');
         if(i===2)eq(dot(Flight.direction(yaw,pitch),unit(flight.pos.v))>.999,'brake measured drift');
         click('throw');
       }
@@ -246,7 +246,13 @@
   test('Empty rack ends a missed flight at the last actual release',()=>{
     for(const mode of ['Straight-Line','Orbital'])for(const soft of [false,true]){
       configure(0,mode,soft,true);click('toStation');set('power',55);
-      for(const [i] of Flight.gear.entries()){keys(String(i+1));eq(selected===i,'slot '+i);click('throw');}
+      const sorted=[6,0,1,2,7,3,8,4,5];
+      eq([...el('tools').children].map(b=>b.id).join()===sorted.map(i=>'tool'+i).join(),'ascending visible rack');
+      for(const [slot,i] of sorted.entries()){
+        const key=String(slot+1);keys(key);
+        eq(selected===i&&el('tool'+i).querySelector('.hotkey').textContent===key,'number key selects displayed tool');
+        click('throw');eq(flight.log.releases.at(-1).tool===i,'record preserves physical item');
+      }
       eq(flight.mask===0&&flight.throws===9&&flight.done==='stranded'&&el('debrief').open,'immediate debrief on ninth throw');
       close(flight.time,flight.log.releases.at(-1).time);eq(flight.time<10,'no expiry wait');
       click('viewLog');eq(el('logSummary').textContent.includes('Out of tools')&&el('logSummary').textContent.includes('0/9'),'stranded log');
@@ -268,9 +274,13 @@
     configure(3,'Orbital',true,true);eq(flight.limit===450&&el('oxygen').textContent==='7:30','short Story clock');
     click('storyEntry');click('skipLesson');eq(flight.limit===600&&el('oxygen').textContent==='10:00','manual handover');
     configure(0,'Straight-Line');eq(flight.limit===600&&el('clockRate').type==='range','manual clock / slider');
-    set('clockRate',17);eq(rate===17&&el('rateLabel').textContent==='17×','live rate label');
-    const time=flight.time;sync(lastTime+2000);close(flight.time-time,34,.00001);
-    click('throw');eq(rate===1&&el('clockRate').value==='1','rate reset');
+    const slider=el('clockRate');
+    eq(slider.min==='0'&&slider.max==='3'&&slider.step==='1','four detents');
+    for(const [i,multiplier] of [1,10,20,30].entries()){
+      set('clockRate',i);eq(rate===multiplier&&el('rateLabel').textContent===multiplier+'×','detent label');
+      const time=flight.time;sync(lastTime+1000);close(flight.time-time,multiplier,.00001);
+    }
+    click('throw');eq(rate===1&&slider.value==='0','release resets to first stop');
     for(const soft of [true,false]){
       fixture('Straight-Line',soft,[5,-18,3],[-.011,.105,.023]);instruments();
       eq(el('speedGauge').classList.contains('over')===soft && el('speedRef').textContent.includes('0.080'),'threshold');
@@ -291,6 +301,61 @@
     }
     click('pause');advance(flight.limit);click('viewLog');backdrop(el('flightLog'));
     eq(!el('flightLog').open&&el('debrief').open,'back to debrief');backdrop(el('debrief'));eq(!el('debrief').open,'back to cockpit');
+  });
+
+  test('Miss hints follow the forward visor, including diagonals and depth',()=>{
+    // At heading 0 the forward axis is +X, screen right is −Y, and up is +Z.
+    eq(trimHint([0,-1,0],0,0).includes('right'),'right');
+    eq(trimHint([0,-1,0],180,0).includes('left'),'left after half-turn');
+    eq(trimHint([0,-1,1],0,0).includes('up and right'),'diagonal');
+    eq(trimHint([0,0,1],0,90).includes('straight ahead'),'looking up at the throw');
+    eq(trimHint([1,0,0],180,0).includes('behind'),'backward pitch');
+    eq(trimHint([0,0,0],0,0)==='','no fabricated direction');
+    for(const mode of ['Straight-Line','Orbital']){
+      fixture(mode,false,[-20,0,10],[.08,0,0]);flight.story=false;
+      setView([1,0,0]);advance(1);nav();
+      eq(el('advice').textContent.includes('Aim up')&&el('advice').textContent.includes('forward visor'),'in-flight cue '+mode);
+      const near=flight.forecast.near;
+      setView(sub(near.p,near.bar));nav();
+      eq(el('advice').textContent.includes('straight ahead'),'faces actual miss in '+mode);
+    }
+  });
+  test('Nine closely spaced release labels clear the trace in both panes',()=>{
+    for(const coincident of [false,true]){
+      configure(2,'Orbital',true,true);click('toStation');set('power',30);
+      for(const [n,tool] of rackOrder.entries()){
+        if(n&&!coincident)advance(n<=3?30:1);
+        choose(tool);click('throw');
+      }
+      eq(flight.done==='stranded','nine real releases');click('viewLog');
+      for(const svg of el('logPanes').querySelectorAll('svg')){
+        const marks=[...svg.querySelectorAll('.releaseMark')];
+        const traces=[...svg.querySelectorAll('polyline')].map(p=>Array.from(p.points,v=>[v.x,v.y]));
+        const prior=[];
+        eq(marks.length===9,'all labels');
+        for(const [i,mark] of marks.entries()){
+          const [anchor,badge]=mark.querySelectorAll('circle'),x=badge.cx.baseVal.value,y=badge.cy.baseVal.value;
+          eq(mark.textContent===String(i+1)&&badge.r.baseVal.value<=6,'small numbered badge');
+          eq(Math.hypot(x-anchor.cx.baseVal.value,y-anchor.cy.baseVal.value)>24,'leader offset');
+          eq(x>=38&&x<=400&&y>=23&&y<=228,'inside plot');
+          eq(prior.every(([u,v])=>Math.hypot(x-u,y-v)>=14),'separate badges');prior.push([x,y]);
+          for(const trace of traces)for(let j=1;j<trace.length;j++){
+            const [a,b]=trace[j-1],[c,d]=trace[j],dx=c-a,dy=d-b;
+            const f=clamp(((x-a)*dx+(y-b)*dy)/(dx*dx+dy*dy||1),0,1);
+            eq(Math.hypot(x-a-f*dx,y-b-f*dy)>8,'clear of coast');
+          }
+        }
+      }
+      el('flightLog').close();el('debrief').close();
+    }
+  });
+  test('Guide and tutorial introduce recoil and the original mission',()=>{
+    click('manual');const guide=el('guide').textContent;
+    eq(['presumed lost','Newton’s third law','wrench','SR-73','next town'].every(s=>guide.includes(s)),'guide premise and backstory');
+    eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // in honor of the legends of tgirl baseball','credit line');
+    click('replayLesson');
+    eq(['presumed lost','Newton’s third law','wrench','pushes you back','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
+    eq(el('brief').textContent.includes('Saturdays'),'character in opening');
   });
   const out=document.createElement('pre');out.id='qa-result';out.textContent=JSON.stringify({passed,errors,rects,viewport:[innerWidth,innerHeight]});document.body.append(out);
 })();
