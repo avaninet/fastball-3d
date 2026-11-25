@@ -2,7 +2,7 @@
 
 [Play the standalone build](index.html) · [Example Orbital flight log](reference/orbital-flight-log.png)
 
-Manual flight now gives Tommi ten minutes and nine throws. The extra tools raise the full-rack velocity-change budget from 0.329 to 0.456 m/s. A player can spend a light tool to trim a miss or keep a second substantial impulse for a return. Story retains its 7:30 clock and the shorter teaching separations.
+Every flight gives Tommi ten minutes of oxygen and nine throws. The extra tools raise the full-rack velocity-change budget from 0.329 to 0.456 m/s. A player can spend a light tool to trim a miss or keep a second substantial impulse for a return. Story uses the shorter teaching separations.
 
 ## Three first-play priorities
 
@@ -16,7 +16,7 @@ The cockpit now keeps the pitch controls together and describes the committed co
 
 ## Clock, rack and endings
 
-The gap from the nearest point of the capture envelope increases by one third for manual flights. This scales the initial distance with the increase from 450 to 600 simulated seconds. The envelope, initial drift velocities and soft-capture threshold retain their previous values. Standard retries restore the same scaled opening. Story replays restore the original opening. Skipping guidance during a flight extends the deadline to 10:00 elapsed and keeps the current position and velocity.
+The gap from the nearest point of the capture envelope increases by one third for manual flights. The envelope, initial drift velocities and soft-capture threshold retain their previous values. Standard retries restore the same scaled opening. Story replays restore the original opening. Skipping guidance keeps the remaining oxygen, position and velocity.
 
 | Opening | Story initial clearance | Manual initial clearance | v0.1 soft route, Straight-Line / Orbital | Prior soft route, Straight-Line / Orbital |
 | --- | ---: | ---: | --- | --- |
@@ -74,4 +74,4 @@ The aft view is taller and takes a larger share of the desktop camera width. The
 
 Browser checks verify that miss hints follow the forward visor in both flight models. Two nine-release flights test the spacing of numbered callouts in both log projections, including throws made at almost the same position.
 
-The browser suite exercises all nine keyboard slots, early debrief, a valid last-tool intercept, a final fast pass, both reserve lengths, slider timing, gauge states, signed velocity, Story lessons, release history and backdrop dismissal, including the nested flight log. It also checks the core cockpit controls against four actual CSS viewports, including 390 × 844 portrait and 844 × 390 landscape. The balance harness and browser runner can be reproduced from the [README](README.md).
+The browser suite exercises all nine keyboard slots, early debrief, a valid last-tool intercept, a final fast pass, the shared ten-minute reserve, slider timing, gauge states, signed velocity, Story lessons, release history and backdrop dismissal, including the nested flight log. It also checks the core cockpit controls against four actual CSS viewports, including 390 × 844 portrait and 844 × 390 landscape. The balance harness and browser runner can be reproduced from the [README](README.md).

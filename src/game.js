@@ -23,7 +23,7 @@ function reseat(skipInitial=false) {
 function start(index,mode,soft,seed=0,story=false,lesson=null,storyOpening=story) {
   const initial=Flight.opening(index,seed,storyOpening);
   invalidateInput();
-  flight={index,mode,soft,seed,story,storyOpening,limit:story?Flight.storyReserve:Flight.manualReserve,lesson,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:'',dragging:false};
+  flight={index,mode,soft,seed,story,storyOpening,limit:Flight.oxygenReserve,lesson,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:'',dragging:false};
   selected=5;power=95;el('power').value=power;setClockStop(0);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
   el('name').textContent=initial.name;el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays she pitches with friends. Today her tether snaps and her suit thrusters jam.':initial.brief;el('modeTag').textContent=mode;
@@ -175,9 +175,10 @@ function instruments() {
   el('suitMass').textContent=Flight.mass(flight.mask).toFixed(1)+' kg';
   const [az,elv]=Flight.angles(v);
   el('driftAngles').textContent=sp<.00001?'Stationary':'HDG '+Math.round((az+360)%360)%360+'° / EL '+(elv>=0?'+':'')+Math.round(elv)+'°';
-  el('oxygen').textContent=clock(Math.ceil(flight.limit-flight.time));el('paused').hidden=!started||running||!!flight.done;
+  el('oxygen').textContent=clock(Math.ceil(flight.limit-flight.time));
+  el('flightDeck').classList.toggle('is-paused',started&&!running&&!flight.done);
   el('pause').textContent=flight.done?'Debrief':running?'Pause':started?'Resume':'Begin flight';
-  el('paused').textContent=flight.story?'PAUSED · LINEUP LIVE':'PAUSED';
+  el('pausedLineup').hidden=!flight.story;
   updateLessonCue();
   nav();
 }

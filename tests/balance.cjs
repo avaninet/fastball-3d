@@ -51,7 +51,8 @@ function runPlan(s,mode,mask,left,soft,actions,angle,pct,draw) {
   const hit=F.entries(s,left-elapsed,mode)[0];
   return {win:!!valid(hit,soft),s,mask,elapsed,hit};
 }
-const rack=(1<<F.gear.length)-1,duration=F.manualReserve??450;
+// Older builds can also be passed on the command line for balance comparisons.
+const rack=(1<<F.gear.length)-1,duration=F.oxygenReserve??F.manualReserve??450;
 const opening=(i,seed,story=false)=>F.opening?F.opening(i,seed,story):i===3?F.randomStart(seed):F.named[i];
 const varied=Array.from({length:128},(_,i)=>opening(3,'D-'+(104729+i).toString(16)));
 const legacy=Array.from({length:128},(_,i)=>opening(3,104729+i));

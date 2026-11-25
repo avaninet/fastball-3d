@@ -117,10 +117,9 @@ el('lessonAction').onclick=lessonAction;
 el('skipLesson').onclick=()=>{
   if(!flight.story||flight.lesson===null||!canPitch())return;
   sync();if(flight.done)return;
-  flight.lesson=null;flight.checkAt=null;flight.story=false;flight.limit=Flight.manualReserve;
-  reseat(Flight.inside(flight.pos.p)&&flight.misses>0);
+  flight.lesson=null;flight.checkAt=null;flight.story=false;
   el('assists').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
   invalidateInput();if(!running)pause();
-  setMsg('Manual flight. The reserve now runs to 10:00 elapsed. Aim and release on the live clock.');updateRack();instruments();
+  setMsg('Manual flight. Aim and release on the live clock.');updateRack();instruments();
 };
 start(0,'Straight-Line',false);requestAnimationFrame(frame);

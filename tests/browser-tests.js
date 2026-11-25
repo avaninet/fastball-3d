@@ -57,6 +57,26 @@
     eq(!running,'tab hidden');keys('p');delete document.hidden;document.dispatchEvent(new Event('visibilitychange'));
     eq(!running,'tab return stays paused');click('pause');pointer(el('throw'),'pointerup',5);pointer(el('throw'),'click',5);eq(!flight.throws,'stale tab click');
   });
+  test('Pause marks both cameras and highlights Resume',()=>{
+    const flag=el('paused'),button=el('pause');
+    function check(paused){
+      eq((getComputedStyle(flag).display!=='none')===paused,'pause label visibility');
+      eq((getComputedStyle(button).boxShadow!=='none')===paused,'resume glow');
+      for(const canvas of [visor,aft]){
+        eq((getComputedStyle(canvas).filter==='grayscale(1)')===paused,'camera '+canvas.id);
+        const veil=getComputedStyle(canvas.parentElement,'::after');
+        eq((veil.content!=='none')===paused,'bright veil '+canvas.id);
+        if(paused)eq(veil.pointerEvents==='none','visor input passes through the overlay');
+      }
+      if(paused)eq(button.textContent==='Resume'&&parseFloat(getComputedStyle(flag).fontSize)>=28,'prominent pause label');
+    }
+    configure(0,'Straight-Line');check(false);keys('p');check(true);click('pause');check(false);
+    click('storyEntry');check(false);click('away');click('throw');click('lessonAction');check(true);
+    const r=visor.getBoundingClientRect(),midX=r.left+r.width/2,midY=r.top+r.height/2;
+    eq(!el('pausedLineup').hidden&&flag.getBoundingClientRect().bottom<midY,'Story reticle stays clear');
+    eq(document.elementFromPoint(midX,midY)===visor,'Story visor receives input');
+    click('lessonAction');eq(flight.done==='capture','coast to debrief');check(false);
+  });
   test('Cockpit rectangles, hit targets and keyboard focus',()=>{
     configure(0,'Straight-Line');scrollTo(0,0);
     for(const id of ['forward','aft','tool0','tool1','tool2','tool3','tool4','tool5','tool6','tool7','tool8','clockRate','power','throw','coast','advice','speedGauge','speedRef','pause']){
@@ -125,6 +145,7 @@
     }
     for(let i=0;i<4;i++){
       eq(flight.lesson===i&&!started,'fresh lesson '+i);
+      eq(el('oxygen').textContent==='10:00','full oxygen at the start of lesson '+i);
       click(i===2?'lessonAction':'away');click('throw');
       if(i===1||i===3)eq(!flight.forecast.hits.length&&flight.forecast.near.d>1,'oblique/curved miss');
       if(i===2)eq(flight.forecast.hits[0].speed>Flight.limit,'approach too fast');
@@ -270,10 +291,22 @@
       eq(flight.misses===(soft&&velocity>.08?1:0),'fast entry retained');el('debrief').close();
     }
   });
-  test('Clock, speed gauge, XYZ telemetry and Story reserve',()=>{
-    configure(3,'Orbital',true,true);eq(flight.limit===450&&el('oxygen').textContent==='7:30','short Story clock');
-    click('storyEntry');click('skipLesson');eq(flight.limit===600&&el('oxygen').textContent==='10:00','manual handover');
-    configure(0,'Straight-Line');eq(flight.limit===600&&el('clockRate').type==='range','manual clock / slider');
+  test('Ten-minute oxygen supply across flight modes, lessons and retries',()=>{
+    for(const mode of ['Straight-Line','Orbital'])for(const story of [false,true])for(const soft of [false,true]){
+      configure(3,mode,soft,story);
+      eq(flight.limit===600&&el('oxygen').textContent==='10:00','fresh flight '+[mode,story,soft]);
+    }
+    click('storyEntry');click('pause');advance(450);instruments();
+    eq(!flight.done&&el('oxygen').textContent==='2:30','First rescue continues past its former deadline');
+    advance(150);
+    eq(flight.done==='oxygen'&&flight.time===600&&el('oxygen').textContent==='0:00','Story expires at ten minutes');
+    click('retry');
+    eq(flight.lesson===0&&el('oxygen').textContent==='10:00','retry starts First rescue with full oxygen');
+    click('pause');advance(60);click('skipLesson');
+    eq(!flight.story&&el('oxygen').textContent==='9:00','manual handover preserves remaining oxygen');
+  });
+  test('Clock, speed gauge and XYZ telemetry',()=>{
+    configure(0,'Straight-Line');eq(el('clockRate').type==='range','play speed slider');
     const slider=el('clockRate');
     eq(slider.min==='0'&&slider.max==='3'&&slider.step==='1','four detents');
     for(const [i,multiplier] of [1,10,20,30].entries()){

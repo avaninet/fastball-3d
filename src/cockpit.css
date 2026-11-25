@@ -10,7 +10,14 @@
 #throw{grid-column:2;grid-row:1/3;min-height:44px}.impulseInfo{grid-column:1/-1}.side{display:flex;flex-direction:column;gap:9px}.aft{height:clamp(120px,22dvh,210px)}
 .coastPanel{min-height:120px}.metrics{grid-template-columns:repeat(2,1fr);gap:10px 0;margin:0;padding:10px}.metric:nth-child(even){border:0}
 .statusLine{margin-top:8px}.lesson{padding:10px 13px;border-color:#776442}.lesson p{color:#e1d6bc;font-size:13px}.lesson button{font-size:12px}.lesson #lessonAction{margin-top:8px}
-.pauseFlag{inset:8px auto auto 50%;transform:translateX(-50%);font-size:11px;background:#152026dc;border:1px solid var(--line);padding:3px 7px;letter-spacing:.06em}
+.is-paused .view canvas{filter:grayscale(1)}
+.is-paused .view::after{content:"";position:absolute;inset:0;z-index:1;background:rgb(232 232 232 / 48%);pointer-events:none}
+.pauseFlag{display:none;position:absolute;inset:0;z-index:2;place-content:center;justify-items:center;gap:2px;pointer-events:none;color:#101921;text-shadow:0 1px 3px #ffffff80;font:800 clamp(36px,min(6.5vw,12dvh),86px)/1 var(--sans);letter-spacing:.09em}
+.is-paused .pauseFlag{display:grid}
+.pauseFlag:has(small:not([hidden])){inset:4% 0 auto;font-size:clamp(28px,min(5vw,7dvh),62px)}
+.pauseFlag small{font:700 clamp(10px,1.3vw,14px)/1.15 var(--mono);letter-spacing:.07em;text-transform:uppercase}
+.is-paused #pause{background:#ffd18b;color:#201809;border-color:#ffdfa9;box-shadow:0 0 0 2px #ffca723d,0 0 14px 3px #f7bc6280}
+.is-paused #pause:hover{background:#ffe2b3}
 #flightLog{width:min(1020px,97vw);max-height:94dvh;background:#101a20}#flightLog .dialogBody{padding:clamp(14px,2vw,27px)}
 .logPanes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.logPanes figure{margin:0;background:#0b141b;border:1px solid var(--line);border-radius:5px;padding:7px}
 .logPanes figcaption{font-size:13px;font-weight:bold}.logPanes svg{display:block;width:100%;height:auto}.logPanes text{font-family:var(--mono)}

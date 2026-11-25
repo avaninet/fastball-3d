@@ -1,6 +1,6 @@
 const Flight = (() => {
   const n = 2 * Math.PI / (92 * 60);
-  const manualReserve = 600, storyReserve = 450, limit = 0.080, half = [7, 1.6, 7], dryMass = 186;
+  const oxygenReserve = 600, limit = 0.080, half = [7, 1.6, 7], dryMass = 186;
   const gear = [
     {name:'Socket driver', mass:0.6, speed:7.4},
     {name:'T-handle', mass:0.8, speed:7.0},
@@ -134,14 +134,14 @@ const Flight = (() => {
   function applyCommand(s,c,mask) {return release(s,c.tool,c.power,direction(c.az,c.el),mask);}
   // Keep the seed sequence compatible with the first six-slot prototype.
   // The live opening is derived from this reproducible separation below.
-  const seedRack=(1<<6)-1;
+  const seedRack=(1<<6)-1, seedHorizon=450;
   function witness(s,mode) {
-    if(entries(s,storyReserve,mode).length) return false;
+    if(entries(s,seedHorizon,mode).length) return false;
     for(const t of [350,395,305,420]) {
       const target=scale(nearest(s.p),0.55), dv=transfer(s,target,t,mode);
       for(const tool of [3,4,5]) {
         if(norm(dv)>impulse(tool,seedRack)*1.01) continue;
-        const c=command(s,dv,tool,seedRack), hit=entries(applyCommand(s,c,seedRack),storyReserve-12,mode)[0];
+        const c=command(s,dv,tool,seedRack), hit=entries(applyCommand(s,c,seedRack),seedHorizon-12,mode)[0];
         if(hit && hit.speed<=limit-.004) return true;
       }
     }
@@ -149,7 +149,7 @@ const Flight = (() => {
   }
   // The original D-seed filter also admitted two releases four seconds apart.
   function twoThrowWitness(s,mode){
-    if(entries(s,storyReserve,mode).length)return false;
+    if(entries(s,seedHorizon,mode).length)return false;
     for(const t of [350,395,305,420]){
       const target=scale(nearest(s.p),.55);
       const first=command(s,transfer(s,target,t,mode),5,seedRack);
@@ -159,7 +159,7 @@ const Flight = (() => {
       for(const tool of [2,3,4]){
         if(norm(dv)>impulse(tool,mask)*1.01)continue;
         const final=applyCommand(next,command(next,dv,tool,mask),mask);
-        const hit=entries(final,storyReserve-16,mode)[0];
+        const hit=entries(final,seedHorizon-16,mode)[0];
         if(hit && hit.speed<=limit-.004)return true;
       }
     }
@@ -191,10 +191,10 @@ const Flight = (() => {
   function opening(index,seed,story){
     const base=index===3?randomStart(seed):named[index];
     if(story)return base;
-    // Extend the gap to the nearest grab bar in proportion to the longer clock.
+    // Manual separations start one third farther from the nearest grab bar.
     const bar=nearest(base.p);
-    return {...base,p:add(bar,scale(sub(base.p,bar),manualReserve/storyReserve))};
+    return {...base,p:add(bar,scale(sub(base.p,bar),4/3))};
   }
-  return {gear,fullRack,named,opening,half,limit,manualReserve,storyReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,impulse,budgets,
+  return {gear,fullRack,named,opening,half,limit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,impulse,budgets,
     release,motion,nearest,clearance,inside,entries,forecast,seedStream,transfer,command,applyCommand,witness,randomStart};
 })();
