@@ -101,6 +101,7 @@ function sync(now=performance.now()) {
 function updateRack() {
   for(const [i,g] of Flight.gear.entries()) {
     const b=el('tool'+i),present=!!(flight.mask&(1<<i));b.disabled=!present||!canPitch();
+    b.classList.toggle('spent',!present);
     const detail=present?g.mass.toFixed(1)+' kg':'Released';
     b.setAttribute('aria-label',g.name+', '+detail);
     b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=detail;
@@ -142,19 +143,6 @@ function describeSide(point,bar) {
   const diff=sub(point,bar),side=['radially inward','radially outward','behind the station','ahead along-track','below the orbital plane','above the orbital plane'];
   const axis=diff.reduce((a,b,i,arr)=>Math.abs(b)>Math.abs(arr[a])?i:a,0);
   return side[2*axis+(diff[axis]>0?1:0)];
-}
-// The displacement runs from the nearest grab bar to the predicted miss.
-// Point the tool to that side so recoil pushes the suit back toward the bars.
-function trimHint(displacement,az,elevation){
-  if(norm(displacement)<1e-7)return '';
-  const [right,up,forward]=Visor.orientation(az,elevation).local(unit(displacement));
-  if(forward>.94)return 'Pitch straight ahead along the forward crosshair.';
-  if(forward<-.94)return 'Aim almost straight behind your current view.';
-  const threshold=.42*Math.max(Math.abs(right),Math.abs(up)),parts=[];
-  if(Math.abs(up)>=threshold)parts.push(up>0?'up':'down');
-  if(Math.abs(right)>=threshold)parts.push(right>0?'right':'left');
-  const side=parts.join(' and ');
-  return forward<-.25?'Turn '+side+' toward the space behind you.':'Aim '+side+' in the forward visor.';
 }
 function nav() {
   const c=el('coast'),a=el('advice'),s=flight;
@@ -239,6 +227,9 @@ function frame(now) {
   updateLossDebrief(now);
   if(dirty || running&&now-lastPaint>=32) {
     if(dirty && !running){nav();updateLessonCue();}
+    el('visorHeading').textContent='HDG '+Readout.heading(yaw,2)+'°';
+    el('visorElevation').textContent='EL '+Readout.signed(pitch,2)+'°';
+    el('flightTime').textContent=clock(flight.time);
     Visor.render(visor,yaw,pitch,flight);Visor.render(aft,yaw+180,-pitch,flight,true);lastPaint=now;dirty=false;
   }
   if(running && now-lastText>=135){instruments();lastText=now;}

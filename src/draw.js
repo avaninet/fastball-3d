@@ -158,7 +158,7 @@ const Visor = (() => {
       line3(ctx,cam,add(a,scale(sub(b,a),k)),add(a,scale(sub(b,a),k+.06)),'#b6f4c5',1.35);
   }
   function label(ctx,x,y,text,color,align='left') {
-    ctx.font='10px Consolas, monospace';ctx.textAlign=align;ctx.lineWidth=3;ctx.strokeStyle='#081218d9';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);
+    ctx.font='600 12px "Segoe UI", Arial, sans-serif';ctx.textAlign=align;ctx.lineWidth=3.5;ctx.strokeStyle='#071018';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);
   }
   // From the suit, all points on a straight coast have one screen bearing.
   // Space curved arrows in pixels and retain one end-on mark on a flat projection.
@@ -197,10 +197,11 @@ const Visor = (() => {
     }
     if(!heads.length && visible){
       ctx.strokeStyle='#a2efd4';ctx.beginPath();ctx.arc(...visible,7,0,Math.PI*2);ctx.stroke();
-      label(ctx,clamp(visible[0]+10,5,w-86),clamp(visible[1]+20,14,h-20),'COAST END-ON','#a2efd4');
+      const caption=small&&w<180?'COAST':'COAST END-ON';
+      label(ctx,clamp(visible[0],50,w-50),clamp(visible[1]+22,15,h-5),caption,'#b4f7df','center');
     }else if(!visible && norm(state.pos.v)>1e-7){
       const direction=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
-      label(ctx,8,h-25,'COAST '+direction,'#a2efd4');
+      label(ctx,w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');
     }
     const pass=hit||m.near;
     if(pass.t<state.age-.01)return;
@@ -211,15 +212,21 @@ const Visor = (() => {
     ctx.lineWidth=1.6;ctx.strokeRect(x-3.5,y-3.5,7,7);
     if(!small)label(ctx,x+9,y-6,hit?'CONTACT':'NEAREST PASS',ctx.strokeStyle);
   }
-  function targetMarker(ctx,cam,p,w,h,small) {
+  function targetMarker(ctx,cam,canvas,w,h,small) {
     const q=cam.world([0,0,0]),xy=q[2]>near?cam.screen(q):null;
-    if(xy && xy[0]>20 && xy[0]<w-20 && xy[1]>24 && xy[1]<h-20)return;
+    if(xy && xy[0]>20 && xy[0]<w-20 && xy[1]>24 && xy[1]<h-20){
+      if(small)return;
+      const rect=canvas.getBoundingClientRect();
+      const top=document.elementFromPoint(rect.left+xy[0],rect.top+xy[1]);
+      if(!top?.closest('.pitchPod,.metrics,.aftPod,.navPod,.lesson,.bearingReadout'))return;
+    }
     let x=q[0],y=-q[1];if(Math.hypot(x,y)<.001){x=0;y=-1;}
     const len=Math.hypot(x,y);x/=len;y/=len;
-    const t=Math.min((w/2-20)/(Math.abs(x)||.0001),(h/2-24)/(Math.abs(y)||.0001));
+    // Keep the forward cue within the open aiming area, clear of the corner panels.
+    const t=Math.min((w/2-12)/(Math.abs(x)||.0001),(h/2-10)/(Math.abs(y)||.0001),small?Infinity:Math.min(w*.13,h*.19,92));
     const ex=w/2+x*t,ey=h/2+y*t,angle=Math.atan2(y,x);
     ctx.save();ctx.translate(ex,ey);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-5,-4);ctx.lineTo(-5,4);ctx.closePath();ctx.fillStyle='#a7dcc0';ctx.fill();ctx.restore();
-    label(ctx,clamp(ex-x*22,25,w-25),clamp(ey-y*14+3,11,h-6),'STN','#c1f0d2','center');
+    label(ctx,clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),'STN','#dcffe9','center');
   }
   function render(canvas,az,el,state,small=false) {
     const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
@@ -247,13 +254,15 @@ const Visor = (() => {
       ctx.strokeStyle='#c1d7d530';ctx.lineWidth=.8;
       for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(cx,cy,r,i*Math.PI/2+.17,(i+1)*Math.PI/2-.17);ctx.stroke();}
       for(let i=0;i<48;i++){const a=i*Math.PI/24,k=i%4===0?6:2.5;stroke(ctx,[cx+Math.cos(a)*r,cy+Math.sin(a)*r],[cx+Math.cos(a)*(r+k),cy+Math.sin(a)*(r+k)],i%4===0?'#c8dcd885':'#849b9a55',.8);}
-      label(ctx,12,18,'HDG  '+Readout.heading(az,2)+'°','#dfebdf');
-      label(ctx,w-12,18,'EL  '+Readout.signed(el,2)+'°','#dfebdf','right');
-      label(ctx,12,h-12,'FWD  /  01','#abc2bf');label(ctx,w-12,h-12,'T + '+clockText(state.time),'#abc2bf','right');
-    }else{label(ctx,9,h-9,'AFT  /  02','#abc2bf');}
-    const col=small?'#bfd7ce':'#ffcb75',span=small?8:15,inner=small?3:5;
-    for(const [x,y] of [[1,0],[-1,0],[0,1],[0,-1]])stroke(ctx,[cx+x*inner,cy+y*inner],[cx+x*span,cy+y*span],col,1.25);
-    targetMarker(ctx,cam,state.pos.p,w,h,small);
+    }
+    const span=small?8:17,inner=small?3:5;
+    ctx.beginPath();
+    for(const [x,y] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      ctx.moveTo(cx+x*inner,cy+y*inner);ctx.lineTo(cx+x*span,cy+y*span);
+    }
+    ctx.strokeStyle='#041018';ctx.lineWidth=4;ctx.stroke();
+    ctx.strokeStyle='#70faff';ctx.lineWidth=2;ctx.stroke();
+    targetMarker(ctx,cam,canvas,w,h,small);
   }
   function toolArt(canvas,i) {
     canvas.width=140;canvas.height=58;
@@ -284,3 +293,17 @@ const Visor = (() => {
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
   return {render,camera,orientation,courseGlyphs,loadEarth,toolArt,clockText};
 })();
+
+// The displacement runs from the nearest grab bar to the predicted miss.
+// Point the tool to that side so recoil pushes the suit back toward the bars.
+function trimHint(displacement,az,elevation){
+  if(Flight.norm(displacement)<1e-7)return '';
+  const [right,up,forward]=Visor.orientation(az,elevation).local(Flight.unit(displacement));
+  if(forward>.94)return 'Pitch straight ahead along the forward crosshair.';
+  if(forward<-.94)return 'Aim almost straight behind your current view.';
+  const threshold=.42*Math.max(Math.abs(right),Math.abs(up)),parts=[];
+  if(Math.abs(up)>=threshold)parts.push(up>0?'up':'down');
+  if(Math.abs(right)>=threshold)parts.push(right>0?'right':'left');
+  const side=parts.join(' and ');
+  return forward<-.25?'Turn '+side+' toward the space behind you.':'Aim '+side+' in the forward visor.';
+}

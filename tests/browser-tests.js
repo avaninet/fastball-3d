@@ -87,6 +87,27 @@
     eq(document.elementFromPoint(midX,midY)===visor,'Story visor receives input');
     click('lessonAction');eq(flight.done==='capture','coast to debrief');check(false);
   });
+  test('Wide visor, inset aft feed and nine-slot rack leave a clear aiming area',()=>{
+    configure(0,'Straight-Line');scrollTo(0,0);
+    const f=visor.getBoundingClientRect(),a=aft.closest('.aftPod').getBoundingClientRect();
+    eq(f.width>=innerWidth*.92,'visor spans the cockpit');
+    eq(a.top>=f.top&&a.right<=f.right&&a.bottom<=f.bottom,'aft feed contained by visor');
+    eq(a.top-f.top<f.height*.12&&f.right-a.right<f.width*.07&&a.width<=f.width*.34,'small upper-right picture in picture');
+    for(const [dx,dy] of [[0,0],[-18,0],[18,0],[0,-18],[0,18]]){
+      eq(document.elementFromPoint(f.x+f.width/2+dx,f.y+f.height/2+dy)===visor,'reticle receives aim input');
+    }
+    const slots=[...el('tools').children].map(tool=>tool.getBoundingClientRect());
+    eq(new Set(slots.map(s=>s.left)).size===3&&new Set(slots.map(s=>s.top)).size===3,'3 × 3 rack');
+    if(innerWidth>=741){
+      eq(slots[0].x<f.x+f.width*.12&&slots.at(-1).bottom<=f.bottom,'lower-left rack inside visor');
+    }
+    for(const canvas of [visor,aft]){
+      Visor.render(canvas,yaw,pitch,flight,canvas===aft);
+      const ctx=canvas.getContext('2d'),ratio=canvas.width/canvas.clientWidth;
+      const pixels=ctx.getImageData(Math.round(canvas.width/2+5*ratio),Math.floor(canvas.height/2-2*ratio),Math.ceil(3*ratio),Math.ceil(4*ratio)).data;
+      eq(pixels.some((v,i)=>i%4===0&&v<160&&pixels[i+1]>195&&pixels[i+2]>200),'bright cyan aiming mark in '+canvas.id);
+    }
+  });
   test('Cockpit rectangles, hit targets and keyboard focus',()=>{
     configure(0,'Straight-Line');scrollTo(0,0);
     for(const id of ['forward','aft','tool0','tool1','tool2','tool3','tool4','tool5','tool6','tool7','tool8','clockRate','power','throw','coast','advice','speedGauge','speedRef','pause']){
