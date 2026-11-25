@@ -99,9 +99,9 @@ const Flight = (() => {
     }
     let best=ds[0]<=ds[steps] ? 0 : end;
     const dist=t=>clearance(motion(s,t,mode).p);
-    if(!hits.length) for(let i=1;i<steps;i++) {
+    if(!hits.length) for(let i=0;i<=steps;i++) {
       if(ds[i]>ds[i-1] || ds[i]>ds[i+1] || (ds[i]===ds[i-1] && ds[i]===ds[i+1])) continue;
-      let lo=path[i-1].t,hi=path[i+1].t;
+      let lo=path[Math.max(0,i-1)].t,hi=path[Math.min(steps,i+1)].t;
       for(let k=0;k<27;k++) {
         const a=(2*lo+hi)/3,b=(lo+2*hi)/3;
         if(dist(a)<dist(b)) hi=b; else lo=a;
@@ -141,14 +141,45 @@ const Flight = (() => {
     }
     return false;
   }
+  // Verify harder crossings with two actual releases four seconds apart,
+  // using the same control rounding, inventory and entry speed as the suit.
+  function twoThrowWitness(s,mode){
+    if(entries(s,reserve,mode).length)return false;
+    for(const t of [350,395,305,420]){
+      const target=scale(nearest(s.p),.55);
+      const first=command(s,transfer(s,target,t,mode),5,63);
+      const coast=applyCommand(s,first,63);
+      if(entries(coast,4,mode).length)continue;
+      const next=motion(coast,4,mode),dv=transfer(next,target,t-4,mode),mask=31;
+      for(const tool of [2,3,4]){
+        if(norm(dv)>impulse(tool,mask)*1.01)continue;
+        const final=applyCommand(next,command(next,dv,tool,mask),mask);
+        const hit=entries(final,reserve-16,mode)[0];
+        if(hit && hit.speed<=limit-.004)return true;
+      }
+    }
+    return false;
+  }
   function randomStart(seed) {
-    const rng=seedStream(seed);
+    const varied=typeof seed==='string' && /^D-/i.test(seed);
+    const numeric=typeof seed==='string'?parseInt(seed.replace(/^D-/i,''),16):seed;
+    const rng=seedStream(numeric);
+    const crossing=varied && rng()<.76;
     for(let i=0;i<350;i++) {
       const side=rng()<.5?-1:1;
       const s={name:'Random drift',seed,p:[rng()*32-16,side*(12+rng()*12),rng()*28-14],
         v:[(rng()-.5)*.068,side*(.003+rng()*.027),(rng()-.5)*.055],
         brief:'An unfamiliar separation. Read your drift and choose an opening pitch.'};
-      if(witness(s,'Straight-Line') && witness(s,'Orbital')) return s;
+      if(varied){
+        if(crossing)s.p=[rng()*56-28,side*(14+rng()*17),rng()*44-22];
+        const [az,el]=angles(s.p),angle=2*Math.PI*rng();
+        const tangent=add(scale(direction(az+90,0),Math.cos(angle)),scale(direction(az,el+90),Math.sin(angle)));
+        const radial=crossing?(rng()-.56)*.095:-.012+.045*rng();
+        const lateral=crossing?.070+.057*rng():.020+.040*rng();
+        s.v=add(scale(unit(s.p),radial),scale(tangent,lateral));
+      }
+      const reachable=mode=>witness(s,mode)||(crossing&&twoThrowWitness(s,mode));
+      if(reachable('Straight-Line') && reachable('Orbital'))return s;
     }
     return {...named[0],seed,name:'Random drift',brief:'A seeded tether-separation reserve case.'};
   }

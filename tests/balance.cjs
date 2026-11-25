@@ -112,3 +112,72 @@ for(const mode of modes){
 const graze={p:[-8,-.6,7],v:[1,1,0]};assert.equal(F.entries(graze,2,'Straight-Line').length,1);
 assert.equal(F.entries({p:[-8,.6,7.001],v:[1,1,0]},3,'Straight-Line').length,0);
 console.log('Contact and reserve checks passed.');
+
+function recipe(initial,mode,soft,kind){
+  let state=initial,elapsed=0,mask=63;
+  function pitch(tool,pct,direction){
+    state=F.release(state,tool,pct,direction,mask);
+    mask^=1<<tool;
+  }
+  if(kind==='manual'){
+    // Same keyboard increments as the visor. Allow twelve live seconds to slew.
+    state=F.motion(state,12,mode);elapsed=12;
+    const from=F.angles(scale(initial.p,-1)),to=F.angles(state.p);
+    const angles=to.map((a,i)=>from[i]+Math.round((a-from[i])*4)/4);
+    pitch(5,95,F.direction(...angles));
+  }else pitch(5,95,unit(state.p));
+  if(kind==='repeat'){
+    // At 60 and 120 seconds spend the next heavy tool unless the coast is already safe.
+    for(const tool of [4,3]){
+      const entries=F.entries(state,450-elapsed,mode,F.inside(state.p));
+      if(valid(entries[0],soft)||entries.some(h=>h.t<=60&&valid(h,soft)))return true;
+      state=F.motion(state,60,mode);elapsed+=60;pitch(tool,95,unit(state.p));
+    }
+  }
+  if(kind==='brake'){
+    const entry=F.entries(state,450-elapsed,mode)[0];
+    if(entry && entry.speed>F.limit && entry.t>18){
+      const wait=entry.t-18;state=F.motion(state,wait,mode);elapsed+=wait;
+      const command=F.command(state,scale(unit(state.v),.061-norm(state.v)),4,mask);
+      pitch(4,command.power,unit(state.v));
+    }
+  }
+  return F.entries(state,450-elapsed,mode,F.inside(state.p)).some(entry=>valid(entry,soft));
+}
+const varied=Array.from({length:128},(_,i)=>F.randomStart('D-'+(104729+i).toString(16)));
+for(const [label,openings] of [['named',F.named],['original',starts],['varied',varied]]){
+  for(const mode of modes){
+    for(const soft of [false,true]){
+      const rows={};
+      for(const kind of ['snap','manual','repeat','brake']){
+        const wins=openings.map(s=>recipe(s,mode,soft,kind));
+        rows[kind]=label==='named'?wins.map(w=>w?1:0).join(''):wins.filter(Boolean).length;
+      }
+      let planned=0,imprecise=0,corrected=0;
+      for(const [i,s] of openings.entries()){
+        const route=plan(s,mode,63,450,soft);assert.ok(route,s.name+' '+mode);
+        planned++;
+        const draw=F.seedStream(0xA580+i*19);
+        const r=runPlan(s,mode,63,450,soft,route.actions,10,10,draw);
+        if(r.win){imprecise++;corrected++;continue;}
+        if(r.early)continue;
+        const near=F.forecast(r.s,450-r.elapsed,mode).near;
+        const time=Math.min(145,Math.max(8,(r.hit?.t??near.t)*.5));
+        const rem=450-time-r.elapsed;
+        if(r.hit && r.hit.t<=time)continue;
+        const coast=F.motion(r.s,time,mode),fix=plan(coast,mode,r.mask,rem,soft);
+        if(fix && runPlan(coast,mode,r.mask,rem,soft,fix.actions,10,10,draw).win)corrected++;
+      }
+      console.log('Strategy comparison',label,mode,soft?'soft':'any',JSON.stringify({...rows,planned,imprecise,corrected}));
+    }
+  }
+}
+
+for(const mode of modes){
+  const lengths=[0,0,0,0];let delayed=0;
+  for(const s of varied){
+    const route=plan(s,mode,63,450,true);lengths[route.actions.length]++;
+    if(plan(F.motion(s,30,mode),mode,63,420,true))delayed++;
+  }
+  console.log('Varied soft routes',mode,'one/two/three',lengths.slice(1).join('/'),'after 30 live seconds',delayed);
+}

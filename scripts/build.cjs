@@ -5,6 +5,9 @@ const root = path.resolve(__dirname, '..');
 const read = (file, encoding) => fs.readFileSync(path.join(root, file), encoding);
 let page = read('src/visor.html', 'utf8');
 const parts = {
+  COCKPIT_STYLE: read('src/cockpit.css', 'utf8'),
+  LOG: read('src/log.js', 'utf8'),
+  STORY: read('src/story.js', 'utf8'),
   PHYSICS: read('src/physics.js', 'utf8'),
   DRAW: read('src/draw.js', 'utf8'),
   GAME: read('src/game.js', 'utf8'),

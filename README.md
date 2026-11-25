@@ -1,27 +1,26 @@
 # Fastball 3D
 
-A first-person EVA rescue game. Capt. Tommi Dylan has a broken tether, a stuck thruster and six things she can throw. Cross the station’s outline before the oxygen reserve runs out.
+Open [index.html](index.html) to fly the standalone local prototype. The game, cameras and artwork work offline. The approved starting build is tagged `prototype-baseline`. [Local test results and playtest questions](REVIEW.md) cover this development round.
 
-**Play:** Open `index.html` in a desktop or mobile browser. The file contains the game and its artwork. It works offline and needs no installation. In the prototype’s default Straight-Line **Tether separation**, select **Face away**, throw the preselected battery at 95%, and watch the station in the aft camera. This deliberately exposes the shortcut that the next round will move into Story.
+## First flight
 
-**Continue development:** Start with [HANDOFF.md](HANDOFF.md). It contains the new-project prompt, current balance evidence, and acceptance checks for the next iteration. [AGENTS.md](AGENTS.md) describes the source and local workflow.
+**Begin flight** starts manual aiming and the 7:30 oxygen clock. Drag the forward visor or tap a bearing, select a tool, adjust power and press **Throw**. The tool follows the crosshair. Its recoil adds to your existing velocity in the opposite direction. The aft camera looks straight behind you. Pause to read the instruments and resume to change the pitch. Closing the guide or setup leaves a running flight paused.
 
-## Open the project
+**First rescue** starts Capt. Tommi Dylan’s Story lesson. Face away and release the staged 95% battery, read the aft camera, then coast to the halfway check and the bars. The debrief continues to an oblique miss, a braking lesson and an Orbital comparison. Skip guidance to fly manually or restart from the guide. **Story flight** in setup enables assisted bearings and paused lineup on the opening and capture rule you choose. A Story release starts or resumes the clock at 1×.
 
-Extract the entire handoff ZIP to a working directory. Open the enclosed `Fastball-3D` folder as the project root. The archive includes the local Git history. `git status` should report a clean `main` branch and `git tag` should list `prototype-baseline`. If a project chat accepts file attachments, attach the ZIP and use the prompt at the top of the handoff.
+**New flight** offers Straight-Line and Orbital, three named separations, and seeded Random drift. **Require a soft capture** starts unchecked and limits entry speed to 0.080 m/s when selected. A fast entry carries through the 14 × 14 × 3.2 m grab volume. Clear it before attempting another entry.
 
-## Flight rules in the baseline
+New random seeds begin with `D-` and include faster sideways crossings. Enter an original hexadecimal seed without a prefix to reproduce the approved prototype’s opening. Retry restores the same geometry and six tools.
 
-- **Straight-Line** holds velocity constant between throws. **Orbital** propagates three-dimensional relative motion about a station on a circular 92-minute orbit.
-- **Tether separation**, **Lateral drift**, **Wide separation** and **Random drift** use the same rack. A hexadecimal seed reproduces a random opening in either model.
-- The station has a solid 14 × 14 m face and 3.2 m depth. Its outline marks grab-bar reach, including the visually empty spaces between panels. Any entry qualifies by default.
-- **Require a soft capture** sets a maximum relative speed of 0.080 m/s at entry. A faster pass spends no extra tool and leaves the flight live. Clear the envelope and enter again to try another grab.
-- The reserve is 7:30 of simulated time. Drag or tap the forward visor, or use arrow keys to aim. Choose a tool, adjust power, then explicitly press **Throw**. The aft camera looks in the opposite direction. Rotation changes aim and never imparts translation or spin.
-- Each pitch adds recoil to the existing velocity. The full six-tool rack can supply about 0.329 m/s of cumulative velocity change at best. The mint coast shows the result of committed throws. Fast-forward, pause, retries, the flight guide and a brief debrief are available.
+## In the cockpit
+
+- Arrow keys turn the visor 2°. Hold Shift for 0.25° adjustments. Keys 1–6 select equipment and [ or ] changes power. Enter throws when the visor has focus. P starts, pauses or resumes the clock.
+- Negative range rate means the suit is closing on the nearest part of the grab volume. The committed path and coast instruments show contact, a fast entry, or the side, distance and time of a miss. A ring identifies a coast viewed end-on. Sparse arrowheads mark bends with visible separation.
+- **View flight log** in the debrief reconstructs the flown segments and actual entries. Read both equal-scale projections to distinguish a crossing in the orbital plane from a cross-track miss. The release record below gives time, tool, power, bearing, position and resulting velocity. [Example Orbital flight log](reference/orbital-flight-log.png)
 
 ## Build and check
 
-Node.js runs the developer tools. There are no package dependencies. From the project root:
+Run these commands from `fastball-3d` with Node.js.
 
 ```sh
 node scripts/build.cjs
@@ -29,6 +28,6 @@ node tests/balance.cjs
 node scripts/browser-qa.cjs
 ```
 
-Open the generated `qa-runner.html` in a browser. The result at the bottom lists passed cases and any errors. To run the browser checks from a terminal, pass the path of a Chromium or Chrome headless executable as the first argument to `scripts/browser-qa.cjs`. It runs the suite at 1440 × 950, 1366 × 768 and 390 × 844. The built `index.html` is tracked so a fresh checkout is playable immediately.
+Open the generated `qa-runner.html` for the browser results, or pass a Chromium executable path to the last command to run all four CSS viewport sizes. Additional arguments pass through to Chromium. The browser checks use local files. The build has no package dependencies.
 
-Fastball is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. Do not try this on orbit.
+[AGENTS.md](AGENTS.md) describes the project workflow. [HANDOFF.md](HANDOFF.md) preserves the original work order and measurements. The pitch layout uses `src/visor.html` and `src/cockpit.css`. The tutorial lives in `src/story.js` and the debrief charts in `src/log.js`.

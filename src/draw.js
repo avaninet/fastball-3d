@@ -137,14 +137,48 @@ const Visor = (() => {
   function label(ctx,x,y,text,color,align='left') {
     ctx.font='10px Consolas, monospace';ctx.textAlign=align;ctx.lineWidth=3;ctx.strokeStyle='#081218d9';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);
   }
-  function course(ctx,cam,state,small) {
-    if(!state.throws)return;
+  // From the suit, all points on a straight coast have one screen bearing.
+  // Space curved arrows in pixels and retain one end-on mark on a flat projection.
+  function courseGlyphs(cam,state,w,h){
+    const hit=state.forecast.hits[state.hitIndex];
+    const stop=hit?.t??state.forecast.path.at(-1).t;
+    let previous=null,visible=null;
+    const heads=[];
+    for(const fraction of [.12,.30,.52,.74,.92]){
+      const t=state.age+(stop-state.age)*fraction;
+      const q=cam.world(Flight.motion(state.anchor,t,state.mode).p);
+      if(q[2]<near){previous=null;continue;}
+      const at=cam.screen(q);
+      if(at[0]<8||at[0]>w-8||at[1]<15||at[1]>h-18){previous=null;continue;}
+      visible=at;
+      if(!previous){previous=at;continue;}
+      const dx=at[0]-previous[0],dy=at[1]-previous[1];
+      if(Math.hypot(dx,dy)<14)continue;
+      heads.push({at,angle:Math.atan2(dy,dx),t});previous=at;
+    }
+    return {heads,visible,behind:dot(state.pos.v,cam.forward)<0};
+  }
+  function course(ctx,cam,state,small,w,h) {
+    if(!state.time&&!state.throws)return;
     const m=state.forecast,hit=m.hits[state.hitIndex],end=hit?.t??Infinity;
     let last=state.pos.p;
     ctx.setLineDash([5,5]);
     for(const {p,t} of m.path)if(t>state.age && t<end){line3(ctx,cam,last,p,'#a2efd4',small?1.3:1.8);last=p;}
     if(hit)line3(ctx,cam,last,hit.p,'#a2efd4',1.6);
     ctx.setLineDash([]);
+    const {heads,visible,behind}=courseGlyphs(cam,state,w,h);
+    for(const {at,angle} of heads){
+      ctx.save();ctx.translate(...at);ctx.rotate(angle);
+      stroke(ctx,[-5,-3],[0,0],'#a2efd4',1.6);stroke(ctx,[0,0],[-5,3],'#a2efd4',1.6);
+      ctx.restore();
+    }
+    if(!heads.length && visible){
+      ctx.strokeStyle='#a2efd4';ctx.beginPath();ctx.arc(...visible,7,0,Math.PI*2);ctx.stroke();
+      label(ctx,clamp(visible[0]+10,5,w-86),clamp(visible[1]+20,14,h-20),'COAST END-ON','#a2efd4');
+    }else if(!visible && norm(state.pos.v)>1e-7){
+      const direction=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
+      label(ctx,8,h-25,'COAST '+direction,'#a2efd4');
+    }
     const pass=hit||m.near;
     if(pass.t<state.age-.01)return;
     if(!hit)line3(ctx,cam,pass.p,m.near.bar,'#f3b76a',1);
@@ -172,7 +206,7 @@ const Visor = (() => {
     const cam=camera(state.pos.p,az,el,w,h,small);
     background(canvas,ctx,w,h,cam,!!state.dragging);
     for(const s of stars){const q=cam.local(s.v);if(q[2]<.2)continue;const [x,y]=cam.screen(q);if(x<0||x>w||y<0||y>h)continue;ctx.fillStyle=s.c;ctx.fillRect(x,y,s.b,s.b);}
-    station(ctx,cam);course(ctx,cam,state,small);
+    station(ctx,cam);course(ctx,cam,state,small,w,h);
     for(const obj of state.objects){
       const where=Flight.motion(obj.start,state.time-obj.time,state.mode).p,q=cam.world(where);if(q[2]<near)continue;
       const [x,y]=cam.screen(q),r=clamp(cam.f*.085/q[2],1.8,9);
@@ -212,5 +246,5 @@ const Visor = (() => {
     if(i===5){shape([[-25,-9],[-13,-16],[25,-11],[25,7],[13,15],[-25,10]],dark);shape([[-25,-9],[-13,-15],[25,-11],[13,-4]],silver);shape([[13,-4],[25,-11],[25,8],[13,15]],'#7f8d8d');rect(-21,-5,28,4,amber);rect(-18,3,10,3,'#c2cbc8');}
   }
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-  return {render,camera,loadEarth,toolArt,clockText};
+  return {render,camera,courseGlyphs,loadEarth,toolArt,clockText};
 })();
