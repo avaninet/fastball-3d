@@ -10,6 +10,9 @@
     try{fn();passed.push(name);}catch(e){errors.push(name+' / '+e.stack);}
     for(const d of document.querySelectorAll('dialog[open]'))d.close();
   }
+  function enterLesson(id){
+    click(id);if(el('confirmRescue').open)click('replaceFlight');
+  }
   function configure(index,mode,soft=false,story=false){
     click('new');el('scenario').value=index;el('scenario').dispatchEvent(new Event('change'));
     document.querySelector('input[name=model][value="'+mode+'"]').checked=true;
@@ -71,7 +74,7 @@
       if(paused)eq(button.textContent==='Resume'&&parseFloat(getComputedStyle(flag).fontSize)>=28,'prominent pause label');
     }
     configure(0,'Straight-Line');check(false);keys('p');check(true);click('pause');check(false);
-    click('storyEntry');check(false);click('away');click('throw');click('lessonAction');check(true);
+    enterLesson('storyEntry');check(false);click('away');click('throw');click('lessonAction');check(true);
     const r=visor.getBoundingClientRect(),midX=r.left+r.width/2,midY=r.top+r.height/2;
     eq(!el('pausedLineup').hidden&&flag.getBoundingClientRect().bottom<midY,'Story reticle stays clear');
     eq(document.elementFromPoint(midX,midY)===visor,'Story visor receives input');
@@ -101,6 +104,32 @@
       if(mode==='Straight-Line'){close(flight.forecast.hits[0].t,358.82173,.001);advance(flight.limit);eq(flight.done==='capture','baseline contact');click('retry');}
       else{close(flight.forecast.near.d,4.51749,.001);click('throw');eq(running&&flight.throws===2,'paused release resumes');}
     }
+  });
+  test('Tablet rack, landscape oxygen and narrow headers display complete labels',()=>{
+    configure(0,'Straight-Line');
+    const frame=window.frameElement,original=frame.style.cssText;
+    const textRect=node=>{const range=document.createRange();range.selectNodeContents(node);return range.getBoundingClientRect();};
+    try{
+      for(const [w,h] of [[768,1024],[1024,768],[844,390],[360,640],[320,568]]){
+        frame.style.width=w+'px';frame.style.height=h+'px';frame.getBoundingClientRect();
+        const root=document.documentElement;
+        eq(innerWidth===w&&root.scrollWidth<=innerWidth,'layout width at '+w+' actual '+root.scrollWidth);
+        for(const b of document.querySelectorAll('.headerActions button'))eq(b.getBoundingClientRect().right<=root.clientWidth,'visible header button '+w);
+        if(w===768||w===1024){
+          for(const n of document.querySelectorAll('.tool b,.tool small')){
+            eq(n.scrollWidth<=n.clientWidth+1&&textRect(n).right<=n.closest('button').getBoundingClientRect().right,'complete '+n.textContent+' at '+w);
+          }
+          const values=[...document.querySelectorAll('.velocity dd')].map(n=>n.getBoundingClientRect().top);
+          eq(Math.max(...values)-Math.min(...values)<1,'aligned velocity values');
+          click('tool0');click('throw');const released=el('tool0').querySelector('small');
+          eq(released.textContent==='Released'&&released.scrollWidth<=released.clientWidth,'released label');
+        }
+        if(w===844){
+          const oxygenLabel=el('oxygen').previousElementSibling;
+          eq(textRect(oxygenLabel).right<=oxygenLabel.closest('.metrics').getBoundingClientRect().right,'full oxygen caption');
+        }
+      }
+    }finally{frame.style.cssText=original;}
   });
   const named=[
     [[[5,-62,14,94]],[[3,-44,-5,99]],[[5,-55,13,100],[2,-56,12,96]]],
@@ -139,7 +168,7 @@
     click('viewLog');eq(el('logPanes').querySelectorAll('svg').length===2&&el('logSummary').textContent.includes('3.00 m'),'log rendered');
   });
   test('Step through four playable lessons, with a light trim and a brake',()=>{
-    click('storyEntry');scrollTo(0,0);
+    enterLesson('storyEntry');scrollTo(0,0);
     for(const id of ['forward','tool5','power','throw','advice','lessonCue','skipLesson']){
       const r=el(id).getBoundingClientRect();eq(r.top>=0&&r.bottom<=innerHeight,id+' staged lesson viewport '+JSON.stringify(r));
     }
@@ -162,7 +191,7 @@
       if(i<3)click('nextLesson');
     }
     click('retry');click('skipLesson');eq(!flight.story&&running&&el('lesson').hidden,'manual handover');
-    click('manual');click('replayLesson');eq(flight.lesson===0 && !started,'replay');
+    click('manual');enterLesson('replayLesson');eq(flight.lesson===0 && !started,'replay');
   });
   function tick(seconds,multiplier){
     rate=multiplier;
@@ -170,6 +199,99 @@
       const dt=Math.min(seconds,multiplier/4);sync(lastTime+dt/multiplier*1000);seconds-=dt;
     }
   }
+  test('A legacy mouse click consumes the matching completed gesture once',()=>{
+    configure(0,'Straight-Line',false,true);
+    const legacy=button=>button.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,detail:1}));
+    function release(button,id){pointer(button,'pointerdown',id);pointer(button,'pointerup',id);}
+    const tool=el('tool0'),button=el('throw');
+    release(tool,2);legacy(tool);eq(selected===0,'touch id 2 selects a slot');
+    release(el('away'),0);legacy(el('away'));close(dot(Flight.direction(yaw,pitch),unit(flight.pos.p)),1);
+    release(button,0);legacy(button);legacy(button);eq(flight.throws===1,'mouse id 0, no replay');
+    release(button,4);pointer(button,'click',1);eq(flight.throws===2,'touch click relabelled as mouse');
+    release(button,6);click('pause');click('pause');legacy(button);
+    eq(flight.throws===2,'gesture invalidated across pause and resume');
+    release(tool,8);legacy(button);eq(flight.throws===2,'different target');
+    enterLesson('storyEntry');click('away');click('throw');release(el('lessonAction'),2);legacy(el('lessonAction'));
+    eq(flight.checked&&!running,'legacy tap on lesson action');
+  });
+  test('A brake inside the bars captures immediately, including with the last tool',()=>{
+    for(const last of [false,true]){
+      configure(0,'Straight-Line',true);
+      const fire=(i,p,v)=>{choose(i);changePower(p);setView(v);click('throw');};
+      fire(5,100,flight.pos.p);fire(4,100,flight.pos.p);advance(flight.forecast.hits[0].t+4);
+      eq(flight.misses===1&&Flight.inside(flight.pos.p),'inside after the fast entry');
+      if(last){
+        [6,0,1,2,7,3].forEach((i,k)=>fire(i,10,[0,0,k%2?1:-1]));
+        fire(8,100,flight.pos.v);
+      }else{
+        fire(8,100,flight.pos.v);
+        if(!flight.done)fire(3,100,flight.pos.v);
+      }
+      eq(flight.done==='capture'&&Flight.softEnough(norm(flight.pos.v)),'grab on release');
+      eq((flight.mask===0)===last&&flight.misses===1,'correct remaining gear and entry count');
+      close(flight.time,flight.log.releases.at(-1).time);click('viewLog');
+      eq(el('logSummary').textContent.includes('Grab speed'),'log shows actual grab speed');
+      el('flightLog').close();el('debrief').close();
+    }
+  });
+  test('Orbital coast slows inside the bars at the same instant on either clock',()=>{
+    for(const speed of [1,30]){
+      fixture('Orbital',true,[0,-1.61,1],[0,.005,.08]);flight.mask=0;
+      const [entry,grab]=flight.forecast.hits;
+      eq(entry.speed>.0801&&grab.t>40&&grab.t<45,'distinct fast entry and later grab');
+      tick(10,speed);eq(flight.misses===1&&!flight.done,'empty rack can still coast to a grab');
+      tick(50,speed);eq(flight.done==='capture','coast captured');
+      close(flight.time,43.847571664,1e-6);close(norm(flight.pos.v),Flight.limit);
+      el('debrief').close();
+    }
+  });
+  test('First rescue protects a live flight and manual retry matches setup after skipping',()=>{
+    configure(1,'Orbital');click('throw');const original=flight;
+    for(const id of ['storyEntry','replayLesson']){
+      if(id==='replayLesson')click('manual');
+      click(id);eq(el('confirmRescue').open&&!running&&flight===original,'requires confirmation');
+      el('confirmRescue').querySelector('.close').click();
+      if(id==='replayLesson')el('guide').querySelector('.close').click();
+      eq(flight===original&&flight.throws===1&&!running,'cancel preserves history and pause');
+    }
+    click('storyEntry');click('replaceFlight');eq(flight.lesson===0&&!started,'confirmed lesson');
+    click('skipLesson');const position=flight.pos.p.slice();advance(600);click('retry');
+    eq(running&&!flight.story&&norm(sub(flight.initial.p,position))>0,'manual retry uses standard geometry');
+    const retried=JSON.stringify(flight.initial);click('new');el('setupForm').requestSubmit();
+    eq(running&&JSON.stringify(flight.initial)===retried,'setup reproduces retry');
+  });
+  test('Boundary values, singles and replay labels agree with the flight',()=>{
+    fixture('Straight-Line',true,[0,-3,0],[0,.0803,0]);instruments();
+    eq(el('coast').textContent.includes('Fast')&&el('advice').textContent.includes('0.0803'),'fast preview');
+    advance(flight.forecast.hits[0].t+.1);eq(el('message').textContent.includes('0.0803'),'fast entry');
+    flight.pos.v=[-.00004,.000003,0];instruments();
+    eq(el('velX').textContent==='+0.0000'&&!el('rate').textContent.startsWith('-0.000'),'rounded zero');
+    eq(Readout.heading(-.001,2)==='0.00'&&Readout.heading(-720.001,2)==='0.00','wrapped rounded headings');
+    eq(Readout.speed(.0800001)!=='0.080'&&Readout.speed(.08)==='0.080','threshold detail');
+    eq(Readout.count(1,'fast pass','fast passes')==='1 fast pass'&&Readout.count(1,'throw')==='1 throw','singular');
+    fixture('Straight-Line',true,[0,-1.7,0],[0,.09,0]);advance(2);
+    choose(6);changePower(100);setView(flight.pos.v);click('throw');
+    eq(flight.done==='capture','single brake after one fast entry');
+    const card=document.createElement('div');card.innerHTML=FlightLog.card(flight);
+    const challenge=card.querySelector('desc').textContent;
+    eq(challenge.includes('1 throw ·')&&challenge.endsWith('1 fast pass'),'singular challenge text');
+    el('debrief').close();
+    configure(3,'Orbital');eq(el('seedTag').textContent.startsWith('Copy replay'),'correct action label');
+    click('throw');advance(600);eq(el('advice').textContent.includes('1 tool released'),'singular coast');
+  });
+  test('Keyboard aim restores full detail and a real-time stall pauses at 30×',()=>{
+    configure(0,'Straight-Line');
+    let keyError=false;const onError=()=>{keyError=true;};
+    window.addEventListener('error',onError);document.dispatchEvent(new Event('keydown'));window.removeEventListener('error',onError);
+    eq(!keyError,'key-less event is ignored');
+    keys('ArrowLeft');keys('ArrowLeft',false,visor,true);eq(flight.keyAiming,'fast sky while held');
+    visor.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft',bubbles:true}));
+    eq(!flight.keyAiming&&dirty,'full-resolution repaint on release');
+    set('clockRate',3);const before=flight.time;sync(lastTime+20000);
+    eq(!running&&started&&!flight.done&&flight.time===before,'no lost oxygen in a stall');
+    click('pause');sync(lastTime+100);close(flight.time,before+3,.02);
+    lastTime=performance.now()-5000;click('pause');eq(!running,'button after a stall leaves flight paused');
+  });
   test('Event records and replay agree at 1× and 30×',()=>{
     for(const scenario of ['fast return','orbital return','expiry']){
       const records=[];
@@ -355,7 +477,7 @@
       configure(3,mode,soft,story);
       eq(flight.limit===600&&el('oxygen').textContent==='10:00','fresh flight '+[mode,story,soft]);
     }
-    click('storyEntry');click('pause');advance(450);instruments();
+    enterLesson('storyEntry');click('pause');advance(450);instruments();
     eq(!flight.done&&el('oxygen').textContent==='2:30','First rescue continues past its former deadline');
     advance(150);
     eq(flight.done==='oxygen'&&flight.time===600&&el('oxygen').textContent==='0:00','Story expires at ten minutes');
@@ -445,7 +567,7 @@
     click('manual');const guide=el('guide').textContent;
     eq(['presumed lost','Newton’s third law','wrench','SR-73','next town'].every(s=>guide.includes(s)),'guide premise and backstory');
     eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // in honor of the legends of tgirl baseball','credit line');
-    click('replayLesson');
+    enterLesson('replayLesson');
     eq(['presumed lost','Newton’s third law','wrench','pushes you back','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
     eq(el('brief').textContent.includes('Saturdays'),'character in opening');
   });

@@ -1,3 +1,22 @@
+const Readout={
+  signed(value,digits,plus=true){
+    const rounded=Number(value.toFixed(digits));
+    return (plus && rounded>=0?'+':'')+rounded.toFixed(digits);
+  },
+  heading(value,digits){
+    const wrapped=((value%360)+360)%360;
+    return (Number(wrapped.toFixed(digits))%360).toFixed(digits);
+  },
+  speed(value){
+    const ordinary=value.toFixed(3);
+    if(Number(ordinary)===Flight.limit && !Flight.softEnough(value)){
+      const precise=value.toFixed(4);
+      return Number(precise)>Flight.limit?precise:'>'+ordinary;
+    }
+    return ordinary;
+  },
+  count(value,singular,plural=singular+'s'){return value+' '+(value===1?singular:plural);}
+};
 const Visor = (() => {
   const {add,sub,scale,dot,norm,unit,direction,clamp,rad}=Flight;
   const xyz=(x,y,z)=>[x,y,z], faces=[];
@@ -188,7 +207,7 @@ const Visor = (() => {
     if(!hit)line3(ctx,cam,pass.p,m.near.bar,'#f3b76a',1);
     const q=cam.world(pass.p);if(q[2]<near)return;
     const [x,y]=cam.screen(q);
-    ctx.strokeStyle=hit && (!state.soft || hit.speed<=Flight.limit)?'#97ecc6':'#ffc370';
+    ctx.strokeStyle=hit && (!state.soft || Flight.softEnough(hit.speed))?'#97ecc6':'#ffc370';
     ctx.lineWidth=1.6;ctx.strokeRect(x-3.5,y-3.5,7,7);
     if(!small)label(ctx,x+9,y-6,hit?'CONTACT':'NEAREST PASS',ctx.strokeStyle);
   }
@@ -208,7 +227,7 @@ const Visor = (() => {
     if(canvas.width!==Math.round(w*ratio)||canvas.height!==Math.round(h*ratio)){canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);}
     const ctx=canvas.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
     const cam=camera(state.pos.p,az,el,w,h,small);
-    background(canvas,ctx,w,h,cam,!!state.dragging);
+    background(canvas,ctx,w,h,cam,!!(state.dragging||state.keyAiming));
     for(const s of stars){const q=cam.local(s.v);if(q[2]<.2)continue;const [x,y]=cam.screen(q);if(x<0||x>w||y<0||y>h)continue;ctx.fillStyle=s.c;ctx.fillRect(x,y,s.b,s.b);}
     station(ctx,cam);course(ctx,cam,state,small,w,h);
     for(const obj of state.objects){
@@ -228,8 +247,8 @@ const Visor = (() => {
       ctx.strokeStyle='#c1d7d530';ctx.lineWidth=.8;
       for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(cx,cy,r,i*Math.PI/2+.17,(i+1)*Math.PI/2-.17);ctx.stroke();}
       for(let i=0;i<48;i++){const a=i*Math.PI/24,k=i%4===0?6:2.5;stroke(ctx,[cx+Math.cos(a)*r,cy+Math.sin(a)*r],[cx+Math.cos(a)*(r+k),cy+Math.sin(a)*(r+k)],i%4===0?'#c8dcd885':'#849b9a55',.8);}
-      label(ctx,12,18,'HDG  '+((az%360+360)%360).toFixed(2)+'°','#dfebdf');
-      label(ctx,w-12,18,'EL  '+(el>=0?'+':'')+el.toFixed(2)+'°','#dfebdf','right');
+      label(ctx,12,18,'HDG  '+Readout.heading(az,2)+'°','#dfebdf');
+      label(ctx,w-12,18,'EL  '+Readout.signed(el,2)+'°','#dfebdf','right');
       label(ctx,12,h-12,'FWD  /  01','#abc2bf');label(ctx,w-12,h-12,'T + '+clockText(state.time),'#abc2bf','right');
     }else{label(ctx,9,h-9,'AFT  /  02','#abc2bf');}
     const col=small?'#bfd7ce':'#ffcb75',span=small?8:15,inner=small?3:5;

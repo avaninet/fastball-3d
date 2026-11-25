@@ -49,13 +49,13 @@ function updateLessonCue(){
   }else if(!flight.checked){
     cue='Find the station in the aft camera. Read Current coast to see where your recoil leads. The clock pauses for one course check.';
     label='Coast to check';
-  }else if(h && (!flight.soft || h.speed<=Flight.limit)){
+  }else if(h && (!flight.soft || Flight.softEnough(h.speed))){
     cue='The coast enters the full grab-bar envelope. Check the entry speed and keep the remaining tools aboard.';label='Coast to grab';
   }else if(h){
     cue='The grab will be too fast. A pitch along the measured drift slows the suit. Line up the brake, then throw. To experience a fast pass, resume without braking and coast clear for another entry.';
     label='Line up brake';
   }else if(Flight.inside(flight.pos.p)&&flight.misses){
-    cue='Still flying through the bars. Resume to clear the envelope before setting up another grab.';
+    cue='You are within reach. Throw along the measured drift to slow down for a grab, or coast through and return.';
   }else{
     const near=flight.forecast.near;
     const miss=near.t>flight.age?sub(near.p,near.bar):sub(flight.pos.p,Flight.nearest(flight.pos.p));
@@ -73,7 +73,7 @@ function storyCorrection(){
   for(const i of rackOrder){
     if(!(flight.mask&(1<<i)))continue;
     const candidates=[];
-    if(hit && flight.soft && hit.speed>Flight.limit){
+    if(hit && flight.soft && !Flight.softEnough(hit.speed)){
       const magnitude=norm(s.v)-.068;
       if(magnitude>0)candidates.push(scale(unit(s.v),-magnitude));
     }else{
@@ -84,14 +84,14 @@ function storyCorrection(){
     for(const dv of candidates){
       const command=Flight.command(s,dv,i,flight.mask);
       const next=Flight.applyCommand(s,command,flight.mask);
-      const entry=Flight.entries(next,left,flight.mode,Flight.inside(s.p)&&flight.misses>0)[0];
-      if(entry && (!flight.soft||entry.speed<=Flight.limit))return command;
+      const contacts=Flight.entries(next,left,flight.mode,Flight.inside(s.p)&&flight.misses>0,flight.soft);
+      if(contacts.some(hit=>!flight.soft||Flight.softEnough(hit.speed)))return command;
     }
   }
 }
 function lessonAction(){
   if(!flight.story || flight.lesson===null || !canPitch())return;
-  sync();if(flight.done)return;
+  if(!sync()||flight.done)return;
   if(!flight.throws && flight.lesson===2){
     const [az,elev]=Flight.angles(flight.pos.p);
     setView(Flight.direction(az+14,elev));choose(5);changePower(95);flight.linedUp=true;
@@ -99,7 +99,7 @@ function lessonAction(){
     advance(Math.max(0,flight.checkAt-flight.time));
   }else{
     const h=flight.forecast.hits[flight.hitIndex];
-    if(h && (!flight.soft || h.speed<=Flight.limit)){
+    if(h && (!flight.soft || Flight.softEnough(h.speed))){
       advance(Math.max(0,h.t-flight.age)+1e-7);
     }else{
       freezeClock();
@@ -110,17 +110,23 @@ function lessonAction(){
   }
   dirty=true;instruments();
 }
-el('storyEntry').onclick=()=>beginLesson(0);
-el('replayLesson').onclick=()=>beginLesson(0);
+function requestFirstRescue(){
+  sync();
+  if(started&&!flight.done){freezeClock();el('confirmRescue').showModal();return;}
+  beginLesson(0);
+}
+el('storyEntry').onclick=requestFirstRescue;
+el('replayLesson').onclick=requestFirstRescue;
+el('replaceFlight').onclick=()=>beginLesson(0);
 el('nextLesson').onclick=()=>beginLesson(flight.lesson+1);
 el('lessonAction').onclick=lessonAction;
 el('skipLesson').onclick=()=>{
   if(!flight.story||flight.lesson===null||!canPitch())return;
-  sync();if(flight.done)return;
-  flight.lesson=null;flight.checkAt=null;flight.story=false;
+  if(!sync()||flight.done)return;
+  flight.lesson=null;flight.checkAt=null;flight.story=false;flight.skippedGuidance=true;
   el('assists').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
   invalidateInput();if(!running)pause();
-  setMsg('Manual flight. Aim and release on the live clock.');updateRack();instruments();
+  setMsg('Manual flight. Aim and release on the live clock. Retry will start the standard manual opening.');updateRack();instruments();
 };
 if(!Replays.openHash(location.hash))start(0,'Straight-Line',false);
 window.addEventListener('hashchange',()=>Replays.openHash(location.hash));

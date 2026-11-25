@@ -21,11 +21,11 @@ function plan(s,mode,mask,left,soft,skipInitial=false) {
       const c=F.command(p,dv,tool,bag); actions.push({...c,delay});
       p=F.applyCommand(p,c,bag);bag^=1<<tool;
       if(finish!==undefined || step===count-1) {
-        const hit=F.entries(p,left-delay,mode,skipInitial && delay===0)[0];
-        if(valid(hit,soft)) return {actions,hit:{...hit,t:hit.t+delay}};
+        const hit=F.entries(p,left-delay,mode,skipInitial && delay===0,soft).find(h=>valid(h,soft));
+        if(hit) return {actions,hit:{...hit,t:hit.t+delay}};
         break;
       }
-      if(F.entries(p,4,mode,skipInitial && delay===0).length) break;
+      if(F.entries(p,4,mode,skipInitial && delay===0,soft).some(h=>valid(h,soft))) break;
       p=F.motion(p,4,mode);delay+=4;
     }
   }
@@ -42,14 +42,14 @@ function runPlan(s,mode,mask,left,soft,actions,angle,pct,draw) {
   for(const c of actions) {
     const dt=c.delay-elapsed;
     if(dt>0) {
-      const hit=F.entries(s,dt,mode)[0]; if(hit) return {win:!!valid(hit,soft),early:true};
+      if(F.entries(s,dt,mode,false,soft).some(h=>valid(h,soft)))return {win:true};
       s=F.motion(s,dt,mode);elapsed+=dt;
     }
     const pc=perturb(c,angle,pct,draw);
     s=F.release(s,c.tool,pc.power,pc.dir,mask);mask^=1<<c.tool;
   }
-  const hit=F.entries(s,left-elapsed,mode)[0];
-  return {win:!!valid(hit,soft),s,mask,elapsed,hit};
+  const contacts=F.entries(s,left-elapsed,mode,false,soft);
+  return {win:contacts.some(h=>valid(h,soft)),s,mask,elapsed,hit:contacts[0]};
 }
 // Older builds can also be passed on the command line for balance comparisons.
 const rack=(1<<F.gear.length)-1,duration=F.oxygenReserve??F.manualReserve??450;
@@ -107,7 +107,7 @@ function recipe(initial,mode,soft,kind){
   if(kind==='repeat'){
     // At 60 and 120 seconds spend the next heavy tool unless the coast is already safe.
     for(const tool of [4,3]){
-      const entries=F.entries(state,duration-elapsed,mode,F.inside(state.p));
+      const entries=F.entries(state,duration-elapsed,mode,F.inside(state.p),soft);
       if(valid(entries[0],soft)||entries.some(h=>h.t<=60&&valid(h,soft)))return true;
       state=F.motion(state,60,mode);elapsed+=60;pitch(tool,95,unit(state.p));
     }
@@ -120,7 +120,7 @@ function recipe(initial,mode,soft,kind){
       pitch(4,command.power,unit(state.v));
     }
   }
-  return F.entries(state,duration-elapsed,mode,F.inside(state.p)).some(entry=>valid(entry,soft));
+  return F.entries(state,duration-elapsed,mode,F.inside(state.p),soft).some(entry=>valid(entry,soft));
 }
 
 for(const mode of modes)for(const soft of [false,true]){
@@ -147,7 +147,6 @@ for(const mode of modes)for(const soft of [false,true]){
         const draw=F.seedStream(0xA580+i*19+trial*7919);
         const r=runPlan(s,mode,rack,duration,soft,routes[i].actions,angle,0,draw);
         if(r.win){openingWins++;withTrim++;continue;}
-        if(r.early)continue;
         const near=F.forecast(r.s,duration-r.elapsed,mode).near;
         const wait=Math.min(duration/3,Math.max(8,(r.hit?.t??near.t)*.5));
         if(r.hit && r.hit.t<=wait)continue;

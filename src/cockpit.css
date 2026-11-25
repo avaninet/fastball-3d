@@ -70,8 +70,15 @@
 .velocity h2{font-size:12px}.velocity h2 small{font:10px var(--mono);color:var(--mute)}
 .velocity dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:5px 0 1px}
 .velocity dt{font-size:10px;color:var(--mute)}.velocity dd{margin:1px 0 0;font:12px var(--mono);color:var(--green)}
+.velocity dl>div{display:flex;flex-direction:column;justify-content:space-between}
 .dialogHead{border-bottom:1px solid #54645f;padding-bottom:10px}.dialogHead h2{color:var(--gold);border-left:3px solid var(--gold);padding-left:9px}
 @media(min-width:741px) and (min-height:501px){.tools{grid-template-columns:repeat(9,minmax(0,1fr))}.tool{padding:3px 4px 5px}.tool b{white-space:normal;line-height:1.1;min-height:2.2em}.tool canvas{height:27px}.tool small{margin-top:1px}}
+@media(min-width:741px) and (max-width:1210px) and (min-height:501px){
+  .tools{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tool{min-height:44px;padding:4px 4px 4px 30px}
+  .tool canvas{position:absolute;left:2px;bottom:5px;width:26px;height:20px}
+  .tool b{min-height:0;overflow-wrap:anywhere}
+}
 @media(max-width:740px) and (min-height:501px), (max-width:599px){
   .brand{gap:3px}.version{font-size:9px}.clockSlider{width:87px}.velocity{padding:6px}.velocity dl{margin:3px 0}
   .deck:has(.lesson:not([hidden])) .forward{height:clamp(92px,14dvh,150px)}#speedRef{font-size:9px}
@@ -101,6 +108,11 @@
 }
 @media(min-width:600px) and (max-height:500px){
   .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.metric small{font-size:8px}#speedRef{font-size:8px}
+  .metric label{white-space:normal;letter-spacing:0}
+}
+@media(max-width:375px){
+  .topbar{height:auto;min-height:46px;flex-wrap:wrap;gap:2px 4px;padding-block:3px}
+  .headerActions{margin-left:auto}
 }
 
 .clockSlider .rateStops{display:flex;justify-content:space-between;margin:-5px 2px 0;pointer-events:none;color:var(--mute);font:9px/1 var(--mono)}

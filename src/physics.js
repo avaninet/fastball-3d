@@ -50,6 +50,7 @@ const Flight = (() => {
   const nearest = p => p.map((x,i)=>clamp(x,-half[i],half[i]));
   const clearance = p => norm(sub(p,nearest(p)));
   const inside = p => p.every((x,i)=>Math.abs(x)<=half[i]+1e-8);
+  const softEnough = speed => speed<=limit+1e-9;
   // Split each coordinate into monotone intervals at every zero of its velocity.
   // For this orbit each velocity is A sin(nt) + B cos(nt) + C.
   function extrema(A,B,C,end) {
@@ -62,7 +63,43 @@ const Flight = (() => {
     }
     return times.sort((a,b)=>a-b);
   }
-  function entries(s,end,mode,skipInitial=false) {
+  // A polynomial is monotone between consecutive roots of its derivative.
+  // Include touching roots so a grazing soft grab also works at high clock rates.
+  function polynomialRoots(coeff,lo,hi){
+    while(coeff.length>1 && coeff.at(-1)===0)coeff.pop();
+    if(coeff.length<2)return [];
+    if(coeff.length===2){
+      const root=-coeff[0]/coeff[1];
+      return root>=lo && root<=hi?[root]:[];
+    }
+    const value=x=>coeff.reduceRight((acc,c)=>acc*x+c,0);
+    const derivative=coeff.slice(1).map((c,i)=>c*(i+1));
+    const cuts=[lo,...polynomialRoots(derivative,lo,hi),hi];
+    const tolerance=32*Number.EPSILON*Math.max(...coeff.map(Math.abs));
+    const roots=cuts.filter(x=>Math.abs(value(x))<=tolerance);
+    for(let i=1;i<cuts.length;i++){
+      let a=cuts[i-1],b=cuts[i];
+      const left=value(a);
+      if(left*value(b)>=0)continue;
+      for(let j=0;j<46;j++){
+        const mid=(a+b)/2;
+        if(left*value(mid)>0)a=mid;else b=mid;
+      }
+      roots.push((a+b)/2);
+    }
+    return roots.sort((a,b)=>a-b);
+  }
+  function softCrossings(velocityCoefficients,end){
+    // With u = tan(nt/2), each velocity component has a quadratic numerator
+    // over 1+u². The ten-minute horizon stays inside a single tangent branch.
+    const squared=limit*limit,coeff=[-squared,0,-2*squared,0,-squared];
+    for(const [sin,cos,offset] of velocityCoefficients){
+      const v=[cos+offset,2*sin,offset-cos];
+      for(let i=0;i<3;i++)for(let j=0;j<3;j++)coeff[i+j]+=v[i]*v[j];
+    }
+    return polynomialRoots(coeff,0,Math.tan(n*end/2)).map(u=>2*Math.atan(u)/n);
+  }
+  function entries(s,end,mode,skipInitial=false,soft=false) {
     const [x,,z]=s.p,[vx,vy,vz]=s.v;
     const coeff=[[3*n*x+2*vy,vx,0],[-2*vx,4*vy+6*n*x,-3*vy-6*n*x],[-n*z,vz,0]];
     const candidates=[0,end];
@@ -84,18 +121,22 @@ const Flight = (() => {
         }
       }
     }
+    if(soft && mode==='Orbital')candidates.push(...softCrossings(coeff,end));
     const sorted=candidates.sort((a,b)=>a-b).filter((t,i,a)=>i===0||t-a[i-1]>1e-7);
     const found=[];
     for(let i=0;i<sorted.length;i++) {
       const t=sorted[i], sample=motion(s,t,mode);
       if(!inside(sample.p)) continue;
-      if(i===0 ? skipInitial : inside(motion(s,(sorted[i-1]+t)/2,mode).p)) continue;
-      found.push({t,p:sample.p,speed:norm(sample.v)});
+      const before=i?motion(s,(sorted[i-1]+t)/2,mode):null;
+      const alreadyInside=before?inside(before.p):skipInitial;
+      const speed=norm(sample.v);
+      if(alreadyInside && !(soft && softEnough(speed) && (!before||norm(before.v)>limit)))continue;
+      found.push({t,p:sample.p,speed});
     }
     return found;
   }
-  function forecast(s,end,mode,skipInitial=false) {
-    const hits=entries(s,end,mode,skipInitial);
+  function forecast(s,end,mode,skipInitial=false,soft=false) {
+    const hits=entries(s,end,mode,skipInitial,soft);
     const path=[], steps=Math.max(2,Math.ceil(end/6)), ds=[];
     for(let i=0;i<=steps;i++) {
       const t=end*i/steps,p=motion(s,t,mode).p;
@@ -196,5 +237,5 @@ const Flight = (() => {
     return {...base,p:add(bar,scale(sub(base.p,bar),4/3))};
   }
   return {gear,fullRack,named,opening,half,limit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,impulse,budgets,
-    release,motion,nearest,clearance,inside,entries,forecast,seedStream,transfer,command,applyCommand,witness,randomStart};
+    release,motion,nearest,clearance,inside,softEnough,entries,forecast,seedStream,transfer,command,applyCommand,witness,randomStart};
 })();

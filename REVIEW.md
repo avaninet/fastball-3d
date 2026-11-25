@@ -34,7 +34,7 @@ Times are rounded and describe the first nominal route found by the same planner
 
 The rack reports inventory and remaining delta-v. The selected tool reports its weight class and recoil at the current power. Each release reduces suit mass, so the same tool delivers slightly more recoil later in a flight.
 
-An empty rack with no predicted intersection during the remaining oxygen time opens **Out of tools** at the last release. The debrief explains the forecast and the log ends at the actual decision time, with oxygen remaining. If a crossing lies ahead, the sim flies to it. A final over-speed soft entry is recorded at its actual time. When another entry is possible, the coast continues.
+An empty rack with no predicted intersection during the remaining oxygen time opens **Out of tools** at the last release. The debrief explains the forecast and the log ends at the actual decision time, with oxygen remaining. If a crossing lies ahead, the sim flies to it. A final over-speed soft entry is recorded at its actual time. The coast continues if another entry or an in-volume slowdown can still produce a grab. A brake inside the bars can earn an immediate grab, including on the last throw.
 
 ## Random reachability and difficulty
 
@@ -52,19 +52,19 @@ The v0.1 planner also found a soft return on **256/256 independent generated ope
 
 ## How much throw error is tolerable?
 
-**Start an optional accuracy setting at a maximum deviation of 2–3°. Try 5° as an experienced-pilot setting.** The shipped game keeps deterministic throws. At 3°, even the stricter Orbital soft route succeeded on 482/512 opening plans (94%); at 5° that fell to 435/512 (85%). At 10°, the same pilot needed a course correction on roughly two out of five soft flights.
+**Start an optional accuracy setting at a maximum deviation of 2–3°. Try 5° as an experienced-pilot setting.** The shipped game keeps deterministic throws. The Orbital soft route succeeded on 484/512 opening plans at 3° (95%) and 437/512 at 5° (85%). At 10°, the same pilot needed a course correction on roughly two out of five soft flights.
 
 Each nonzero row uses four paired trials on each of 128 generated openings. Each throw draws independently and uniformly by solid angle inside a cone around the intended direction, with exact player power. The number in degrees is the cone’s maximum deviation from the intended bearing. Each cell shows opening-plan wins → total wins with one opportunity to replan, out of 512 flights. A plan can contain multiple equipment releases.
 
 | Maximum deviation | Straight-Line, any | Orbital, any | Straight-Line, soft | Orbital, soft |
 | --- | ---: | ---: | ---: | ---: |
-| 2° | 508 → 512 | 507 → 512 | 499 → 512 | 494 → 512 |
-| 3° | 503 → 512 | 498 → 512 | 490 → 512 | 482 → 512 |
-| 5° | 491 → 512 | 465 → 512 | 464 → 512 | 435 → 512 |
-| 8° | 433 → 512 | 408 → 512 | 385 → 511 | 355 → 510 |
-| 10° | 388 → 512 | 361 → 511 | 320 → 506 | 298 → 505 |
-| 15° | 275 → 512 | 236 → 507 | 203 → 500 | 191 → 492 |
-| 20° | 176 → 499 | 161 → 485 | 128 → 456 | 123 → 454 |
+| 2° | 508 → 512 | 507 → 512 | 499 → 512 | 496 → 512 |
+| 3° | 503 → 512 | 498 → 512 | 490 → 512 | 484 → 512 |
+| 5° | 491 → 512 | 465 → 512 | 464 → 512 | 437 → 512 |
+| 8° | 433 → 512 | 408 → 512 | 385 → 511 | 358 → 509 |
+| 10° | 388 → 512 | 361 → 511 | 320 → 506 | 299 → 504 |
+| 15° | 275 → 512 | 236 → 507 | 203 → 500 | 192 → 492 |
+| 20° | 176 → 499 | 161 → 485 | 128 → 456 | 124 → 453 |
 
 At 0° every generated opening had a winning plan under either rule and model. The correction pilot can read the exact 3D state and receives a timely course check. Those advantages matter most at larger error angles. Human tolerance for a pitch missing its intended bearing still needs a hands-on test.
 
@@ -74,4 +74,6 @@ The aft view is taller and takes a larger share of the desktop camera width. The
 
 Browser checks verify that miss hints follow the forward visor in both flight models. Two nine-release flights test the spacing of numbered callouts in both log projections, including throws made at almost the same position.
 
-The browser suite exercises all nine keyboard slots, early debrief, a valid last-tool intercept, a final fast pass, the shared ten-minute reserve, slider timing, gauge states, signed velocity, Story lessons, release history and backdrop dismissal, including the nested flight log. It also checks the core cockpit controls against four actual CSS viewports, including 390 × 844 portrait and 844 × 390 landscape. The balance harness and browser runner can be reproduced from the [README](README.md).
+The browser suite exercises all nine keyboard slots, early debrief, a valid last-tool intercept, a final fast pass, the shared ten-minute reserve, slider timing, gauge states, signed velocity, Story lessons, release history and backdrop dismissal, including the nested flight log. It also checks the core cockpit controls against four actual CSS viewports, including 390 × 844 portrait and 844 × 390 landscape. The browser suite also checks tablet rack labels at 768 and 1024 px and header bounds down to 320 px. Follow the [README](README.md) to run the balance and browser checks.
+
+All 42 browser checks passed in Chromium on the four cockpit viewports. The legacy tap checks exercise mouse and touch releases followed by a plain mouse click. Physical iPhone and iPad taps still need a device test. An Orbital regression crosses the bars too fast and slows to capture speed inside at 43.847572 s on both the 1× and 30× clocks.

@@ -14,17 +14,17 @@ function setMsg(msg){el('message').textContent=msg;}
 function stationDirection(){return scale(flight.pos.p,-1);}
 function reseat(skipInitial=false) {
   flight.anchor={p:flight.pos.p.slice(),v:flight.pos.v.slice()};flight.age=0;flight.hitIndex=0;
-  flight.forecast=Flight.forecast(flight.anchor,Math.max(0,flight.limit-flight.time),flight.mode,skipInitial);
+  flight.forecast=Flight.forecast(flight.anchor,Math.max(0,flight.limit-flight.time),flight.mode,skipInitial,flight.soft);
 }
-function start(index,mode,soft,seed=0,story=false,lesson=null,storyOpening=story) {
-  const initial=Flight.opening(index,seed,storyOpening);
+function start(index,mode,soft,seed=0,story=false,lesson=null) {
+  const initial=Flight.opening(index,seed,story);
   invalidateInput();
-  flight={index,mode,soft,seed,story,storyOpening,limit:Flight.oxygenReserve,lesson,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:'',dragging:false};
+  flight={index,mode,soft,seed,story,limit:Flight.oxygenReserve,lesson,skippedGuidance:false,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:'',dragging:false,keyAiming:false};
   selected=5;power=95;el('power').value=power;setClockStop(0);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
   el('name').textContent=initial.name;el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays she pitches with friends. Today her tether snaps and her suit thrusters jam.':initial.brief;el('modeTag').textContent=mode;
   el('captureTag').textContent=soft?'Soft capture ≤ 0.080 m/s':'Any-speed capture';
-  el('seedTag').hidden=index!==3;el('seedTag').textContent='Copy seed '+seedLabel(seed);
+  el('seedTag').hidden=index!==3;el('seedTag').textContent='Copy replay · '+seedLabel(seed);
   Replays.updateAddress(flight);
   el('assists').hidden=!story;el('storyTag').hidden=!story;
   el('lesson').hidden=lesson===null;
@@ -34,16 +34,23 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,storyOpening=story
 const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools'};
 function finish(result) {
   running=false;flight.done=result;flight.finishedAt=new Date();invalidateInput();dirty=true;
+  el('retry').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
   const won=result==='capture',drill=!!(flight.mask&(1<<4));
   el('endTitle').textContent=outcomes[result];
-  el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”'):'The reserve ran out before a successful grab. Retry the same opening to test a different pitch.';
+  el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”'):'The reserve ran out before a successful grab. Retry to test a different pitch.';
   if(result==='stranded'){
     const lastFast=flight.log.fast.at(-1);
-    el('endCopy').textContent=lastFast && Math.abs(lastFast.time-flight.time)<1e-7
-      ? 'The final pass was too fast to grab. The empty rack leaves no way back before oxygen expiry.'
-      : 'The rack is empty. Predicted closest clearance is '+flight.forecast.near.d.toFixed(1)+' m before oxygen expiry.';
+    if(lastFast && Math.abs(lastFast.time-flight.time)<1e-7){
+      el('endCopy').textContent='The final pass was too fast to grab. The empty rack leaves no way back before oxygen expiry.';
+    }else if(Flight.inside(flight.pos.p)){
+      el('endCopy').textContent='The rack is empty. The suit is moving too fast for a grab anywhere on the remaining coast.';
+    }else{
+      const distance=flight.forecast.near.d;
+      const clearance=distance<.05?'less than 0.1':distance.toFixed(1);
+      el('endCopy').textContent='The rack is empty. The remaining coast misses the bars by '+clearance+' m before oxygen expiry.';
+    }
   }
-  el('endStats').textContent=clock(flight.time)+' flight time · '+flight.throws+' throw'+(flight.throws===1?'':'s')+' · '+norm(flight.pos.v).toFixed(3)+' m/s'+(flight.misses?' · '+flight.misses+' fast pass'+(flight.misses===1?'':'es'):'');
+  el('endStats').textContent=clock(flight.time)+' flight time · '+Readout.count(flight.throws,'throw')+' · '+Readout.speed(norm(flight.pos.v))+' m/s'+(flight.misses?' · '+Readout.count(flight.misses,'fast pass','fast passes'):'');
   setMsg(el('endTitle').textContent+'. '+el('endStats').textContent);
   el('debriefShare').hidden=flight.index!==3;
   el('endSeed').textContent=flight.index===3?seedLabel(flight.seed):'';
@@ -56,7 +63,7 @@ function advance(dt) {
   const hits=flight.forecast.hits;
   while(flight.hitIndex<hits.length && hits[flight.hitIndex].t<=end+1e-8) {
     const h=hits[flight.hitIndex++];
-    if(!flight.soft || h.speed<=Flight.limit+1e-9) {
+    if(!flight.soft || Flight.softEnough(h.speed)) {
       flight.time+=Math.max(0,h.t-flight.age);flight.age=h.t;flight.pos=Flight.motion(flight.anchor,h.t,flight.mode);
       finish('capture');return;
     }
@@ -66,7 +73,7 @@ function advance(dt) {
       flight.time+=Math.max(0,h.t-flight.age);flight.age=h.t;flight.pos=Flight.motion(flight.anchor,h.t,flight.mode);
       finish('stranded');return;
     }
-    setMsg('Fast pass at '+h.speed.toFixed(3)+' m/s. Clear the grab bars, turn back and enter again at 0.080 m/s or slower.');
+    setMsg('Fast pass at '+Readout.speed(h.speed)+' m/s. Brake while within reach, or circle back for a slower grab.');
   }
   flight.time+=step;flight.age=end;flight.pos=Flight.motion(flight.anchor,end,flight.mode);
   if(flight.time>=flight.limit-1e-8)finish('oxygen');
@@ -77,13 +84,21 @@ function advance(dt) {
 }
 function sync(now=performance.now()) {
   now=Math.max(now,lastTime);
-  if(running)advance((now-lastTime)/1000*rate);
+  const elapsed=now-lastTime;
   lastTime=now;
+  if(running && elapsed>1000){
+    freezeClock();setMsg('Flight paused after a clock interruption. Resume when ready.');
+    return false;
+  }
+  if(running)advance(elapsed/1000*rate);
+  return true;
 }
 function updateRack() {
   for(const [i,g] of Flight.gear.entries()) {
     const b=el('tool'+i),present=!!(flight.mask&(1<<i));b.disabled=!present||!canPitch();
-    b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=present?g.mass.toFixed(1)+' kg':'Released';
+    const detail=present?g.mass.toFixed(1)+' kg':'Released';
+    b.setAttribute('aria-label',g.name+', '+detail);
+    b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=detail;
   }
   el('budget').textContent=Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
   el('throw').disabled=selected<0||!canPitch();el('power').disabled=selected<0||!canPitch();
@@ -104,6 +119,8 @@ function throwTool() {
   setMsg(g.name+' released at '+power+'%. Read the committed coast before spending another tool.');
   selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
   reseat(Flight.inside(old.p)&&flight.misses>0);
+  const contact=flight.forecast.hits[0];
+  if(contact?.t===0 && (!flight.soft||Flight.softEnough(contact.speed))){finish('capture');return;}
   if(!flight.mask && !flight.forecast.hits.length){finish('stranded');return;}
   if(!running)invalidateInput();
   flight.noTrim=false;started=true;running=true;scheduleLessonCheck();setClockStop(0);lastTime=performance.now();dirty=true;updateRack();instruments();
@@ -129,23 +146,28 @@ function trimHint(displacement,az,elevation){
 function nav() {
   const c=el('coast'),a=el('advice'),s=flight;
   c.className='readout';
-  if(s.done){c.textContent=outcomes[s.done];c.classList.add(s.done==='capture'?'good':'danger');a.textContent='Flight time '+clock(s.time)+' · '+s.throws+' tools released.';return;}
+  if(s.done){c.textContent=outcomes[s.done];c.classList.add(s.done==='capture'?'good':'danger');a.textContent='Flight time '+clock(s.time)+' · '+Readout.count(s.throws,'tool')+' released.';return;}
   if(!started && !s.throws){
     c.textContent=s.story?'Ready for first pitch':'Ready to begin';
     a.textContent=s.story?'Line up while staged. Throw starts the oxygen clock.':'The tool follows the crosshair. Your suit recoils the other way. Begin flight starts the clock.';return;
   }
   const h=s.forecast.hits[s.hitIndex];
   if(h){
-    const tooFast=s.soft&&h.speed>Flight.limit+1e-9;
+    const tooFast=s.soft&&!Flight.softEnough(h.speed);
     c.textContent=(tooFast?'Fast contact in ':'Contact in ')+clock(Math.ceil(Math.max(0,h.t-s.age)));c.classList.add(tooFast?'warn':'good');
-    a.textContent=tooFast?'Projected '+h.speed.toFixed(3)+' m/s. Throw along measured drift to brake before reaching the bars.':'Grab bars on course. Projected contact speed '+h.speed.toFixed(3)+' m/s. You can advance the clock.';return;
+    if(tooFast){
+      a.textContent='Projected '+Readout.speed(h.speed)+' m/s. '+(s.mask?'Throw along measured drift to brake before reaching the bars.':'The rack is empty. Coast to the bars.');
+    }else{
+      a.textContent='Grab bars on course. Projected grab speed '+Readout.speed(h.speed)+' m/s. You can advance the clock.';
+    }
+    return;
   }
-  if(s.misses && Flight.inside(s.pos.p)){c.textContent='Inside after fast pass';c.classList.add('warn');a.textContent='Coast clear of the outline, then set up a slower return.';return;}
+  if(s.misses && Flight.inside(s.pos.p)){c.textContent='Inside after fast pass';c.classList.add('warn');a.textContent='Throw along your drift to brake while the bars are still within reach, or coast through and return.';return;}
   const n=s.forecast.near;
   if(s.misses && n.d<1e-6 && n.t<=s.age){
     const last=s.log.fast.at(-1);
     c.textContent='Cleared after fast pass';
-    a.textContent='Last entry '+clock(s.time-last.time)+' ago at '+last.speed.toFixed(3)+' m/s. Set up a slower return.';
+    a.textContent='Last entry '+clock(s.time-last.time)+' ago at '+Readout.speed(last.speed)+' m/s. Set up a slower return.';
     c.classList.add('warn');return;
   }
   if(!s.throws && s.index===0 && n.t<=s.age+.03){
@@ -161,20 +183,20 @@ function nav() {
 function instruments() {
   const {p,v}=flight.pos,bar=Flight.nearest(p),distance=Flight.clearance(p);
   const rr=distance>1e-8?dot(unit(sub(p,bar)),v):0,sp=norm(v);
-  el('range').textContent=distance.toFixed(1);el('rate').textContent=(rr>=0?'+':'')+rr.toFixed(3);el('rate').className=rr<0?'good':rr>0?'warn':'';
-  el('speed').textContent=sp.toFixed(3);el('speed').className=flight.soft&&sp>Flight.limit?'danger':'';
+  el('range').textContent=distance.toFixed(1);el('rate').textContent=Readout.signed(rr,3);el('rate').className=rr<0?'good':rr>0?'warn':'';
+  el('speed').textContent=Readout.speed(sp);el('speed').className=flight.soft&&!Flight.softEnough(sp)?'danger':'';
   const gauge=el('speedGauge'),ceiling=Math.max(.12,Math.ceil(sp/.04)*.04);
   gauge.style.setProperty('--fill',(100*sp/ceiling)+'%');
   gauge.style.setProperty('--tick',(100*Flight.limit/ceiling)+'%');
-  gauge.classList.toggle('over',flight.soft&&sp>Flight.limit);
-  gauge.setAttribute('aria-valuemax',ceiling.toFixed(3));gauge.setAttribute('aria-valuenow',sp.toFixed(4));
+  gauge.classList.toggle('over',flight.soft&&!Flight.softEnough(sp));
+  gauge.setAttribute('aria-valuemax',ceiling.toFixed(3));gauge.setAttribute('aria-valuenow',String(sp));
   const threshold=flight.soft?'Soft limit':'Reference';
   el('speedRef').textContent=threshold+' '+Flight.limit.toFixed(3);
-  gauge.setAttribute('aria-valuetext',sp.toFixed(4)+' metres per second. '+threshold+' '+Flight.limit.toFixed(3));
-  for(const [i,axis] of ['X','Y','Z'].entries())el('vel'+axis).textContent=(v[i]>=0?'+':'')+v[i].toFixed(4);
+  gauge.setAttribute('aria-valuetext',Readout.speed(sp)+' metres per second. '+threshold+' '+Flight.limit.toFixed(3));
+  for(const [i,axis] of ['X','Y','Z'].entries())el('vel'+axis).textContent=Readout.signed(v[i],4);
   el('suitMass').textContent=Flight.mass(flight.mask).toFixed(1)+' kg';
   const [az,elv]=Flight.angles(v);
-  el('driftAngles').textContent=sp<.00001?'Stationary':'HDG '+Math.round((az+360)%360)%360+'° / EL '+(elv>=0?'+':'')+Math.round(elv)+'°';
+  el('driftAngles').textContent=sp<.00001?'Stationary':'HDG '+Readout.heading(az,0)+'° / EL '+Readout.signed(elv,0)+'°';
   el('oxygen').textContent=clock(Math.ceil(flight.limit-flight.time));
   el('flightDeck').classList.toggle('is-paused',started&&!running&&!flight.done);
   el('pause').textContent=flight.done?'Debrief':running?'Pause':started?'Resume':'Begin flight';
@@ -188,7 +210,7 @@ function freezeClock(){
 }
 function pause(){
   if(document.hidden||document.querySelector('dialog[open]'))return;
-  sync();
+  if(!sync())return;
   if(flight.done){el('debrief').showModal();return;}
   if(running){freezeClock();return;}
   invalidateInput();started=true;running=true;lastTime=performance.now();dirty=true;updateRack();instruments();
@@ -207,13 +229,15 @@ for(const [slot,i] of rackOrder.entries()) {
   const g=Flight.gear[i],keyNumber=slot+1;
   const b=document.createElement('button');b.id='tool'+i;b.className='tool';b.title=g.name+' · '+weightClass(g)+' · '+g.mass.toFixed(1)+' kg · key '+keyNumber;
   const key=document.createElement('span');key.className='hotkey';key.textContent=keyNumber;
+  b.setAttribute('aria-keyshortcuts',String(keyNumber));
   const img=document.createElement('canvas');img.setAttribute('aria-hidden','true');const name=document.createElement('b');name.textContent=g.name;
   const size=document.createElement('small');b.append(key,img,name,size);el('tools').append(b);Visor.toolArt(img,i);b.onclick=()=>choose(i);
 }
-const heldKeys=new Map(), presses=new Map(), handledClicks=new WeakSet();
+const heldKeys=new Map(),aimKeys=new Set(), presses=new Map(), handledClicks=new WeakSet();
 let inputEpoch=0, inputSince=0, sliderPress=null;
 function invalidateInput(){
   inputEpoch++;inputSince=performance.now();presses.clear();
+  aimKeys.clear();if(flight)flight.keyAiming=false;
   if(sliderPress?.ended)sliderPress=null;
   if(drag && visor.hasPointerCapture(drag.id))visor.releasePointerCapture(drag.id);
   drag=null;if(flight)flight.dragging=false;document.body.classList.remove('dragging');
@@ -233,13 +257,18 @@ el('power').oninput=()=>changePower(sliderPress && sliderPress.epoch!==inputEpoc
 // a new opening and a hidden tab each invalidate outstanding cockpit gestures.
 const pitchTargets='.tool,#throw,#away,#toStation,#prograde,#lessonAction';
 document.addEventListener('pointerdown',e=>{
+  presses.delete(e.pointerId);
   if(e.target===el('power'))sliderPress={id:e.pointerId,epoch:canPitch()?inputEpoch:-1};
   const button=e.target.closest(pitchTargets);
+  for(const [id,press] of presses)if(press.up&&press.button===button)presses.delete(id);
   if(button && canPitch() && e.button===0)presses.set(e.pointerId,{button,epoch:inputEpoch,up:false});
 },true);
 document.addEventListener('pointerup',e=>{
   const press=presses.get(e.pointerId);
-  if(press)press.up=press.button===e.target.closest(pitchTargets);
+  if(press){
+    press.up=press.button===e.target.closest(pitchTargets);
+    if(!press.up)presses.delete(e.pointerId);
+  }
   if(sliderPress?.id===e.pointerId){
     const released=sliderPress;released.ended=true;
     // Native range inputs may deliver their final input after pointerup.
@@ -254,7 +283,14 @@ document.addEventListener('click',e=>{
   if(!button)return;
   let valid=canPitch()&&e.timeStamp>=inputSince&&!handledClicks.has(e);
   if(e.detail>0 || (e.pointerType && e.pointerId>=0)){
-    const id=e.pointerId ?? 1,press=presses.get(id);
+    // A compatibility mouse click can omit or relabel the original touch ID.
+    let id=e.pointerId;
+    if(!presses.has(id)){
+      for(const [candidate,completed] of presses){
+        if(completed.button===button&&completed.up&&completed.epoch===inputEpoch){id=candidate;break;}
+      }
+    }
+    const press=presses.get(id);
     valid=valid && press?.button===button && press.up && press.epoch===inputEpoch;
     presses.delete(id);
   }
@@ -284,15 +320,17 @@ function endDrag(e,accept){
 visor.onpointerup=e=>endDrag(e,true);visor.onpointercancel=e=>endDrag(e,false);visor.onlostpointercapture=e=>endDrag(e,false);
 document.addEventListener('keyup',e=>{
   const key=e.code||e.key;
+  if(aimKeys.delete(key)){flight.keyAiming=aimKeys.size>0;dirty=true;}
   if(heldKeys.has(key)&&heldKeys.get(key)!==inputEpoch){e.preventDefault();e.stopImmediatePropagation();}
   heldKeys.delete(key);
 },true);
 document.addEventListener('keydown',e=>{
+  if(typeof e.key!=='string'||!e.key)return;
   const code=e.code||e.key,key=e.key.toLowerCase();
   if(!e.repeat)heldKeys.set(code,canPitch()||key==='p'?inputEpoch:-1);
   if(e.repeat && heldKeys.get(code)!==inputEpoch){e.preventDefault();return;}
   if(document.querySelector('dialog[open]')||e.altKey||e.ctrlKey||e.metaKey)return;
-  const target=e.target;
+  const target=e.target instanceof Element?e.target:document.body;
   if(key==='p'){e.preventDefault();if(!e.repeat)pause();return;}
   if(target.matches(pitchTargets) && (key==='enter'||key===' ')){
     e.preventDefault();if(canPitch()&&!e.repeat)target.click();return;
@@ -308,8 +346,12 @@ document.addEventListener('keydown',e=>{
   if(key==='['||key===']'){e.preventDefault();changePower(power+(key==='['?-1:1));return;}
   if(key==='enter'&&target===visor){e.preventDefault();if(!e.repeat)throwTool();return;}
   if(!key.startsWith('arrow'))return;
+  aimKeys.add(code);flight.keyAiming=true;
   e.preventDefault();if(key==='arrowleft')yaw+=step;if(key==='arrowright')yaw-=step;
   if(key==='arrowup')pitch=clamp(pitch+step,-90,90);if(key==='arrowdown')pitch=clamp(pitch-step,-90,90);dirty=true;
+});
+window.addEventListener('blur',()=>{
+  if(aimKeys.size){aimKeys.clear();flight.keyAiming=false;dirty=true;}
 });
 function pauseForModal(d){
   sync();freezeClock();
@@ -351,17 +393,22 @@ el('loadSeed').onclick=loadSetupSeed;
 el('seed').oninput=()=>{el('seed').removeAttribute('aria-invalid');el('seedPreview').textContent='Choose Load seed to preview this opening.';};
 el('seed').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadSetupSeed();}};
 el('storyMode').onchange=()=>{if(!el('seedGroup').hidden)loadSetupSeed();};
+function launchFlight(index,mode,soft,seed,story,lesson=null){
+  start(index,mode,soft,seed,story,lesson);
+  if(!story)pause();
+  visor.focus({preventScroll:true});
+}
 el('setupForm').onsubmit=e=>{
   e.preventDefault();
   const index=Number(el('scenario').value);
   const replay=index===3?loadSetupSeed():{...setupRules(),seed:0};
   if(!replay)return;
   const {mode,soft,seed,story}=replay;
-  el('setup').close();start(index,mode,soft,seed,story);
-  if(!story)pause();
-  visor.focus({preventScroll:true});
+  el('setup').close();launchFlight(index,mode,soft,seed,story);
 };
-el('retry').onclick=()=>{el('debrief').close();start(flight.index,flight.mode,flight.soft,flight.seed,flight.story,flight.lesson,flight.storyOpening);};
+el('retry').onclick=()=>{
+  el('debrief').close();launchFlight(flight.index,flight.mode,flight.soft,flight.seed,flight.story,flight.lesson);
+};
 el('viewLog').onclick=()=>{FlightLog.show(flight);el('flightLog').showModal();};
 document.querySelectorAll('.close').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 // Require both ends of a gesture on the backdrop, including on touch screens.
@@ -379,7 +426,7 @@ for(const dialog of document.querySelectorAll('dialog')){
   });
   dialog.addEventListener('close',()=>{pointer=null;});
 }
-for(const d of [el('guide'),el('setup')])d.addEventListener('close',()=>{
+for(const d of [el('guide'),el('setup'),el('confirmRescue')])d.addEventListener('close',()=>{
   dirty=true;updateRack();instruments();
 });
 document.addEventListener('visibilitychange',()=>{
