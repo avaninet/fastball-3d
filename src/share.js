@@ -78,7 +78,8 @@ el('openShareCard').onclick=()=>{
 };
 el('copyChallenge').onclick=()=>{
   const text=el('cardArt').querySelector('desc').textContent;
-  return Replays.copy(text+'\nCan you beat my flight?\n'+Replays.link(flight),el('cardStatus'),'Challenge copied.');
+  const challenge=flight.done==='capture'?'Can you bring home more Δv or make a gentler grab?':'Can you get Tommi home from this drift?';
+  return Replays.copy(text+'\n'+challenge+'\n'+Replays.link(flight),el('cardStatus'),'Challenge copied.');
 };
 el('saveCard').onclick=async()=>{
   const image=new Image(),svg=el('cardArt').querySelector('svg');

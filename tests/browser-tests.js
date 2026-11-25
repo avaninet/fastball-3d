@@ -229,6 +229,7 @@
       }
       eq(flight.done==='capture'&&Flight.softEnough(norm(flight.pos.v)),'grab on release');
       eq((flight.mask===0)===last&&flight.misses===1,'correct remaining gear and entry count');
+      if(last)eq(el('endBudget').textContent==='Δv brought home 0.000 / 0.456 m/s (0.0%)','last-tool rescue brings home zero remaining impulse');
       close(flight.time,flight.log.releases.at(-1).time);click('viewLog');
       eq(el('logSummary').textContent.includes('Grab speed'),'log shows actual grab speed');
       el('flightLog').close();el('debrief').close();
@@ -400,14 +401,25 @@
       }else{click('pause');advance(600);}
       eq(flight.done===ending&&el('debrief').open&&!el('debriefShare').hidden,'share after '+ending);
       eq(el('endSeed').textContent==='00019919','debrief seed');
+      const recovered=ending==='capture'?Flight.budgets[flight.mask]:0;
+      const percent=(100*recovered/Flight.budgets[Flight.fullRack]).toFixed(1);
+      const budget='Δv brought home '+recovered.toFixed(3)+' / 0.456 m/s ('+percent+'%)';
+      const speed=(ending==='capture'?'Grab speed ':'Final relative speed ')+Readout.speed(norm(flight.pos.v))+' m/s';
+      if(ending==='capture')eq(recovered>0&&recovered<Flight.budgets[Flight.fullRack],'partial rack recovered');
+      if(ending==='oxygen')eq(flight.mask===Flight.fullRack,'suit lost with gear still aboard');
+      eq(el('endBudget').textContent===budget&&el('endStats').textContent.includes(speed),'debrief metrics');
+      click('viewLog');eq([budget,speed].every(s=>el('logSummary').textContent.includes(s)),'full log metrics');el('flightLog').close();
       click('openShareCard');const art=el('cardArt'),date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
       eq(el('shareCard').open&&art.querySelectorAll('svg').length===1&&art.textContent.includes('V-bar / R-bar')&&!art.textContent.includes('cross-track'),'one orbital-plane chart');
       eq([date,seedLabel(flight.seed),outcomes[ending],flight.throws+'/'+Flight.gear.length+' tools used'].every(s=>art.textContent.includes(s)),'actual log and local completion date');
       eq(art.querySelectorAll('.releaseMark').length===flight.throws,'all real releases');
+      const labels=[...art.querySelectorAll('text')].map(node=>node.textContent);
+      eq([budget,speed].every(s=>labels.includes(s)),'both metrics printed on card');
       const savedCopy=Replays.copy;let copied;
       try{
         Replays.copy=text=>{copied=text;};click('copyChallenge');
         eq(copied.includes(outcomes[ending])&&Replays.parse(copied).seed===flight.seed,'challenge text can load directly');
+        eq([budget,speed].every(s=>copied.includes(s)),'both metrics copied with replay');
         el('shareCard').querySelector('.close').click();eq(el('debrief').open,'return to debrief');
         click('copyEndSeed');eq(copied.endsWith(Replays.fragment(flight)),'debrief replay');
       }finally{Replays.copy=savedCopy;}

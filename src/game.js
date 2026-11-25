@@ -37,7 +37,7 @@ function finish(result) {
   el('retry').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
   const won=result==='capture',drill=!!(flight.mask&(1<<4));
   el('endTitle').textContent=outcomes[result];
-  el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”'):'The reserve ran out before a successful grab. Retry to test a different pitch.';
+  el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”')+' — Commander Julian Bern':'The reserve ran out before a successful grab. Retry to test a different pitch.';
   if(result==='stranded'){
     const lastFast=flight.log.fast.at(-1);
     if(lastFast && Math.abs(lastFast.time-flight.time)<1e-7){
@@ -50,8 +50,10 @@ function finish(result) {
       el('endCopy').textContent='The rack is empty. The remaining coast misses the bars by '+clearance+' m before oxygen expiry.';
     }
   }
-  el('endStats').textContent=clock(flight.time)+' flight time · '+Readout.count(flight.throws,'throw')+' · '+Readout.speed(norm(flight.pos.v))+' m/s'+(flight.misses?' · '+Readout.count(flight.misses,'fast pass','fast passes'):'');
-  setMsg(el('endTitle').textContent+'. '+el('endStats').textContent);
+  const {budget,speed}=FlightLog.resultReadout(flight);
+  el('endBudget').textContent=budget;
+  el('endStats').textContent=speed+' · '+clock(flight.time)+' flight time · '+Readout.count(flight.throws,'throw')+(flight.misses?' · '+Readout.count(flight.misses,'fast pass','fast passes'):'');
+  setMsg(el('endTitle').textContent+'. '+budget+' · '+el('endStats').textContent);
   el('debriefShare').hidden=flight.index!==3;
   el('endSeed').textContent=flight.index===3?seedLabel(flight.seed):'';
   el('endShareStatus').textContent='';
