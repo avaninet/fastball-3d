@@ -107,3 +107,17 @@
 .rateStops i{font-style:normal}
 .credits{border-top:1px solid var(--line);margin-top:16px;padding-top:2px}
 .credits p{font-size:12px;color:var(--mute)}
+.seedActions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0}
+.seedActions button{min-height:34px;font-size:13px}
+#seedPreview,#endShareStatus,#cardStatus{font-size:12px;color:var(--green)}
+#seed[aria-invalid=true]{border-color:var(--red)}
+#seed[aria-invalid=true]~#seedPreview{color:var(--red)}
+#seedTag{min-height:26px;color:var(--green)}
+#debriefShare{border-top:1px solid var(--line);margin-top:16px}
+#endSeed{color:var(--green);margin-right:auto;font:600 14px var(--mono)}
+#shareCard{width:min(95vw,480px);max-height:95dvh}
+#shareCard .dialogBody{padding:12px}
+#shareCard .dialogHead{margin-bottom:8px}
+#cardArt svg{display:block;width:100%;height:auto}
+#cardStatus:empty,#endShareStatus:empty{display:none}
+#copyText{display:block;width:100%;margin-top:7px;padding:8px;background:var(--bg);color:var(--text);font:13px var(--mono)}

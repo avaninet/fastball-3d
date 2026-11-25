@@ -122,4 +122,6 @@ el('skipLesson').onclick=()=>{
   invalidateInput();if(!running)pause();
   setMsg('Manual flight. Aim and release on the live clock.');updateRack();instruments();
 };
-start(0,'Straight-Line',false);requestAnimationFrame(frame);
+if(!Replays.openHash(location.hash))start(0,'Straight-Line',false);
+window.addEventListener('hashchange',()=>Replays.openHash(location.hash));
+requestAnimationFrame(frame);

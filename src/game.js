@@ -9,10 +9,6 @@ const hex=n=>(n>>>0).toString(16).toUpperCase().padStart(8,'0');
 const seedLabel=seed=>typeof seed==='number'?hex(seed):seed;
 const weightClass=g=>g.mass<1?'Light':g.mass<3?'Medium':'Heavy';
 const randomSeed=()=>'D-'+hex(crypto.getRandomValues(new Uint32Array(1))[0]);
-function readSeed(value){
-  const label=value.trim().toUpperCase();
-  return label.startsWith('D-')?'D-'+hex(parseInt(label.slice(2),16)):parseInt(label,16)>>>0;
-}
 function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector);dirty=true;}}
 function setMsg(msg){el('message').textContent=msg;}
 function stationDirection(){return scale(flight.pos.p,-1);}
@@ -28,7 +24,8 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,storyOpening=story
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
   el('name').textContent=initial.name;el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays she pitches with friends. Today her tether snaps and her suit thrusters jam.':initial.brief;el('modeTag').textContent=mode;
   el('captureTag').textContent=soft?'Soft capture ≤ 0.080 m/s':'Any-speed capture';
-  el('seedTag').hidden=index!==3;el('seedTag').textContent='Seed '+seedLabel(seed);
+  el('seedTag').hidden=index!==3;el('seedTag').textContent='Copy seed '+seedLabel(seed);
+  Replays.updateAddress(flight);
   el('assists').hidden=!story;el('storyTag').hidden=!story;
   el('lesson').hidden=lesson===null;
   setMsg(story?'Story flight. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
@@ -36,7 +33,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,storyOpening=story
 }
 const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools'};
 function finish(result) {
-  running=false;flight.done=result;invalidateInput();dirty=true;
+  running=false;flight.done=result;flight.finishedAt=new Date();invalidateInput();dirty=true;
   const won=result==='capture',drill=!!(flight.mask&(1<<4));
   el('endTitle').textContent=outcomes[result];
   el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”'):'The reserve ran out before a successful grab. Retry the same opening to test a different pitch.';
@@ -48,6 +45,9 @@ function finish(result) {
   }
   el('endStats').textContent=clock(flight.time)+' flight time · '+flight.throws+' throw'+(flight.throws===1?'':'s')+' · '+norm(flight.pos.v).toFixed(3)+' m/s'+(flight.misses?' · '+flight.misses+' fast pass'+(flight.misses===1?'':'es'):'');
   setMsg(el('endTitle').textContent+'. '+el('endStats').textContent);
+  el('debriefShare').hidden=flight.index!==3;
+  el('endSeed').textContent=flight.index===3?seedLabel(flight.seed):'';
+  el('endShareStatus').textContent='';
   updateLessonEnd();instruments();updateRack();el('debrief').showModal();
 }
 function advance(dt) {
@@ -316,21 +316,48 @@ function pauseForModal(d){
   if(el('debrief').open)el('debrief').close();
   d.showModal();updateRack();
 }
+function setupRules(){
+  return {mode:document.querySelector('input[name=model]:checked').value,soft:el('soft').checked,story:el('storyMode').checked};
+}
+function previewSeed(replay){
+  const initial=Flight.opening(3,replay.seed,replay.story);
+  el('seedPreview').textContent=seedLabel(replay.seed)+' · '+Flight.clearance(initial.p).toFixed(1)+' m from the bars · '+norm(initial.v).toFixed(3)+' m/s';
+}
+function loadSetupSeed(){
+  const input=el('seed'),replay=Replays.parse(input.value,setupRules());
+  if(!replay){
+    el('seedPreview').textContent='Enter a Fastball 3D seed (for example D-00019919) or a replay link.';
+    input.setAttribute('aria-invalid','true');input.focus();return null;
+  }
+  input.removeAttribute('aria-invalid');input.value=seedLabel(replay.seed);
+  document.querySelector('input[name=model][value="'+replay.mode+'"]').checked=true;
+  el('soft').checked=replay.soft;el('storyMode').checked=replay.story;
+  previewSeed(replay);return replay;
+}
 function updateSetup() {
   const idx=Number(el('scenario').value),isRandom=idx===3;
   el('seedGroup').hidden=!isRandom;el('seed').required=isRandom;el('seed').disabled=!isRandom;
-  el('setupBrief').textContent=isRandom?'Reuse the seed to retry the same drift. Standard separations start farther out than Story.':Flight.named[idx].brief;
+  el('setupBrief').textContent=isRandom?'Share the opening and flight rules with a friend, or load their replay.':Flight.named[idx].brief;
+  if(isRandom)loadSetupSeed();
 }
 function openSetup(){
   el('scenario').value=String(flight.index);el('seed').value=flight.index===3?seedLabel(flight.seed):randomSeed();
-  document.querySelector('input[name=model][value="'+flight.mode+'"]').checked=true;el('soft').checked=flight.soft;updateSetup();pauseForModal(el('setup'));
+  document.querySelector('input[name=model][value="'+flight.mode+'"]').checked=true;
+  el('soft').checked=flight.soft;el('storyMode').checked=flight.story;updateSetup();pauseForModal(el('setup'));
 }
 el('new').onclick=openSetup;el('again').onclick=openSetup;el('manual').onclick=()=>pauseForModal(el('guide'));
-el('scenario').onchange=updateSetup;el('reroll').onclick=()=>{el('seed').value=randomSeed();};
+el('scenario').onchange=updateSetup;el('reroll').onclick=()=>{el('seed').value=randomSeed();loadSetupSeed();};
+el('loadSeed').onclick=loadSetupSeed;
+el('seed').oninput=()=>{el('seed').removeAttribute('aria-invalid');el('seedPreview').textContent='Choose Load seed to preview this opening.';};
+el('seed').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadSetupSeed();}};
+el('storyMode').onchange=()=>{if(!el('seedGroup').hidden)loadSetupSeed();};
 el('setupForm').onsubmit=e=>{
   e.preventDefault();
-  const story=e.submitter?.value==='story';
-  el('setup').close();start(Number(el('scenario').value),document.querySelector('input[name=model]:checked').value,el('soft').checked,readSeed(el('seed').value),story);
+  const index=Number(el('scenario').value);
+  const replay=index===3?loadSetupSeed():{...setupRules(),seed:0};
+  if(!replay)return;
+  const {mode,soft,seed,story}=replay;
+  el('setup').close();start(index,mode,soft,seed,story);
   if(!story)pause();
   visor.focus({preventScroll:true});
 };

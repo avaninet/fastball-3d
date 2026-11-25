@@ -12,6 +12,14 @@ Open [index.html](index.html) to fly the standalone local v0.1 build. The game, 
 
 New random seeds begin with `D-` and include faster sideways crossings. Plain hexadecimal seeds use the original gentler drift family. Manual starts scale the gap to the nearest bars by one third. Story keeps the original geometry. Retry restores the flight’s geometry and nine tools.
 
+## Share a random drift
+
+In **New flight → Random drift**, paste a 3D seed or replay link and choose **Load seed** to preview the initial clearance and speed. A bare seed uses the settings in setup. A replay restores the sender’s flight model, capture rule and Story setting. **Begin flight** launches that opening.
+
+**Copy replay** in setup, the seed button in the cockpit, and **Share** in the debrief all share the same opening. The link uses Alpha’s fragment format, for example `#seed=D-00019919&level=Orbital&goal=soft&story=1`. A hosted copy includes the game’s web address. An offline copy shares the fragment, which a friend can paste into their own copy. Following another replay in the same tab during a flight pauses for confirmation.
+
+After any random-drift result, **View flight card** shows the V-bar/R-bar plot, seed, local finish date and abbreviated flight log. **Save image** exports a PNG. **Copy challenge** includes the result and replay so a friend can try the same drift. [Example flight card](reference/random-drift-card.png)
+
 ## In the cockpit
 
 - Arrow keys turn the visor 2°. Hold Shift for 0.25° adjustments. Keys 1–9 select equipment and [ or ] changes power. Enter throws when the visor has focus. P starts, pauses or resumes the clock.

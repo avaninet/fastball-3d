@@ -7,6 +7,7 @@ let page = read('src/visor.html', 'utf8');
 const parts = {
   COCKPIT_STYLE: read('src/cockpit.css', 'utf8'),
   LOG: read('src/log.js', 'utf8'),
+  SHARE: read('src/share.js', 'utf8'),
   STORY: read('src/story.js', 'utf8'),
   PHYSICS: read('src/physics.js', 'utf8'),
   DRAW: read('src/draw.js', 'utf8'),
