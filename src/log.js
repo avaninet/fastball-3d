@@ -78,11 +78,11 @@ const FlightLog = (() => {
       return Visor.clockText(Math.floor(ms/1000))+'.'+String(ms%1000).padStart(3,'0');
     };
     const tools=Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length;
-    const result=flight.done==='capture'?'Grab secured':'Oxygen exhausted';
+    const result=outcomes[flight.done];
     el('logTitle').textContent=flight.initial.name+' · Flight log';
     el('logSummary').textContent=[result,flight.mode,flight.soft?'Soft ≤ 0.080 m/s':'Any-speed capture',
       flight.index===3?'Seed '+seedLabel(flight.seed):'',precise(flight.time)+' elapsed',
-      Visor.clockText(Math.ceil(Flight.reserve-flight.time))+' oxygen',tools+'/6 tools aboard',
+      Visor.clockText(Math.ceil(flight.limit-flight.time))+' oxygen',tools+'/'+Flight.gear.length+' tools aboard',
       flight.done==='capture'?'Entry '+Flight.norm(flight.pos.v).toFixed(3)+' m/s':'Closest clearance '+closest.toFixed(2)+' m'].filter(Boolean).join('  ·  ');
     el('logPanes').innerHTML=[0,2].map(axis=>pane(flight,segments,grid,axis)).join('');
     el('logEvents').textContent=['Start 0:00',...flight.log.fast.map(h=>'Fast entry '+precise(h.time)+' at '+h.speed.toFixed(3)+' m/s'),result+' '+precise(flight.time)].join('  ·  ');

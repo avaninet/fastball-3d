@@ -244,6 +244,19 @@ const Visor = (() => {
     if(i===3){shape([[-24,-9],[-10,-15],[22,-11],[26,10],[17,14],[-25,9]],'#987950');shape([[-24,-9],[-10,-14],[23,-10],[12,-3],[-23,-4]],'#c7a675');rect(-9,-10,5,21,'#545457');rect(9,-8,4,21,'#545457');rect(-7,1,3,4,silver);}
     if(i===4){shape([[-8,-4],[3,-4],[0,14],[-4,19],[-13,15]],dark);shape([[-19,-14],[9,-14],[17,-8],[17,0],[8,5],[-17,1],[-22,-4]],amber);rect(15,-9,9,9,silver);rect(24,-6,10,3,dark);rect(-18,-13,13,5,'#696f69');rect(-15,15,17,6,'#a99c73');}
     if(i===5){shape([[-25,-9],[-13,-16],[25,-11],[25,7],[13,15],[-25,10]],dark);shape([[-25,-9],[-13,-15],[25,-11],[13,-4]],silver);shape([[13,-4],[25,-11],[25,8],[13,15]],'#7f8d8d');rect(-21,-5,28,4,amber);rect(-18,3,10,3,'#c2cbc8');}
+    if(i===6){ // Spring-gate tether clip
+      c.lineWidth=5;c.strokeStyle=silver;c.beginPath();c.ellipse(0,0,20,10,-.28,0,Math.PI*2);c.stroke();
+      c.strokeStyle=amber;c.beginPath();c.moveTo(4,-11);c.lineTo(18,-6);c.stroke();
+    }
+    if(i===7){ // Hand lamp with a flared reflector and a ribbed grip
+      rect(-23,-6,28,12,dark);for(const x of [-18,-12,-6])rect(x,-5,2,10,silver);
+      shape([[4,-6],[18,-13],[23,-12],[23,12],[18,13],[4,6]],amber);rect(21,-11,4,22,'#dfeddb');
+    }
+    if(i===8){ // Protective camera housing and its recessed lens
+      shape([[-24,-12],[13,-12],[23,-6],[23,12],[-24,12]],silver);rect(-19,-8,9,4,amber);
+      c.fillStyle=dark;c.beginPath();c.arc(7,0,10,0,Math.PI*2);c.fill();
+      c.fillStyle='#425c69';c.beginPath();c.arc(7,0,6,0,Math.PI*2);c.fill();
+    }
   }
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
   return {render,camera,courseGlyphs,loadEarth,toolArt,clockText};

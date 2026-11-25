@@ -59,11 +59,11 @@
   });
   test('Cockpit rectangles, hit targets and keyboard focus',()=>{
     configure(0,'Straight-Line');scrollTo(0,0);
-    for(const id of ['forward','aft','tool0','tool1','tool2','tool3','tool4','tool5','power','throw','coast','advice','pause']){
+    for(const id of ['forward','aft','tool0','tool1','tool2','tool3','tool4','tool5','tool6','tool7','tool8','clockRate','power','throw','coast','advice','speedGauge','speedRef','pause']){
       const node=el(id),r=node.getBoundingClientRect();
       if(['forward','tool0','power','throw','advice'].includes(id))rects[id]=[r.x,r.y,r.width,r.height].map(Math.round);
       eq(r.width>=24&&r.height>0&&r.left>=0&&r.right<=innerWidth+.01&&r.top>=0&&r.bottom<=innerHeight+.01,id+' viewport '+JSON.stringify(r));
-      if(!['aft','coast','advice'].includes(id)){
+      if(!['aft','coast','advice','speedGauge','speedRef'].includes(id)){
         eq(r.height>=24&&node.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)),id+' hit target');
         node.focus();eq(document.activeElement===node&&scrollY===0,id+' keyboard focus scroll');
       }
@@ -78,28 +78,28 @@
       configure(0,mode,false,true);eq(!running&&!started&&!el('assists').hidden,'Story staged');
       click('away');click('throw');eq(running&&flight.throws===1,'release starts Story');keys('p');
       keys('ArrowLeft');click('prograde');close(dot(Flight.direction(yaw,pitch),unit(flight.pos.v)),1);
-      if(mode==='Straight-Line'){close(flight.forecast.hits[0].t,346.48743,.001);advance(450);eq(flight.done==='capture','baseline contact');click('retry');}
-      else{close(flight.forecast.near.d,4.1653,.001);click('throw');eq(running&&flight.throws===2,'paused release resumes');}
+      if(mode==='Straight-Line'){close(flight.forecast.hits[0].t,358.82173,.001);advance(flight.limit);eq(flight.done==='capture','baseline contact');click('retry');}
+      else{close(flight.forecast.near.d,4.51749,.001);click('throw');eq(running&&flight.throws===2,'paused release resumes');}
     }
   });
   const named=[
-    [[[5,-61,15,94]],[[3,-46,-3,94]],[[5,-55,14,100],[2,-54,13,94]]],
-    [[[5,-61,15,94]],[[3,-46,-3,94]],[[5,-54,14,100],[1,-55,13,82]]],
-    [[[5,-43,13,99]],[[4,-38,-3,95]],[[5,-37,12,100],[3,-37,12,70]]],
-    [[[5,-43,13,99]],[[4,-38,-3,95]],[[5,-34,12,100],[2,-35,12,82]]]
+    [[[5,-62,14,94]],[[3,-44,-5,99]],[[5,-55,13,100],[2,-56,12,96]]],
+    [[[5,-62,14,94]],[[3,-44,-5,99]],[[5,-55,13,100],[1,-54,13,85]]],
+    [[[5,-38,11,100]],[[5,-34,-6,85]],[[5,-32,11,100],[3,-31,10,78]]],
+    [[[5,-38,11,100]],[[5,-34,-6,85]],[[5,-28,10,100],[2,-29,11,97]]]
   ];
   for(let k=0;k<4;k++)for(let idx=0;idx<3;idx++)test('Named capture '+k+'/'+idx,()=>{
     configure(idx,k<2?'Straight-Line':'Orbital',!!(k%2));
     for(const [i,[tool,az,elv,pct]] of named[k][idx].entries()){
       if(i)advance(4);aim(az,elv);click('tool'+tool);set('power',pct);click('throw');
     }
-    advance(450);eq(flight.done==='capture','reachable via ordinary aim and power controls');
+    advance(flight.limit);eq(flight.done==='capture','reachable via ordinary aim and power controls');
     if(k%2)eq(norm(flight.pos.v)<=.080000001,'soft capture');
     click('retry');
   });
 
   test('Seed reuse and expiry',()=>{
-    configure(3,'Orbital',true);const p=flight.pos.p.join(',');advance(450);
+    configure(3,'Orbital',true);const p=flight.pos.p.join(',');advance(flight.limit);
     eq(flight.done==='oxygen','expiry');click('viewLog');eq(el('logSummary').textContent.includes('00019919')&&el('logThrows').textContent.includes('No tools'),'seeded log');
     el('flightLog').querySelector('.close').click();click('retry');eq(flight.pos.p.join(',')===p,'retry seed');
     configure(3,'Straight-Line');eq(flight.pos.p.join(',')===p,'same model-independent start');
@@ -113,7 +113,7 @@
     for(const [az,e] of [[90,0],[-90,0],[70,12],[0,90],[160,-30]]){
       advance(.01);Visor.render(visor,az,e,flight);Visor.render(aft,az+180,-e,flight,true);
     }
-    advance(450);const {segments,closest}=FlightLog.reconstruct(flight),grid=FlightLog.layout(segments);
+    advance(flight.limit);const {segments,closest}=FlightLog.reconstruct(flight),grid=FlightLog.layout(segments);
     close(closest,3);const crossing=[0,0,10];close(grid.project(crossing,0)[1],grid.cy);
     eq(grid.project(crossing,2)[1]<grid.cy-7*grid.scale,'cross-track trace clears projected envelope');
     click('viewLog');eq(el('logPanes').querySelectorAll('svg').length===2&&el('logSummary').textContent.includes('3.00 m'),'log rendered');
@@ -155,7 +155,7 @@
       for(const speed of [1,30]){
         if(scenario==='fast return'){
           fixture('Straight-Line',true,[0,-6,0],[0,.116,0]);
-          flight.mask=63^(1<<5)^(1<<3);updateRack();
+          flight.mask=Flight.fullRack^(1<<5)^(1<<3);updateRack();
           tick(74,speed);eq(flight.misses===1&&!Flight.inside(flight.pos.p),'fast entry and exit');
           click('prograde');click('tool4');set('power',100);click('throw');tick(4,speed);
           click('prograde');click('tool2');set('power',100);click('throw');tick(3,speed);
@@ -163,7 +163,7 @@
         }else if(scenario==='orbital return'){
           configure(0,'Orbital',true,true);setView(Flight.direction(-43,13));set('power',99);click('throw');
         }else configure(3,'Straight-Line');
-        tick(450,speed);eq(flight.done===(scenario==='expiry'?'oxygen':'capture'),'result');
+        tick(flight.limit,speed);eq(flight.done===(scenario==='expiry'?'oxygen':'capture'),'result');
         const {segments}=FlightLog.reconstruct(flight);
         close(norm(sub(segments.at(-1).at(-1).p,flight.pos.p)),0,.00001);
         eq(flight.log.releases.length===flight.throws,'release count');
@@ -199,9 +199,9 @@
       }
       click('throw');const release=flight.log.releases[0];
       eq(dot(release.dir,unit(release.p))>.99998,'manual angular tolerance');
-      close(norm(sub(release.v,Flight.release(Flight.motion(flight.initial,release.time,mode),5,95,release.dir,63).v)),0,.000001);
+      close(norm(sub(release.v,Flight.release(Flight.motion(flight.initial,release.time,mode),5,95,release.dir,Flight.fullRack).v)),0,.000001);
       const projected=flight.forecast.hits.find(h=>h.speed<=Flight.limit);
-      advance(450);eq(flight.done===(projected?'capture':'oxygen'),'coast matches actual result');el('debrief').close();
+      advance(flight.limit);eq(flight.done===(projected?'capture':'oxygen'),'coast matches actual result');el('debrief').close();
     }
   });
   test('Seed generation, playback and log preserve the drift family',()=>{
@@ -209,8 +209,8 @@
     eq(/^D-[0-9A-F]{8}$/.test(seed)&&el('seed').checkValidity(),'generated seed format');
     el('seed').value='d-19919';el('setupForm').requestSubmit(el('setupForm').querySelector('[value="manual"]'));
     eq(flight.seed==='D-00019919','canonical D seed');
-    eq(flight.pos.p.join(',')===Flight.randomStart('D-00019919').p.join(','),'replayed new geometry');
-    const v=flight.pos.v.join(',');advance(450);click('viewLog');eq(el('logSummary').textContent.includes('D-00019919'),'seed in log');
+    eq(flight.pos.p.join(',')===Flight.opening(3,'D-00019919',false).p.join(','),'replayed new geometry');
+    const v=flight.pos.v.join(',');advance(flight.limit);click('viewLog');eq(el('logSummary').textContent.includes('D-00019919'),'seed in log');
     el('flightLog').querySelector('.close').click();click('retry');eq(v===flight.pos.v.join(','),'D retry');
   });
   test('Directional coast for closure, recession, a miss and an orbital bend',()=>{
@@ -231,7 +231,7 @@
         eq(Math.cos(arrow.angle)*(ahead[0]-arrow.at[0])+Math.sin(arrow.angle)*(ahead[1]-arrow.at[1])>0,'points to later time');
         const partial=Array.from({length:100},(_,i)=>camera(i-50)).find(cam=>{
           const inside=t=>{const p=cam.world(Flight.motion(flight.anchor,t,mode).p);const xy=cam.screen(p);return p[2]>0&&xy[0]>8&&xy[0]<632&&xy[1]>15&&xy[1]<302;};
-          const horizon=flight.forecast.hits[0]?.t??450;
+          const horizon=flight.forecast.hits[0]?.t??flight.limit;
           return inside(horizon*.12)&&!inside(horizon*.92);
         });
         eq(partial&&Visor.courseGlyphs(partial,flight,640,320).visible,'track bends out of frame');
@@ -241,6 +241,56 @@
       }
       instruments();eq(el('rate').textContent[0]===(Flight.dot(unit(sub(position,Flight.nearest(position))),velocity)<0?'-':'+'),'signed range rate');
     }
+  });
+
+  test('Empty rack ends a missed flight at the last actual release',()=>{
+    for(const mode of ['Straight-Line','Orbital'])for(const soft of [false,true]){
+      configure(0,mode,soft,true);click('toStation');set('power',55);
+      for(const [i] of Flight.gear.entries()){keys(String(i+1));eq(selected===i,'slot '+i);click('throw');}
+      eq(flight.mask===0&&flight.throws===9&&flight.done==='stranded'&&el('debrief').open,'immediate debrief on ninth throw');
+      close(flight.time,flight.log.releases.at(-1).time);eq(flight.time<10,'no expiry wait');
+      click('viewLog');eq(el('logSummary').textContent.includes('Out of tools')&&el('logSummary').textContent.includes('0/9'),'stranded log');
+      eq(el('logThrows').children.length===9,'all releases in log');
+      el('flightLog').close();click('retry');eq(flight.mask===Flight.fullRack&&!flight.done,'retry restores all nine');
+    }
+  });
+  test('Last tool preserves a valid coast and records a final fast contact',()=>{
+    for(const [soft,velocity,result] of [[true,.05,'capture'],[false,.12,'capture'],[true,.12,'stranded']]){
+      fixture('Straight-Line',soft,[0,-8,0],[0,velocity,0]);
+      flight.mask=1<<6;choose(6);setView([0,-1,0]);set('power',10);click('throw');
+      eq(!flight.done&&flight.forecast.hits.length===1,'crossing stays live');
+      const at=flight.forecast.hits[0].t;advance(flight.limit);eq(flight.done===result,'actual crossing');
+      close(flight.time,flight.log.releases[0].time+at,.00001);
+      eq(flight.misses===(soft&&velocity>.08?1:0),'fast entry retained');el('debrief').close();
+    }
+  });
+  test('Clock, speed gauge, XYZ telemetry and Story reserve',()=>{
+    configure(3,'Orbital',true,true);eq(flight.limit===450&&el('oxygen').textContent==='7:30','short Story clock');
+    click('storyEntry');click('skipLesson');eq(flight.limit===600&&el('oxygen').textContent==='10:00','manual handover');
+    configure(0,'Straight-Line');eq(flight.limit===600&&el('clockRate').type==='range','manual clock / slider');
+    set('clockRate',17);eq(rate===17&&el('rateLabel').textContent==='17×','live rate label');
+    const time=flight.time;sync(lastTime+2000);close(flight.time-time,34,.00001);
+    click('throw');eq(rate===1&&el('clockRate').value==='1','rate reset');
+    for(const soft of [true,false]){
+      fixture('Straight-Line',soft,[5,-18,3],[-.011,.105,.023]);instruments();
+      eq(el('speedGauge').classList.contains('over')===soft && el('speedRef').textContent.includes('0.080'),'threshold');
+      eq(el('velX').textContent==='-0.0110'&&el('velY').textContent==='+0.1050'&&el('velZ').textContent==='+0.0230','signed axes');
+      eq(el('suitMass').textContent===Flight.mass(flight.mask).toFixed(1)+' kg','mass');
+    }
+  });
+  test('Backdrop dismisses only the active dialog',()=>{
+    configure(0,'Straight-Line');
+    const backdrop=d=>{
+      const r=d.getBoundingClientRect(),x=r.left-1,y=r.top+2;
+      pointer(d,'pointerdown',15,x,y);pointer(d,'pointerup',15,x,y);pointer(d,'click',15,x,y);
+    };
+    for(const [id,open] of [['guide','manual'],['setup','new']]){
+      click(open);const d=el(id),r=d.getBoundingClientRect();
+      pointer(d,'pointerdown',15,r.left+4,r.top+4);pointer(d,'click',15,r.left-1,r.top+3);
+      eq(d.open,'inside press dragging out stays open');backdrop(d);eq(!d.open&&!running,'close while paused');
+    }
+    click('pause');advance(flight.limit);click('viewLog');backdrop(el('flightLog'));
+    eq(!el('flightLog').open&&el('debrief').open,'back to debrief');backdrop(el('debrief'));eq(!el('debrief').open,'back to cockpit');
   });
   const out=document.createElement('pre');out.id='qa-result';out.textContent=JSON.stringify({passed,errors,rects,viewport:[innerWidth,innerHeight]});document.body.append(out);
 })();

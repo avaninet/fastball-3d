@@ -1,14 +1,18 @@
 const Flight = (() => {
   const n = 2 * Math.PI / (92 * 60);
-  const reserve = 450, limit = 0.080, half = [7, 1.6, 7], dryMass = 186;
+  const manualReserve = 600, storyReserve = 450, limit = 0.080, half = [7, 1.6, 7], dryMass = 186;
   const gear = [
     {name:'Socket driver', mass:0.6, speed:7.4},
     {name:'T-handle', mass:0.8, speed:7.0},
     {name:'Gas cartridge', mass:1.2, speed:6.4},
     {name:'Wrench pouch', mass:2.4, speed:5.2},
     {name:'Power drill', mass:3.6, speed:4.2},
-    {name:'Spare battery', mass:4.8, speed:3.8}
+    {name:'Spare battery', mass:4.8, speed:3.8},
+    {name:'Tether clip', mass:0.4, speed:7.5},
+    {name:'Inspection lamp', mass:1.5, speed:5.8},
+    {name:'Camera housing', mass:3.2, speed:4.3}
   ];
+  const fullRack = (1 << gear.length) - 1;
   const named = [
     {name:'Tether separation', p:[12,-19,8], v:[0.016,-0.019,0.010], brief:'A broken tether. A slow outward drift. Bring Capt. Tommi Dylan back to the grab bars.'},
     {name:'Lateral drift', p:[-7,-18,9], v:[0.050,0.008,-0.018], brief:'You are sliding across the station face. Take some sideways speed out of your first pitch.'},
@@ -29,7 +33,7 @@ const Flight = (() => {
   const mass = mask => gear.reduce((m,g,i)=>m+((mask & (1<<i)) ? g.mass : 0),dryMass);
   const impulse = (tool,mask) => gear[tool].mass*gear[tool].speed/mass(mask);
   const budgets = [0];
-  for (let mask=1;mask<64;mask++) {
+  for (let mask=1;mask<=fullRack;mask++) {
     budgets[mask]=Math.max(...gear.map((g,i)=>(mask & (1<<i)) ? impulse(i,mask)+budgets[mask^(1<<i)] : 0));
   }
   function release(s,tool,power,dir,mask) {
@@ -128,33 +132,34 @@ const Flight = (() => {
     return {tool,az:Math.round(az),el:Math.round(el),power:clamp(Math.round(100*norm(dv)/impulse(tool,mask)),10,100)};
   }
   function applyCommand(s,c,mask) {return release(s,c.tool,c.power,direction(c.az,c.el),mask);}
-  // An inexpensive constructive seed check, using actual rounded controls and contact speed.
+  // Keep the seed sequence compatible with the first six-slot prototype.
+  // The live opening is derived from this reproducible separation below.
+  const seedRack=(1<<6)-1;
   function witness(s,mode) {
-    if(entries(s,reserve,mode).length) return false;
+    if(entries(s,storyReserve,mode).length) return false;
     for(const t of [350,395,305,420]) {
       const target=scale(nearest(s.p),0.55), dv=transfer(s,target,t,mode);
       for(const tool of [3,4,5]) {
-        if(norm(dv)>impulse(tool,63)*1.01) continue;
-        const c=command(s,dv,tool,63), hit=entries(applyCommand(s,c,63),reserve-12,mode)[0];
+        if(norm(dv)>impulse(tool,seedRack)*1.01) continue;
+        const c=command(s,dv,tool,seedRack), hit=entries(applyCommand(s,c,seedRack),storyReserve-12,mode)[0];
         if(hit && hit.speed<=limit-.004) return true;
       }
     }
     return false;
   }
-  // Verify harder crossings with two actual releases four seconds apart,
-  // using the same control rounding, inventory and entry speed as the suit.
+  // The original D-seed filter also admitted two releases four seconds apart.
   function twoThrowWitness(s,mode){
-    if(entries(s,reserve,mode).length)return false;
+    if(entries(s,storyReserve,mode).length)return false;
     for(const t of [350,395,305,420]){
       const target=scale(nearest(s.p),.55);
-      const first=command(s,transfer(s,target,t,mode),5,63);
-      const coast=applyCommand(s,first,63);
+      const first=command(s,transfer(s,target,t,mode),5,seedRack);
+      const coast=applyCommand(s,first,seedRack);
       if(entries(coast,4,mode).length)continue;
-      const next=motion(coast,4,mode),dv=transfer(next,target,t-4,mode),mask=31;
+      const next=motion(coast,4,mode),dv=transfer(next,target,t-4,mode),mask=seedRack^(1<<5);
       for(const tool of [2,3,4]){
         if(norm(dv)>impulse(tool,mask)*1.01)continue;
         const final=applyCommand(next,command(next,dv,tool,mask),mask);
-        const hit=entries(final,reserve-16,mode)[0];
+        const hit=entries(final,storyReserve-16,mode)[0];
         if(hit && hit.speed<=limit-.004)return true;
       }
     }
@@ -183,6 +188,13 @@ const Flight = (() => {
     }
     return {...named[0],seed,name:'Random drift',brief:'A seeded tether-separation reserve case.'};
   }
-  return {gear,named,half,limit,reserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,impulse,budgets,
+  function opening(index,seed,story){
+    const base=index===3?randomStart(seed):named[index];
+    if(story)return base;
+    // Extend the gap to the nearest grab bar in proportion to the longer clock.
+    const bar=nearest(base.p);
+    return {...base,p:add(bar,scale(sub(base.p,bar),manualReserve/storyReserve))};
+  }
+  return {gear,fullRack,named,opening,half,limit,manualReserve,storyReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,impulse,budgets,
     release,motion,nearest,clearance,inside,entries,forecast,seedStream,transfer,command,applyCommand,witness,randomStart};
 })();

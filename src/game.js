@@ -4,6 +4,7 @@ let flight, yaw=0,pitch=0,selected=5,power=95,running=false,started=false,dirty=
 let lastTime=performance.now(),lastPaint=0,lastText=0,rate=1;
 const hex=n=>(n>>>0).toString(16).toUpperCase().padStart(8,'0');
 const seedLabel=seed=>typeof seed==='number'?hex(seed):seed;
+const weightClass=g=>g.mass<1?'Light':g.mass<3?'Medium':'Heavy';
 const randomSeed=()=>'D-'+hex(crypto.getRandomValues(new Uint32Array(1))[0]);
 function readSeed(value){
   const label=value.trim().toUpperCase();
@@ -14,13 +15,13 @@ function setMsg(msg){el('message').textContent=msg;}
 function stationDirection(){return scale(flight.pos.p,-1);}
 function reseat(skipInitial=false) {
   flight.anchor={p:flight.pos.p.slice(),v:flight.pos.v.slice()};flight.age=0;flight.hitIndex=0;
-  flight.forecast=Flight.forecast(flight.anchor,Math.max(0,Flight.reserve-flight.time),flight.mode,skipInitial);
+  flight.forecast=Flight.forecast(flight.anchor,Math.max(0,flight.limit-flight.time),flight.mode,skipInitial);
 }
-function start(index,mode,soft,seed=0,story=false,lesson=null) {
-  const initial=index===3?Flight.randomStart(seed):Flight.named[index];
+function start(index,mode,soft,seed=0,story=false,lesson=null,storyOpening=story) {
+  const initial=Flight.opening(index,seed,storyOpening);
   invalidateInput();
-  flight={index,mode,soft,seed,story,lesson,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:63,objects:[],misses:0,done:'',dragging:false};
-  selected=5;power=95;el('power').value=power;rate=1;el('clockRate').value='1';
+  flight={index,mode,soft,seed,story,storyOpening,limit:story?Flight.storyReserve:Flight.manualReserve,lesson,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:'',dragging:false};
+  selected=5;power=95;el('power').value=power;setClockRate(1);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
   el('name').textContent=initial.name;el('brief').textContent=initial.brief;el('modeTag').textContent=mode;
   el('captureTag').textContent=soft?'Soft capture ≤ 0.080 m/s':'Any-speed capture';
@@ -30,18 +31,25 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   setMsg(story?'Story flight. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
   updateRack();instruments();dirty=true;
 }
+const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools'};
 function finish(result) {
   running=false;flight.done=result;invalidateInput();dirty=true;
   const won=result==='capture',drill=!!(flight.mask&(1<<4));
-  el('endTitle').textContent=won?'Grab bars secured':'Oxygen exhausted';
+  el('endTitle').textContent=outcomes[result];
   el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”'):'The reserve ran out before a successful grab. Retry the same opening to test a different pitch.';
+  if(result==='stranded'){
+    const lastFast=flight.log.fast.at(-1);
+    el('endCopy').textContent=lastFast && Math.abs(lastFast.time-flight.time)<1e-7
+      ? 'The final pass was too fast to grab. The empty rack leaves no way back before oxygen expiry.'
+      : 'The rack is empty. Predicted closest clearance is '+flight.forecast.near.d.toFixed(1)+' m before oxygen expiry.';
+  }
   el('endStats').textContent=clock(flight.time)+' flight time · '+flight.throws+' throw'+(flight.throws===1?'':'s')+' · '+norm(flight.pos.v).toFixed(3)+' m/s'+(flight.misses?' · '+flight.misses+' fast pass'+(flight.misses===1?'':'es'):'');
   setMsg(el('endTitle').textContent+'. '+el('endStats').textContent);
   updateLessonEnd();instruments();updateRack();el('debrief').showModal();
 }
 function advance(dt) {
   if(flight.done || dt<=0)return;
-  const step=Math.min(dt,Flight.reserve-flight.time,flight.checkAt===null?Infinity:Math.max(0,flight.checkAt-flight.time)),end=flight.age+step;
+  const step=Math.min(dt,flight.limit-flight.time,flight.checkAt===null?Infinity:Math.max(0,flight.checkAt-flight.time)),end=flight.age+step;
   const hits=flight.forecast.hits;
   while(flight.hitIndex<hits.length && hits[flight.hitIndex].t<=end+1e-8) {
     const h=hits[flight.hitIndex++];
@@ -50,10 +58,15 @@ function advance(dt) {
       finish('capture');return;
     }
     flight.log.fast.push({time:flight.time-flight.age+h.t,p:h.p.slice(),speed:h.speed});
-    flight.misses++;setMsg('Fast pass at '+h.speed.toFixed(3)+' m/s. Clear the grab bars, turn back and enter again at 0.080 m/s or slower.');
+    flight.misses++;
+    if(!flight.mask && flight.hitIndex===hits.length){
+      flight.time+=Math.max(0,h.t-flight.age);flight.age=h.t;flight.pos=Flight.motion(flight.anchor,h.t,flight.mode);
+      finish('stranded');return;
+    }
+    setMsg('Fast pass at '+h.speed.toFixed(3)+' m/s. Clear the grab bars, turn back and enter again at 0.080 m/s or slower.');
   }
   flight.time+=step;flight.age=end;flight.pos=Flight.motion(flight.anchor,end,flight.mode);
-  if(flight.time>=Flight.reserve-1e-8)finish('oxygen');
+  if(flight.time>=flight.limit-1e-8)finish('oxygen');
   else if(flight.checkAt!==null && flight.time>=flight.checkAt-1e-8){
     flight.checkAt=null;flight.checked=true;freezeClock();
     setMsg('Course check. Read both cameras and Current coast before resuming.');
@@ -69,11 +82,11 @@ function updateRack() {
     const b=el('tool'+i),present=!!(flight.mask&(1<<i));b.disabled=!present||!canPitch();
     b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=present?g.mass.toFixed(1)+' kg':'Released';
   }
-  el('budget').textContent=Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
+  el('budget').textContent=Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
   el('throw').disabled=selected<0||!canPitch();el('power').disabled=selected<0||!canPitch();
   el('throwText').textContent=selected<0?'Rack empty':(flight.story&&!running?'Throw & fly · ':'Throw ')+Flight.gear[selected].name.toLowerCase();
   el('powerValue').textContent=power+'%';
-  el('impulseInfo').textContent=selected<0?'No equipment remaining':(Flight.impulse(selected,flight.mask)*power/100).toFixed(3)+' m/s recoil';
+  el('impulseInfo').textContent=selected<0?'No equipment remaining':weightClass(Flight.gear[selected])+' · '+(Flight.impulse(selected,flight.mask)*power/100).toFixed(3)+' m/s recoil';
 }
 function choose(i){if(canPitch() && (flight.mask&(1<<i))){selected=i;updateRack();}}
 function throwTool() {
@@ -88,8 +101,9 @@ function throwTool() {
   setMsg(g.name+' released at '+power+'%. Read the committed coast before spending another tool.');
   selected=Flight.gear.findIndex((g,i)=>!!(flight.mask&(1<<i)));
   reseat(Flight.inside(old.p)&&flight.misses>0);
+  if(!flight.mask && !flight.forecast.hits.length){finish('stranded');return;}
   if(!running)invalidateInput();
-  flight.noTrim=false;started=true;running=true;scheduleLessonCheck();rate=1;el('clockRate').value='1';lastTime=performance.now();dirty=true;updateRack();instruments();
+  flight.noTrim=false;started=true;running=true;scheduleLessonCheck();setClockRate(1);lastTime=performance.now();dirty=true;updateRack();instruments();
 }
 function describeSide(point,bar) {
   const diff=sub(point,bar),side=['radially inward','radially outward','behind the station','ahead along-track','below the orbital plane','above the orbital plane'];
@@ -99,10 +113,10 @@ function describeSide(point,bar) {
 function nav() {
   const c=el('coast'),a=el('advice'),s=flight;
   c.className='readout';
-  if(s.done){c.textContent=s.done==='capture'?'Contact confirmed':'Reserve expired';c.classList.add(s.done==='capture'?'good':'danger');a.textContent='Flight time '+clock(s.time)+' · '+s.throws+' tools released.';return;}
+  if(s.done){c.textContent=outcomes[s.done];c.classList.add(s.done==='capture'?'good':'danger');a.textContent='Flight time '+clock(s.time)+' · '+s.throws+' tools released.';return;}
   if(!started && !s.throws){
     c.textContent=s.story?'Ready for first pitch':'Ready to begin';
-    a.textContent=s.story?'Line up while staged. Throw starts the oxygen clock.':'Begin flight to start the oxygen clock. Aim the tool along the crosshair.';return;
+    a.textContent=s.story?'Line up while staged. Throw starts the oxygen clock.':'The tool follows the crosshair. Your suit recoils the other way. Begin flight starts the clock.';return;
   }
   const h=s.forecast.hits[s.hitIndex];
   if(h){
@@ -118,6 +132,11 @@ function nav() {
     a.textContent='Last entry '+clock(s.time-last.time)+' ago at '+last.speed.toFixed(3)+' m/s. Set up a slower return.';
     c.classList.add('warn');return;
   }
+  if(!s.throws && s.index===0 && n.t<=s.age+.03){
+    c.textContent='Drifting away';
+    a.textContent='Turn the visor away from the station. Throw along the crosshair to push yourself back. Watch the aft camera.';
+    c.classList.add('warn');return;
+  }
   if(n.t<=s.age+.03){c.textContent='Opening the gap';a.textContent='Closest pass '+n.d.toFixed(1)+' m '+describeSide(n.p,n.bar)+', '+clock(s.age-n.t)+' ago. Account for sideways drift on the return.';}
   else if(n.t>=s.forecast.path.at(-1).t-.03){c.textContent=n.d.toFixed(1)+' m short at expiry';a.textContent='Closest at oxygen expiry in '+clock(Math.ceil(n.t-s.age))+', '+describeSide(n.p,n.bar)+'.';}
   else{c.textContent='Miss by '+n.d.toFixed(1)+' m';a.textContent='Nearest pass '+describeSide(n.p,n.bar)+' in '+clock(Math.ceil(n.t-s.age))+'. Throw toward the side of the miss to trim.';}
@@ -128,9 +147,19 @@ function instruments() {
   const rr=distance>1e-8?dot(unit(sub(p,bar)),v):0,sp=norm(v);
   el('range').textContent=distance.toFixed(1);el('rate').textContent=(rr>=0?'+':'')+rr.toFixed(3);el('rate').className=rr<0?'good':rr>0?'warn':'';
   el('speed').textContent=sp.toFixed(3);el('speed').className=flight.soft&&sp>Flight.limit?'danger':'';
+  const gauge=el('speedGauge'),ceiling=Math.max(.12,Math.ceil(sp/.04)*.04);
+  gauge.style.setProperty('--fill',(100*sp/ceiling)+'%');
+  gauge.style.setProperty('--tick',(100*Flight.limit/ceiling)+'%');
+  gauge.classList.toggle('over',flight.soft&&sp>Flight.limit);
+  gauge.setAttribute('aria-valuemax',ceiling.toFixed(3));gauge.setAttribute('aria-valuenow',sp.toFixed(4));
+  const threshold=flight.soft?'Soft limit':'Reference';
+  el('speedRef').textContent=threshold+' '+Flight.limit.toFixed(3);
+  gauge.setAttribute('aria-valuetext',sp.toFixed(4)+' metres per second. '+threshold+' '+Flight.limit.toFixed(3));
+  for(const [i,axis] of ['X','Y','Z'].entries())el('vel'+axis).textContent=(v[i]>=0?'+':'')+v[i].toFixed(4);
+  el('suitMass').textContent=Flight.mass(flight.mask).toFixed(1)+' kg';
   const [az,elv]=Flight.angles(v);
   el('driftAngles').textContent=sp<.00001?'Stationary':'HDG '+Math.round((az+360)%360)%360+'° / EL '+(elv>=0?'+':'')+Math.round(elv)+'°';
-  el('oxygen').textContent=clock(Math.ceil(Flight.reserve-flight.time));el('paused').hidden=!started||running||!!flight.done;
+  el('oxygen').textContent=clock(Math.ceil(flight.limit-flight.time));el('paused').hidden=!started||running||!!flight.done;
   el('pause').textContent=flight.done?'Debrief':running?'Pause':started?'Resume':'Begin flight';
   el('paused').textContent=flight.story?'PAUSED · LINEUP LIVE':'PAUSED';
   updateLessonCue();
@@ -157,7 +186,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 for(const [i,g] of Flight.gear.entries()) {
-  const b=document.createElement('button');b.id='tool'+i;b.className='tool';b.title=g.name+' · '+g.mass.toFixed(1)+' kg · key '+(i+1);
+  const b=document.createElement('button');b.id='tool'+i;b.className='tool';b.title=g.name+' · '+weightClass(g)+' · '+g.mass.toFixed(1)+' kg · key '+(i+1);
   const key=document.createElement('span');key.className='hotkey';key.textContent=i+1;
   const img=document.createElement('canvas');img.setAttribute('aria-hidden','true');const name=document.createElement('b');name.textContent=g.name;
   const size=document.createElement('small');b.append(key,img,name,size);el('tools').append(b);Visor.toolArt(img,i);b.onclick=()=>choose(i);
@@ -174,7 +203,11 @@ function changePower(value){if(canPitch())power=clamp(value,10,100);el('power').
 function snap(vector){if(flight.story&&canPitch())setView(vector);}
 el('toStation').onclick=()=>snap(stationDirection());el('away').onclick=()=>snap(flight.pos.p);el('prograde').onclick=()=>snap(flight.pos.v);
 el('throw').onclick=throwTool;el('pause').onclick=pause;
-el('clockRate').onchange=()=>{sync();rate=Number(el('clockRate').value);};
+function setClockRate(value){
+  rate=value;el('clockRate').value=String(value);el('rateLabel').textContent=value+'×';
+  el('clockRate').setAttribute('aria-valuetext',value+' times real time');
+}
+el('clockRate').oninput=()=>{sync();setClockRate(Number(el('clockRate').value));};
 el('power').oninput=()=>changePower(sliderPress && sliderPress.epoch!==inputEpoch?power:Number(el('power').value));
 
 // Tie browser-generated activation to the press that began it. Pause, dialogs,
@@ -252,7 +285,7 @@ document.addEventListener('keydown',e=>{
   if(target===el('power'))sliderPress=null;
   if(target.matches('input,select,textarea'))return;
   const step=e.shiftKey?.25:2;
-  if(/^[1-6]$/.test(key)){choose(Number(key)-1);return;}
+  if(/^[1-9]$/.test(key)){choose(Number(key)-1);return;}
   if(key==='['||key===']'){e.preventDefault();changePower(power+(key==='['?-1:1));return;}
   if(key==='enter'&&target===visor){e.preventDefault();if(!e.repeat)throwTool();return;}
   if(!key.startsWith('arrow'))return;
@@ -267,7 +300,7 @@ function pauseForModal(d){
 function updateSetup() {
   const idx=Number(el('scenario').value),isRandom=idx===3;
   el('seedGroup').hidden=!isRandom;el('seed').required=isRandom;el('seed').disabled=!isRandom;
-  el('setupBrief').textContent=isRandom?'Each seed is checked for a soft return in both flight models.':Flight.named[idx].brief;
+  el('setupBrief').textContent=isRandom?'Reuse the seed to retry the same drift. Standard separations start farther out than Story.':Flight.named[idx].brief;
 }
 function openSetup(){
   el('scenario').value=String(flight.index);el('seed').value=flight.index===3?seedLabel(flight.seed):randomSeed();
@@ -282,9 +315,24 @@ el('setupForm').onsubmit=e=>{
   if(!story)pause();
   visor.focus({preventScroll:true});
 };
-el('retry').onclick=()=>{el('debrief').close();start(flight.index,flight.mode,flight.soft,flight.seed,flight.story,flight.lesson);};
+el('retry').onclick=()=>{el('debrief').close();start(flight.index,flight.mode,flight.soft,flight.seed,flight.story,flight.lesson,flight.storyOpening);};
 el('viewLog').onclick=()=>{FlightLog.show(flight);el('flightLog').showModal();};
 document.querySelectorAll('.close').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+// Require both ends of a gesture on the backdrop, including on touch screens.
+for(const dialog of document.querySelectorAll('dialog')){
+  let pointer=null;
+  const outside=e=>{
+    const r=dialog.getBoundingClientRect();
+    return e.target===dialog && (e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom);
+  };
+  dialog.addEventListener('pointerdown',e=>{pointer=e.button===0 && outside(e)?e.pointerId:null;});
+  dialog.addEventListener('pointercancel',()=>{pointer=null;});
+  dialog.addEventListener('click',e=>{
+    if(pointer!==null && (e.pointerId===undefined||pointer===e.pointerId) && outside(e))dialog.close();
+    pointer=null;
+  });
+  dialog.addEventListener('close',()=>{pointer=null;});
+}
 for(const d of [el('guide'),el('setup')])d.addEventListener('close',()=>{
   dirty=true;updateRack();instruments();
 });

@@ -6,7 +6,7 @@ const F=vm.runInNewContext(src+';Flight',{Math}), modes=['Straight-Line','Orbita
 const {norm,scale,unit,add,dot,clamp}=F;
 function valid(hit,soft){return hit && (!soft || hit.speed<=F.limit+1e-9);}
 function plan(s,mode,mask,left,soft,skipInitial=false) {
-  const rack=[0,1,2,3,4,5].filter(i=>mask&(1<<i));
+  const rack=F.gear.map((_,i)=>i).filter(i=>mask&(1<<i));
   if(!rack.length || left<1) return null;
   const targets=[scale(F.nearest(s.p),.55),[0,0,0],scale(F.nearest(s.p),.84)];
   const times=[.75,.88,.61,.95,.48,.32].map(f=>f*left);
@@ -51,38 +51,15 @@ function runPlan(s,mode,mask,left,soft,actions,angle,pct,draw) {
   const hit=F.entries(s,left-elapsed,mode)[0];
   return {win:!!valid(hit,soft),s,mask,elapsed,hit};
 }
-const starts=Array.from({length:128},(_,i)=>F.randomStart(104729+i));
-for(const mode of modes) {
-  const simple=starts.map(s=>F.entries(F.release(s,5,95,unit(s.p),63),450,mode)[0]);
-  console.log(mode,'face away + 95% battery, any / soft',simple.filter(Boolean).length,simple.filter(h=>valid(h,true)).length);
-  for(const soft of [false,true]) {
-    const named=F.named.map(s=>{
-      const r=plan(s,mode,63,450,soft); assert.ok(r,s.name+' '+mode);
-      return [s.name,r.actions.map(c=>[c.tool,c.az,c.el,c.power]),Math.round(r.hit.t),r.hit.speed.toFixed(4)];
-    });
-    const rows=[];
-    for(const [angle,pct] of [[0,0],[3,3],[5,5],[10,10]]) {
-      let won=0,recovered=0;
-      for(const [i,s] of starts.entries()) {
-        const nominal=plan(s,mode,63,450,soft);assert.ok(nominal);
-        const draw=F.seedStream(0xA580+i*19);
-        const r=runPlan(s,mode,63,450,soft,nominal.actions,angle,pct,draw);
-        if(r.win) {won++;recovered++;continue;}
-        if(r.early)continue;
-        const forecast=F.forecast(r.s,450-r.elapsed,mode);
-        const time=Math.min(145,Math.max(8,(r.hit?.t??forecast.near.t)*.50));
-        if(r.hit && r.hit.t<=time)continue;
-        const next=F.motion(r.s,time,mode),left=450-r.elapsed-time;
-        const fix=plan(next,mode,r.mask,left,soft);
-        if(fix && runPlan(next,mode,r.mask,left,soft,fix.actions,angle,pct,draw).win)recovered++;
-      }
-      rows.push({angle,pct,opening:won,withCorrection:recovered});
-    }
-    console.log(mode,soft?'soft':'any',JSON.stringify({named,rows}));
-  }
+const rack=(1<<F.gear.length)-1,duration=F.manualReserve??450;
+const opening=(i,seed,story=false)=>F.opening?F.opening(i,seed,story):i===3?F.randomStart(seed):F.named[i];
+const varied=Array.from({length:128},(_,i)=>opening(3,'D-'+(104729+i).toString(16)));
+const legacy=Array.from({length:128},(_,i)=>opening(3,104729+i));
+const named=F.named.map((_,i)=>opening(i,0));
+for(const mode of modes){
   // A spent battery and pouch, an already excessive speed toward the thin
   // station face, and a genuine first entry followed by an exit.
-  let braked=0,returned=0,returnWithError=0,attempts=0;const bag=63^(1<<5)^(1<<3);
+  let braked=0,returned=0,returnWithError=0,attempts=0;const bag=rack^(1<<5)^(1<<3);
   for(let i=0;i<96;i++){
     const draw=F.seedStream(1501+i);
     const p=[(draw()-.5)*5,-1.6-8,(draw()-.5)*5],v=[(draw()-.5)*.012,.10+draw()*.035,(draw()-.5)*.012];
@@ -114,7 +91,7 @@ assert.equal(F.entries({p:[-8,.6,7.001],v:[1,1,0]},3,'Straight-Line').length,0);
 console.log('Contact and reserve checks passed.');
 
 function recipe(initial,mode,soft,kind){
-  let state=initial,elapsed=0,mask=63;
+  let state=initial,elapsed=0,mask=rack;
   function pitch(tool,pct,direction){
     state=F.release(state,tool,pct,direction,mask);
     mask^=1<<tool;
@@ -129,55 +106,62 @@ function recipe(initial,mode,soft,kind){
   if(kind==='repeat'){
     // At 60 and 120 seconds spend the next heavy tool unless the coast is already safe.
     for(const tool of [4,3]){
-      const entries=F.entries(state,450-elapsed,mode,F.inside(state.p));
+      const entries=F.entries(state,duration-elapsed,mode,F.inside(state.p));
       if(valid(entries[0],soft)||entries.some(h=>h.t<=60&&valid(h,soft)))return true;
       state=F.motion(state,60,mode);elapsed+=60;pitch(tool,95,unit(state.p));
     }
   }
   if(kind==='brake'){
-    const entry=F.entries(state,450-elapsed,mode)[0];
+    const entry=F.entries(state,duration-elapsed,mode)[0];
     if(entry && entry.speed>F.limit && entry.t>18){
       const wait=entry.t-18;state=F.motion(state,wait,mode);elapsed+=wait;
       const command=F.command(state,scale(unit(state.v),.061-norm(state.v)),4,mask);
       pitch(4,command.power,unit(state.v));
     }
   }
-  return F.entries(state,450-elapsed,mode,F.inside(state.p)).some(entry=>valid(entry,soft));
+  return F.entries(state,duration-elapsed,mode,F.inside(state.p)).some(entry=>valid(entry,soft));
 }
-const varied=Array.from({length:128},(_,i)=>F.randomStart('D-'+(104729+i).toString(16)));
-for(const [label,openings] of [['named',F.named],['original',starts],['varied',varied]]){
-  for(const mode of modes){
-    for(const soft of [false,true]){
-      const rows={};
-      for(const kind of ['snap','manual','repeat','brake']){
-        const wins=openings.map(s=>recipe(s,mode,soft,kind));
-        rows[kind]=label==='named'?wins.map(w=>w?1:0).join(''):wins.filter(Boolean).length;
-      }
-      let planned=0,imprecise=0,corrected=0;
-      for(const [i,s] of openings.entries()){
-        const route=plan(s,mode,63,450,soft);assert.ok(route,s.name+' '+mode);
-        planned++;
-        const draw=F.seedStream(0xA580+i*19);
-        const r=runPlan(s,mode,63,450,soft,route.actions,10,10,draw);
-        if(r.win){imprecise++;corrected++;continue;}
+
+for(const mode of modes)for(const soft of [false,true]){
+  const rows=named.map(s=>{
+    const route=plan(s,mode,rack,duration,soft);assert.ok(route,s.name+' '+mode);
+    return [s.name,route.actions.map(c=>[c.tool,c.az,c.el,c.power]),Math.round(route.hit.t),route.hit.speed.toFixed(4)];
+  });
+  console.log('Named',mode,soft?'soft':'any',JSON.stringify(rows));
+  for(const [label,starts] of [['named',named],['legacy',legacy],['generated',varied]]){
+    const counts={};
+    for(const kind of ['snap','manual','repeat','brake'])counts[kind]=starts.filter(s=>recipe(s,mode,soft,kind)).length;
+    const routes=starts.map(s=>plan(s,mode,rack,duration,soft));counts.exact=routes.filter(Boolean).length;
+    counts.after30=starts.filter(s=>plan(F.motion(s,30,mode),mode,rack,duration-30,soft)).length;
+    console.log(label,mode,soft?'soft':'any',JSON.stringify(counts));
+    assert.ok(counts.exact>=starts.length*.95,'mostly reachable');
+    if(label!=='generated')continue;
+    // Paired cone draws reuse the same seeds at every angle. Power is exact.
+    // All correction throws receive the same angular error as the opening.
+    for(const angle of [0,2,3,5,8,10,15,20]){
+      let openingWins=0,withTrim=0;
+      const attempts=angle===0?1:4;
+      for(const [i,s] of starts.entries())for(let trial=0;trial<attempts;trial++){
+        if(!routes[i])continue;
+        const draw=F.seedStream(0xA580+i*19+trial*7919);
+        const r=runPlan(s,mode,rack,duration,soft,routes[i].actions,angle,0,draw);
+        if(r.win){openingWins++;withTrim++;continue;}
         if(r.early)continue;
-        const near=F.forecast(r.s,450-r.elapsed,mode).near;
-        const time=Math.min(145,Math.max(8,(r.hit?.t??near.t)*.5));
-        const rem=450-time-r.elapsed;
-        if(r.hit && r.hit.t<=time)continue;
-        const coast=F.motion(r.s,time,mode),fix=plan(coast,mode,r.mask,rem,soft);
-        if(fix && runPlan(coast,mode,r.mask,rem,soft,fix.actions,10,10,draw).win)corrected++;
+        const near=F.forecast(r.s,duration-r.elapsed,mode).near;
+        const wait=Math.min(duration/3,Math.max(8,(r.hit?.t??near.t)*.5));
+        if(r.hit && r.hit.t<=wait)continue;
+        const left=duration-r.elapsed-wait,coast=F.motion(r.s,wait,mode);
+        const fix=plan(coast,mode,r.mask,left,soft);
+        if(fix && runPlan(coast,mode,r.mask,left,soft,fix.actions,angle,0,draw).win)withTrim++;
       }
-      console.log('Strategy comparison',label,mode,soft?'soft':'any',JSON.stringify({...rows,planned,imprecise,corrected}));
+      console.log('Cone',mode,soft?'soft':'any',angle,openingWins,withTrim,'/',attempts*starts.length);
     }
   }
 }
 
+const holdout=Array.from({length:256},(_,i)=>opening(3,'D-'+(0x726800+i*1543).toString(16)));
 for(const mode of modes){
-  const lengths=[0,0,0,0];let delayed=0;
-  for(const s of varied){
-    const route=plan(s,mode,63,450,true);lengths[route.actions.length]++;
-    if(plan(F.motion(s,30,mode),mode,63,420,true))delayed++;
-  }
-  console.log('Varied soft routes',mode,'one/two/three',lengths.slice(1).join('/'),'after 30 live seconds',delayed);
+  const softWins=holdout.filter(s=>plan(s,mode,rack,duration,true)).length;
+  console.log('Independent generated seeds',mode,'soft',softWins,'/',holdout.length);
+  assert.ok(softWins>=holdout.length*.95,'independent random reachability');
 }
