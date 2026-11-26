@@ -2,7 +2,9 @@
 
 You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan back within reach of the station’s grab bars.
 
-[Play Fastball 3D in your browser](https://avaninet.github.io/fastball-3d/)
+[Play Fastball 3D v0.4 in your browser](https://avaninet.github.io/fastball-3d/) · [Download the standalone v0.4 game](https://raw.githubusercontent.com/avaninet/fastball-3d/v0.4/index.html)
+
+**New in v0.4.** Dodgeball Challenge puts a loose service cover and a bent frame across your route home. Random Dodgeball offers 4,096 replayable variations. High-speed Orbital approaches now register at the grab bars, and First rescue can guide you home after a wrong-way opening pitch.
 
 Fastball 3D is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. **Do not try this on orbit.**
 
@@ -29,7 +31,7 @@ The crew would like their drill back. It’s the only one aboard until resupply,
 1. For a manual flight, leave **Tether separation**, **Straight-Line** and the default any-speed grab selected. **Begin flight** starts the clock and unlocks aiming. For a guided pitch with time to line up, choose **First rescue** in the header instead.
 2. Turn the forward visor, choose a tool from the rack, set the power and press **Throw**. Turning your head only changes where the next tool will go. Your existing drift carries on.
 3. Read **Current coast** after each throw. **Contact in** means your present path reaches the bars. You can keep the tools you have left and advance the clock. **Miss by** gives the clearance at the nearest pass and a direction for a correction. Try a light tool while the pass is still ahead.
-4. Reach any part of the outlined **14 × 3.2 × 14 m** volume (X × Y × Z, with the thin side along track), including the gaps between panels. The grab happens automatically. You have **10:00** in every mode. In manual flight, after your last throw a miss or an unavoidable overspeed ends the flight at release. Both visors fade to **GAME OVER**, then the debrief explains why. In Orbital, even a fast entry can still lead to a soft grab if you slow enough inside the bars. Let that coast play out.
+4. Reach any part of the outlined **14 × 3.2 × 14 m** volume (X × Y × Z, with the thin side along track), including the gaps between panels. The grab happens automatically. You have **10:00** in every mode. In manual flight, after your last throw a miss or an unavoidable overspeed ends the flight at release. If a debris collision is forecast, the clock runs to impact. Both visors fade to **GAME OVER**, then the debrief explains why. In Orbital, even a fast entry can still lead to a soft grab if you slow enough inside the bars. Let that coast play out.
 
 ## Choose the challenge
 
@@ -45,7 +47,9 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 | Random Dodgeball | A DB1 seed selects one of 4,096 qualified cover and frame trajectories. Use either flight model, capture rule or inventory mode. |
 | Straight-Line / Orbital | In Straight-Line, velocity stays constant between throws. In Orbital, the path can bend relative to the orbiting station. Watch the committed coast. |
 | Require a soft capture | Off by default. Turn it on to require **0.080 m/s or slower** within the bars. A fast entry carries you through. You can still brake inside the volume or come back around. |
-| Story flight | Unlimited auto-reloading tools and a closer opening with **Face station**, **Face away** and **Face drift**. Line up before the clock starts or while paused. **Throw** starts or resumes flight at 1×. |
+| Story flight | Unlimited auto-reloading tools with **Face station**, **Face away** and **Face drift**. Drift scenarios start closer to the bars. Both Dodgeball modes keep the same starting geometry in Story and manual flight. Line up before the clock starts or while paused. **Throw** starts or resumes flight at 1×. |
+
+**Flying around debris.** The amber box marks the piece on your collision course. The blue cross shows where your suit would hit it. Switch on **Preview throw** to see whether a pitch clears the box. **Dodgeball Coach** suggests a tool and bearing during a warning, and fast-forward drops to 1× with up to 65 seconds to react. [How the Random Dodgeball openings were tested](reference/random-dodgeball-study.md)
 
 **First rescue** is the optional walkthrough with exact pitches. It stages a first throw, pauses for a halfway course check, then offers an oblique miss, a braking lesson and an Orbital comparison. Only **First rescue** pauses automatically for a course check. In later lessons you can choose when to stage a correction. If the first battery goes toward the station, **Line up correction** stages a full-power battery to counter the outward drift. Throw it, then line up the return pitch. **Skip guidance** gives you manual control with the nine tools currently aboard. Each can then be thrown once. A flight that starts in the lesson is scored as assisted even if you skip before the first throw. Compare throw count and speed on that flight. **Retry** after skipping starts the standard manual opening with a full rack and a fresh clock. Replay the lesson anytime from **Guide**.
 

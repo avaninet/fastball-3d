@@ -1,12 +1,12 @@
-# Fastball 3D v0.4 · Local flight review
+# Fastball 3D v0.4 · Flight review
 
 [Play the standalone build](index.html) · [Example Orbital flight log](reference/orbital-flight-log.png)
 
-Every flight gives Tommi ten minutes of oxygen. Manual flights allow nine throws. Story tools reload immediately at constant suit and gear mass. The extra tools raise the full-rack velocity-change budget from 0.329 to 0.456 m/s. A player can spend a light tool to trim a miss or keep a second substantial impulse for a return. Story uses the shorter teaching separations.
+Every flight gives Tommi ten minutes of oxygen. Manual flights allow nine throws. Story tools reload immediately at constant suit and gear mass. The extra tools raise the full-rack velocity-change budget from 0.329 to 0.456 m/s. A player can spend a light tool to trim a miss or keep a second substantial impulse for a return. Story uses shorter separations in the drift scenarios. Each Dodgeball opening uses the same geometry in manual and Story flight.
 
 ## November 26 audit follow-up
 
-The review used v0.2 commit `1089b69`. The v0.3 checkout already included the compact cockpit, assisted scoring after Skip guidance, keyboard-layout support, capped replay input, accessibility labels, CSP hashes and pinned CI actions. Version 0.4 builds on the local Dodgeball release `54318bf`.
+The review used v0.2 commit `1089b69`. The v0.3 checkout already included the compact cockpit, assisted scoring after Skip guidance, keyboard-layout support, capped replay input, accessibility labels, CSP hashes and pinned CI actions. Version 0.4 builds on the Dodgeball commit `54318bf`.
 
 A 35-throw Story approach now forecasts and records the same high-speed Orbital capture. In First rescue, throwing the first battery toward the station leads to a staged full-power recovery and a second correction that reaches the bars. Turning, selecting a tool or changing power updates the lesson cue. Completed flights show the outcome. Wide separation and the coast readout now agree about which way the suit is drifting.
 
@@ -86,4 +86,4 @@ There are 81 browser checks per viewport. New coverage reproduces the 35-battery
 
 The balance harness checks the first crossing on all six faces at 1.5, 3, 8 and 12 m/s with both grab rules. The Dodgeball suite checks debris collisions and routes home. The station check verifies all 28 parts and their mounting faces. The browser suite exercises GPU and software Earth projection, camera occlusion and the released-tool sprites. Native browser coverage includes Space activation, clipboard fallback and PNG export. The flight log and share-card examples were recaptured from the four-release, soft-capture Orbital flight on seed D-00019919.
 
-Windows Chrome 158 passed the full suite at all four viewports with the native font stack and again with embedded DejaVu Sans and DejaVu Sans Mono. Native Chrome input checks also covered mouse focus, a single Enter release, slider arrows and checkbox Space. Clipboard fallback and flight-card PNG export passed. Hosted CI and physical-device testing remain open.
+Windows Chrome 158 passed the full suite at all four viewports with the native font stack and again with embedded DejaVu Sans and DejaVu Sans Mono. Native Chrome input checks also covered mouse focus, a single Enter release, slider arrows and checkbox Space. Clipboard fallback and flight-card PNG export passed. Physical-device testing remains open. [GitHub Actions checks](https://github.com/avaninet/fastball-3d/actions/workflows/check.yml)
