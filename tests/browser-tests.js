@@ -135,8 +135,17 @@
       eq(alpha(style.backgroundColor)>0&&alpha(style.backgroundColor)<.8,selector+' transmits visor light');
       eq(alpha(style.borderLeftColor)<1&&style.opacity==='1',selector+' has a translucent edge and solid contents');
     }
+    const released=el('tool'+selected);
     click('throw');
-    for(const node of [el('oxygen'),el('advice'),el('throw'),document.querySelector('.tool.spent small')]){
+    const faded=Number(getComputedStyle(released).opacity);
+    eq(released.disabled&&released.querySelector('small').textContent==='Released'&&faded>0&&faded<1,'released slot and its contents fade together');
+    keys('p');
+    eq(Number(getComputedStyle(released).opacity)===faded,'spent slot stays faded while paused');
+    for(const slot of document.querySelectorAll('.tool:not(.spent)')){
+      eq(slot.disabled&&getComputedStyle(slot).opacity==='1','paused inventory stays at full opacity');
+    }
+    keys('p');
+    for(const node of [el('oxygen'),el('advice'),el('throw'),el('tool'+selected)]){
       eq(getComputedStyle(node).opacity==='1'&&alpha(getComputedStyle(node).color)===1,'solid control or label');
     }
     if(visorBackdrop.clientHeight){
