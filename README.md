@@ -4,13 +4,15 @@ You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan ba
 
 **To play offline**, download `index.html` and open it in your browser. The game, cameras and artwork are all in that file. [Game file](index.html)
 
-**The tool goes through the forward crosshair. You recoil the other way.** On **Tether separation**, face away from the station before you throw. The tool will leave the forward visor and you can watch for the station in the aft camera. **Current coast**, just below that camera, tells you whether you’ll reach the bars. If it says “Aim up and right,” that’s where to throw the *tool*. The recoil nudges your suit down and left relative to the same view.
+**The tool goes through the forward crosshair. You recoil the other way.** On **Tether separation**, face away from the station before you throw. The tool will leave the forward visor and you can watch for the station in the aft camera. In the flight instruments, **Current coast** tells you whether you’ll reach the bars. If it says “Aim up and right,” that’s where to throw the *tool*. The recoil nudges your suit down and left relative to the same view.
 
 ## The service call
 
 Private space contractor BOREX designed its first spacesuit for the people who would maintain fleets of commercial datacenter satellites. The lightweight suit gave a technician more freedom to maneuver, and its automatic return system was supposed to bring them home if they came loose. On the first outing, mission specialist Capt. Tommi Dylan (she/they) is making the orbital equivalent of a service call to cold-reboot an inference server. Yes, it takes all nine tools.
 
-Then the tether parts. The thruster valves stick closed. An astronaut drifting away without a tether or working emergency thrusters is presumed lost. Station commander Julian Bern can still see her radar track. Tommi can still put a hand on the wrench pouch. Newton’s third law gives her one last option. Fling a wrench as hard as she can out into space and the wrench pushes her back.
+The tether parts. The thruster valves stick closed. An astronaut drifting away without a tether or working emergency thrusters is presumed lost. Station commander Julian Bern can still see her radar track. Tommi can still put a hand on the wrench pouch. Newton’s third law gives her one last option. Fling a wrench as hard as she can out into space and the wrench pushes her back.
+
+It’s the night of the new moon. From here in Earth’s shadow, the planet hides both Sun and Moon. A few stars hang above the dark curve of Earth. Ten minutes of air. The station a little farther away with every second. Tommi looks down the throat of death and decides she’s going to pitch her way home.
 
 Tommi broke Mach 10 in the classified SR-73, but the habit that comes back to her now is older than that. She was a high-school star pitcher. She still plays Saturdays with her friends, sometimes against a team from the next town. She fits her fingers around the handle as if it had seams, loosens them, then takes her grip again. On a dusty field in the bright sun, that’s the moment the crowd goes quiet for her. Out here the silence gives her a little room to breathe. She’ll need it.
 
@@ -19,7 +21,7 @@ The crew would like their drill back. It’s the only one aboard until resupply,
 ## Fly a first rescue
 
 1. For a manual flight, leave **Tether separation**, **Straight-Line** and the default any-speed grab selected. **Begin flight** starts the clock and unlocks aiming. For a guided pitch with time to line up, choose **First rescue** in the header instead.
-2. Turn the forward visor, choose a tool beneath it, set the power and press **Throw**. Turning your head only changes where the next tool will go. Your existing drift carries on.
+2. Turn the forward visor, choose a tool from the rack, set the power and press **Throw**. Turning your head only changes where the next tool will go. Your existing drift carries on.
 3. Read **Current coast** after each throw. **Contact in** means your present path reaches the bars. You can keep the tools you have left and advance the clock. **Miss by** gives the clearance at the nearest pass and a direction for a correction. Try a light tool while the pass is still ahead.
 4. Reach any part of the outlined **14 × 14 × 3.2 m** volume, including the gaps between panels. The grab happens automatically. You have **10:00** in every mode. After your last throw, a miss or an unavoidable overspeed ends the flight at release. Both visors fade to **GAME OVER**, then the debrief explains why. In Orbital, even a fast entry can still lead to a soft grab if you slow enough inside the bars. Let that coast play out.
 

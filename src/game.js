@@ -108,7 +108,6 @@ function updateRack() {
   }
   el('budget').textContent=Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
   el('throw').disabled=selected<0||!canPitch();el('power').disabled=selected<0||!canPitch();
-  el('throwText').textContent=selected<0?'Rack empty':(flight.story&&!running?'Throw & fly · ':'Throw ')+Flight.gear[selected].name.toLowerCase();
   el('powerValue').textContent=power+'%';
   el('impulseInfo').textContent=selected<0?'No equipment remaining':weightClass(Flight.gear[selected])+' · '+(Flight.impulse(selected,flight.mask)*power/100).toFixed(3)+' m/s recoil';
 }

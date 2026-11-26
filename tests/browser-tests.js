@@ -92,14 +92,24 @@
     const f=visor.getBoundingClientRect(),a=aft.closest('.aftPod').getBoundingClientRect();
     eq(f.width>=innerWidth*.92,'visor spans the cockpit');
     eq(a.top>=f.top&&a.right<=f.right&&a.bottom<=f.bottom,'aft feed contained by visor');
-    eq(a.top-f.top<f.height*.12&&f.right-a.right<f.width*.07&&a.width<=f.width*.34,'small upper-right picture in picture');
+    close(a.top,f.top,1);close(a.right,f.right,1);
+    eq(a.width<=f.width*.35,'compact aft picture in picture');
     for(const [dx,dy] of [[0,0],[-18,0],[18,0],[0,-18],[0,18]]){
       eq(document.elementFromPoint(f.x+f.width/2+dx,f.y+f.height/2+dy)===visor,'reticle receives aim input');
     }
     const slots=[...el('tools').children].map(tool=>tool.getBoundingClientRect());
     eq(new Set(slots.map(s=>s.left)).size===3&&new Set(slots.map(s=>s.top)).size===3,'3 × 3 rack');
+    const sidebar=el('coast').closest('.metrics'),rack=el('tools').closest('.pitchPod').getBoundingClientRect();
+    const side=sidebar.getBoundingClientRect();
+    eq(side.right<=rack.left+1&&sidebar.contains(el('oxygen'))&&sidebar.contains(el('velX')),'unified instruments to the left of rack');
     if(innerWidth>=741){
-      eq(slots[0].x<f.x+f.width*.12&&slots.at(-1).bottom<=f.bottom,'lower-left rack inside visor');
+      eq(rack.right>f.right-f.width*.07&&rack.bottom<=f.bottom&&rack.top>=a.bottom,'lower-right rack clears aft feed');
+      eq(side.top-f.top<f.height*.12&&side.left-f.left<f.width*.07&&side.height>side.width,'tall upper-left instrument sidebar');
+    }
+    const button=el('throw'),size=button.getBoundingClientRect();
+    for(const tool of rackOrder){
+      click('tool'+tool);eq(button.textContent==='Throw','constant release label');
+      close(button.getBoundingClientRect().width,size.width);close(button.getBoundingClientRect().height,size.height);
     }
     for(const canvas of [visor,aft]){
       Visor.render(canvas,yaw,pitch,flight,canvas===aft);
@@ -107,6 +117,37 @@
       const pixels=ctx.getImageData(Math.round(canvas.width/2+5*ratio),Math.floor(canvas.height/2-2*ratio),Math.ceil(3*ratio),Math.ceil(4*ratio)).data;
       eq(pixels.some((v,i)=>i%4===0&&v<160&&pixels[i+1]>195&&pixels[i+2]>200),'bright cyan aiming mark in '+canvas.id);
     }
+  });
+  test('Stars follow visor bearings, drift with the orbital frame and disappear behind Earth',()=>{
+    const canvas=document.createElement('canvas');
+    canvas.style.cssText='position:fixed;left:-1000px;width:640px;height:320px';
+    document.body.append(canvas);
+    try{
+      const ctx=canvas.getContext('2d'),paint=ctx.fillRect.bind(ctx);
+      let points;
+      ctx.fillRect=(x,y,w,h)=>{
+        if(w===h&&w>0&&w<1.5)points.set(w,[x+w/2,y+h/2]);
+        paint(x,y,w,h);
+      };
+      function look(az,el,time=0,small=false,dragging=false){
+        points=new Map();
+        Visor.render(canvas,az,el,{...flight,mode:'Orbital',time,dragging,objects:[]},small);
+        return points;
+      }
+      for(const small of [false,true]){
+        const initial=look(0,0,0,small),dragged=look(8,5,0,small,true);
+        eq(initial.size>8&&initial.size<160,'sparse sky');
+        const [size,xy]=[...initial].find(([key])=>dragged.has(key));
+        const camera=Visor.camera([0,0,0],0,0,640,320,small);
+        const ray=Flight.add(camera.forward,Flight.add(scale(camera.right,(xy[0]-320)/camera.f),scale(camera.up,(160-xy[1])/camera.f)));
+        const turned=Visor.camera([0,0,0],8,5,640,320,small);
+        const expected=turned.screen(turned.local(ray));
+        dragged.get(size).forEach((v,i)=>close(v,expected[i]));
+        const orbital=look(-60*Flight.n/Flight.rad,0,60,small);
+        orbital.get(size).forEach((v,i)=>close(v,xy[i]));
+        eq(look(180,0,0,small).size===0,'Earth occludes the starfield');
+      }
+    }finally{canvas.remove();}
   });
   test('Cockpit rectangles, hit targets and keyboard focus',()=>{
     configure(0,'Straight-Line');scrollTo(0,0);
@@ -143,12 +184,18 @@
         const root=document.documentElement;
         eq(innerWidth===w&&root.scrollWidth<=innerWidth,'layout width at '+w+' actual '+root.scrollWidth);
         for(const b of document.querySelectorAll('.headerActions button'))eq(b.getBoundingClientRect().right<=root.clientWidth,'visible header button '+w);
+        for(const unit of document.querySelectorAll('.metric small')){
+          eq(textRect(unit).right<=unit.closest('.metric').getBoundingClientRect().right+1,'unit fits its reading at '+w);
+        }
         if(w===768||w===1024){
           for(const n of document.querySelectorAll('.tool b,.tool small')){
             eq(n.scrollWidth<=n.clientWidth+1&&textRect(n).right<=n.closest('button').getBoundingClientRect().right,'complete '+n.textContent+' at '+w);
           }
-          const values=[...document.querySelectorAll('.velocity dd')].map(n=>n.getBoundingClientRect().top);
-          eq(Math.max(...values)-Math.min(...values)<1,'aligned velocity values');
+          const values=[...document.querySelectorAll('.velocity dd')].map(n=>n.getBoundingClientRect());
+          for(const [i,value] of values.entries()){
+            close(value.right,values[0].right,1);
+            if(i)eq(value.top>=values[i-1].bottom,'separate velocity rows');
+          }
           click('tool0');click('throw');const released=el('tool0').querySelector('small');
           eq(released.textContent==='Released'&&released.scrollWidth<=released.clientWidth,'released label');
         }

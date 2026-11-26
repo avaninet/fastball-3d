@@ -65,11 +65,14 @@ const Visor = (() => {
   }
   moduleZ(-4.65,-1.62,.74);moduleZ(-1.5,1.54,1.15);moduleZ(1.65,4.5,.82);
   moduleZ(4.55,5.75,.53);box(0,-1.24,.28,1.13,.5,.86,['#f0d69f','#d5b171','#8a7350']);
-  const stars=[],rng=Flight.seedStream(8180);
-  for(let i=0;i<1250;i++){
-    const z=rng()*2-1,a=rng()*Math.PI*2,r=Math.sqrt(1-z*z),v=[r*Math.cos(a),r*Math.sin(a),z];
-    if(v[0]>-.39)stars.push({v,b:rng()>.86?1.4:.68,c:rng()>.68?'#a2b7bf':'#5e7786'});
-  }
+  const limbAngle=66,limbX=-Math.cos(limbAngle*rad);
+  const starRandom=Flight.seedStream(8180);
+  const stars=Array.from({length:1500},()=>{
+    const z=2*starRandom()-1,azimuth=2*Math.PI*starRandom(),radius=Math.sqrt(1-z*z);
+    const brightness=starRandom();
+    return {x:radius*Math.cos(azimuth),y:radius*Math.sin(azimuth),z,brightness,
+      size:.95+.48*brightness,color:brightness>.94?'#a2b8c3':brightness>.72?'#768c99':'#586c79'};
+  });
   const half=Flight.half,edges=[];
   for(let axis=0;axis<3;axis++)for(const j of [-1,1])for(const k of [-1,1]){
     const a=[0,0,0],b=[0,0,0];a[axis]=-half[axis];b[axis]=half[axis];
@@ -101,7 +104,7 @@ const Visor = (() => {
           // A periodic reflection joins the two ends of the original horizon photograph.
           const tx=Math.min(atlas.w-1,Math.floor(Math.abs(2*u-1)*atlas.w));
           const limb=104+65*((tx/atlas.w-.5)*2)**2;
-          const ty=limb+(66-polar)*6.3;
+          const ty=limb+(limbAngle-polar)*6.3;
           if(ty>=0){
             const idx=4*(tx+atlas.w*clamp(Math.floor(ty),0,atlas.h-1)),blend=clamp(ty/36,0,1),fade=clamp((atlas.h-ty)/52,0,1);
             R+=(atlas.data[idx]*fade+3-R)*blend;G+=(atlas.data[idx+1]*fade+9-G)*blend;B+=(atlas.data[idx+2]*fade+14-B)*blend;
@@ -218,7 +221,7 @@ const Visor = (() => {
       if(small)return;
       const rect=canvas.getBoundingClientRect();
       const top=document.elementFromPoint(rect.left+xy[0],rect.top+xy[1]);
-      if(!top?.closest('.pitchPod,.metrics,.aftPod,.navPod,.lesson,.bearingReadout'))return;
+      if(!top?.closest('.pitchPod,.metrics,.aftPod,.lesson,.bearingReadout'))return;
     }
     let x=q[0],y=-q[1];if(Math.hypot(x,y)<.001){x=0;y=-1;}
     const len=Math.hypot(x,y);x/=len;y/=len;
@@ -228,6 +231,22 @@ const Visor = (() => {
     ctx.save();ctx.translate(ex,ey);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-5,-4);ctx.lineTo(-5,4);ctx.closePath();ctx.fillStyle='#a7dcc0';ctx.fill();ctx.restore();
     label(ctx,clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),'STN','#dcffe9','center');
   }
+  function drawStars(ctx,cam,w,h,state){
+    // Inertial bearings rotate into the station frame as it follows its orbit.
+    const angle=state.mode==='Orbital'?-Flight.n*state.time:0,c=Math.cos(angle),s=Math.sin(angle);
+    const cutoff=1-clamp(w*h/320000,.20,1);
+    for(const star of stars){
+      if(star.brightness<cutoff)continue;
+      const x=c*star.x-s*star.y,y=s*star.x+c*star.y;
+      if(x<=limbX)continue;
+      const q=cam.local([x,y,star.z]);
+      if(q[2]<=0)continue;
+      const [px,py]=cam.screen(q);
+      if(px<0||px>=w||py<0||py>=h)continue;
+      ctx.fillStyle=star.color;
+      ctx.fillRect(px-star.size/2,py-star.size/2,star.size,star.size);
+    }
+  }
   function render(canvas,az,el,state,small=false) {
     const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
     const ratio=Math.min(window.devicePixelRatio||1,1.75);
@@ -235,7 +254,7 @@ const Visor = (() => {
     const ctx=canvas.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
     const cam=camera(state.pos.p,az,el,w,h,small);
     background(canvas,ctx,w,h,cam,!!(state.dragging||state.keyAiming));
-    for(const s of stars){const q=cam.local(s.v);if(q[2]<.2)continue;const [x,y]=cam.screen(q);if(x<0||x>w||y<0||y>h)continue;ctx.fillStyle=s.c;ctx.fillRect(x,y,s.b,s.b);}
+    drawStars(ctx,cam,w,h,state);
     station(ctx,cam);course(ctx,cam,state,small,w,h);
     for(const obj of state.objects){
       const where=Flight.motion(obj.start,state.time-obj.time,state.mode).p,q=cam.world(where);if(q[2]<near)continue;
