@@ -123,6 +123,35 @@
       eq(pixels.some((v,i)=>i%4===0&&v<160&&pixels[i+1]>195&&pixels[i+2]>200),'bright cyan aiming mark in '+canvas.id);
     }
   });
+  test('Instrument glass reveals the live scene while text and controls keep their opacity',()=>{
+    configure(0,'Straight-Line');
+    const pigment=document.createElement('canvas').getContext('2d',{willReadFrequently:true});
+    function alpha(color){
+      pigment.clearRect(0,0,1,1);pigment.fillStyle=color;pigment.fillRect(0,0,1,1);
+      return pigment.getImageData(0,0,1,1).data[3]/255;
+    }
+    for(const selector of ['.metrics','.pitchPod','.tool[aria-pressed="false"]','.tool[aria-pressed="true"]']){
+      const style=getComputedStyle(document.querySelector(selector));
+      eq(alpha(style.backgroundColor)>0&&alpha(style.backgroundColor)<.8,selector+' transmits visor light');
+      eq(alpha(style.borderLeftColor)<1&&style.opacity==='1',selector+' has a translucent edge and solid contents');
+    }
+    click('throw');
+    for(const node of [el('oxygen'),el('advice'),el('throw'),document.querySelector('.tool.spent small')]){
+      eq(getComputedStyle(node).opacity==='1'&&alpha(getComputedStyle(node).color)===1,'solid control or label');
+    }
+    if(visorBackdrop.clientHeight){
+      const glass=visorBackdrop.getBoundingClientRect(),rack=el('tools').getBoundingClientRect();
+      function sample(azimuth){
+        Visor.render(visor,azimuth,0,flight,false,visorBackdrop);
+        const ratio=visorBackdrop.width/glass.width;
+        return visorBackdrop.getContext('2d').getImageData(Math.floor((rack.left-glass.left)*ratio),
+          Math.floor((rack.top-glass.top)*ratio),Math.floor(rack.width*ratio),Math.floor(rack.height*ratio)).data;
+      }
+      eq(visorBackdrop.clientHeight>visor.clientHeight&&rack.top>=visor.getBoundingClientRect().bottom,'rack overlays extended scene');
+      const space=sample(0),earth=sample(180);
+      eq(space.some((v,i)=>Math.abs(v-earth[i])>20),'scene under portrait rack follows the camera');
+    }
+  });
   test('Stars follow visor bearings, drift with the orbital frame and disappear behind Earth',()=>{
     const canvas=document.createElement('canvas');
     canvas.style.cssText='position:fixed;left:-1000px;width:640px;height:320px';

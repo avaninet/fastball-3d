@@ -84,15 +84,15 @@ const Visor = (() => {
     const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,c.width,c.height);
     atlas={w:c.width,h:c.height,data:ctx.getImageData(0,0,c.width,c.height).data};
   }
-  function background(canvas,ctx,w,h,cam,drag) {
-    const {forward,right,up,f}=cam, key=[w,h,cam.az,cam.el,!!atlas,drag].join('/');
+  function background(canvas,ctx,w,h,cam,drag,centerY) {
+    const {forward,right,up,f}=cam, key=[w,h,centerY,cam.az,cam.el,!!atlas,drag].join('/');
     let cache=skyCache.get(canvas);
     if(cache?.key===key){ctx.drawImage(cache.c,0,0,w,h);return;}
     const c=cache?.c||document.createElement('canvas');
     c.width=Math.min(Math.ceil(w),drag?260:550);c.height=Math.max(1,Math.round(c.width*h/w));
     const bc=c.getContext('2d'),im=bc.createImageData(c.width,c.height),data=im.data;
     for(let j=0;j<c.height;j++) {
-      const y=(h/2-(j+.5)*h/c.height)/f;
+      const y=(centerY-(j+.5)*h/c.height)/f;
       const row=add(forward,scale(up,y));
       for(let i=0;i<c.width;i++) {
         const x=((i+.5)*w/c.width-w/2)/f,dx=row[0]+x*right[0],dy=row[1]+x*right[1],dz=row[2]+x*right[2];
@@ -160,8 +160,23 @@ const Visor = (() => {
     for(const [a,b] of edges)for(const k of [0,.94])
       line3(ctx,cam,add(a,scale(sub(b,a),k)),add(a,scale(sub(b,a),k+.06)),'#b6f4c5',1.35);
   }
-  function label(ctx,x,y,text,color,align='left') {
-    ctx.font='600 12px "Segoe UI", Arial, sans-serif';ctx.textAlign=align;ctx.lineWidth=3.5;ctx.strokeStyle='#071018';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);
+  function captions(ctx,canvas,w,small) {
+    const stage=canvas.closest('.hudStage'),view=canvas.getBoundingClientRect();
+    const covers=small||!stage?[]:Array.from(stage.querySelectorAll('.metrics,.pitchPod,.aftPod'),p=>p.getBoundingClientRect());
+    return (x,y,text,color,align='left')=>{
+      ctx.font='600 12px "Segoe UI", Arial, sans-serif';
+      let left=0,right=w;
+      for(const box of covers){
+        if(view.top+y+3<=box.top||view.top+y-12>=box.bottom)continue;
+        if(box.left<=view.left+1)left=Math.max(left,box.right-view.left+3);
+        else right=Math.min(right,box.left-view.left-3);
+      }
+      if(x<left||x>right)return;
+      const width=ctx.measureText(text).width,offset=align==='center'?width/2:0;
+      if(width>right-left)return;
+      x=clamp(x,left+offset,right-width+offset);
+      ctx.textAlign=align;ctx.lineWidth=3.5;ctx.strokeStyle='#071018';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);
+    };
   }
   // Measure from the suit in metres. A coast that curves back toward the
   // viewer should brighten again even though those samples are later in time.
@@ -212,7 +227,7 @@ const Visor = (() => {
     }
     return {heads,visible,behind:dot(state.pos.v,cam.forward)<0};
   }
-  function course(ctx,cam,state,small,w,h) {
+  function course(ctx,cam,state,small,w,h,label) {
     if(!state.time&&!state.throws)return;
     const m=state.forecast,hit=m.hits[state.hitIndex];
     coastPath(ctx,cam,state,hit,small);
@@ -238,10 +253,10 @@ const Visor = (() => {
       const x=clamp(visible[0],halfLabel,w-halfLabel),height=14*(lines.length-1);
       const below=visible[1]+22;
       const y=clamp(below+height<=h-4?below:visible[1]-13-height,13,h-4-height);
-      lines.forEach((s,i)=>label(ctx,x,y+i*14,s,'#b4f7df','center'));
+      lines.forEach((s,i)=>label(x,y+i*14,s,'#b4f7df','center'));
     }else if(!visible && norm(state.pos.v)>1e-7){
       const direction=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
-      label(ctx,w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');
+      label(w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');
     }
     const pass=hit||m.near;
     if(pass.t<state.age-.01)return;
@@ -250,9 +265,9 @@ const Visor = (() => {
     const [x,y]=cam.screen(q);
     ctx.strokeStyle=hit && (!state.soft || Flight.softEnough(hit.speed))?'#97ecc6':'#ffc370';
     ctx.lineWidth=1.6;ctx.strokeRect(x-3.5,y-3.5,7,7);
-    if(!small)label(ctx,x+9,y-6,hit?'CONTACT':'NEAREST PASS',ctx.strokeStyle);
+    if(!small)label(x+9,y-6,hit?'CONTACT':'NEAREST PASS',ctx.strokeStyle);
   }
-  function targetMarker(ctx,cam,canvas,w,h,small) {
+  function targetMarker(ctx,cam,canvas,w,h,small,label) {
     const q=cam.world([0,0,0]),xy=q[2]>near?cam.screen(q):null;
     if(xy && xy[0]>20 && xy[0]<w-20 && xy[1]>24 && xy[1]<h-20){
       if(small)return;
@@ -266,9 +281,9 @@ const Visor = (() => {
     const t=Math.min((w/2-12)/(Math.abs(x)||.0001),(h/2-10)/(Math.abs(y)||.0001),small?Infinity:Math.min(w*.13,h*.19,92));
     const ex=w/2+x*t,ey=h/2+y*t,angle=Math.atan2(y,x);
     ctx.save();ctx.translate(ex,ey);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-5,-4);ctx.lineTo(-5,4);ctx.closePath();ctx.fillStyle='#a7dcc0';ctx.fill();ctx.restore();
-    label(ctx,clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),'STN','#dcffe9','center');
+    label(clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),'STN','#dcffe9','center');
   }
-  function drawStars(ctx,cam,w,h,state){
+  function drawStars(ctx,cam,w,h,state,sceneHeight){
     // Inertial bearings rotate into the station frame as it follows its orbit.
     const angle=state.mode==='Orbital'?-Flight.n*state.time:0,c=Math.cos(angle),s=Math.sin(angle);
     const cutoff=1-clamp(w*h/320000,.20,1);
@@ -279,20 +294,28 @@ const Visor = (() => {
       const q=cam.local([x,y,star.z]);
       if(q[2]<=0)continue;
       const [px,py]=cam.screen(q);
-      if(px<0||px>=w||py<0||py>=h)continue;
+      if(px<0||px>=w||py<0||py>=sceneHeight)continue;
       ctx.fillStyle=star.color;
       ctx.fillRect(px-star.size/2,py-star.size/2,star.size,star.size);
     }
   }
-  function render(canvas,az,el,state,small=false) {
+  function render(canvas,az,el,state,small=false,backdrop=null) {
     const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
     const ratio=Math.min(window.devicePixelRatio||1,1.75);
-    if(canvas.width!==Math.round(w*ratio)||canvas.height!==Math.round(h*ratio)){canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);}
-    const ctx=canvas.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
+    const width=Math.round(w*ratio),height=Math.round(h*ratio);
+    if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+    // On phones the rack sits below the aiming area. Extend the same projection
+    // under it while keeping the reticle, lens and touch coordinates in place.
+    const surface=backdrop?.clientHeight?backdrop:canvas,sceneHeight=surface.clientHeight;
+    if(surface!==canvas&&(surface.width!==width||surface.height!==Math.round(sceneHeight*ratio))){
+      surface.width=width;surface.height=Math.round(sceneHeight*ratio);
+    }
+    const ctx=surface.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
     const cam=camera(state.pos.p,az,el,w,h,small);
-    background(canvas,ctx,w,h,cam,!!(state.dragging||state.keyAiming));
-    drawStars(ctx,cam,w,h,state);
-    station(ctx,cam);course(ctx,cam,state,small,w,h);
+    background(surface,ctx,w,sceneHeight,cam,!!(state.dragging||state.keyAiming),h/2);
+    drawStars(ctx,cam,w,h,state,sceneHeight);
+    const label=captions(ctx,canvas,w,small);
+    station(ctx,cam);course(ctx,cam,state,small,w,h,label);
     for(const obj of state.objects){
       const where=Flight.motion(obj.start,state.time-obj.time,state.mode).p,q=cam.world(where);if(q[2]<near)continue;
       const [x,y]=cam.screen(q),r=clamp(cam.f*.085/q[2],1.8,9);
@@ -304,7 +327,7 @@ const Visor = (() => {
       const [x,y]=cam.screen(drift);
       ctx.strokeStyle='#b0e6cc';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.stroke();
       stroke(ctx,[x-9,y],[x-4,y],'#b0e6cc');stroke(ctx,[x+4,y],[x+9,y],'#b0e6cc');stroke(ctx,[x,y-8],[x,y-4],'#b0e6cc');
-      if(!small && x>15&&x<w-55&&y>30&&y<h-24)label(ctx,x+12,y+4,'DRIFT','#b0e6cc');
+      if(!small && x>15&&x<w-55&&y>30&&y<h-24)label(x+12,y+4,'DRIFT','#b0e6cc');
     }
     if(!small){
       ctx.strokeStyle='#c1d7d530';ctx.lineWidth=.8;
@@ -318,7 +341,12 @@ const Visor = (() => {
     }
     ctx.strokeStyle='#041018';ctx.lineWidth=4;ctx.stroke();
     ctx.strokeStyle='#70faff';ctx.lineWidth=2;ctx.stroke();
-    targetMarker(ctx,cam,canvas,w,h,small);
+    targetMarker(ctx,cam,canvas,w,h,small,label);
+    if(surface!==canvas){
+      const view=canvas.getContext('2d',{alpha:false});
+      view.save();view.resetTransform();
+      view.drawImage(surface,0,0,width,height,0,0,width,height);view.restore();
+    }
   }
   function toolArt(canvas,i) {
     canvas.width=140;canvas.height=58;

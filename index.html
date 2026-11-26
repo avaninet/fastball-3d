@@ -78,6 +78,7 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
   --inset:clamp(10px,1.3vw,24px);
   --hud-surface:rgb(9 19 26 / 91%);
   --hud-line:#51636b;
+  --instrument-line:rgb(182 221 220 / 31%);
   display:flex;flex:1;flex-direction:column;gap:0;min-width:0;
   background:#0b141a;border:1px solid #405058;border-radius:8px;overflow:hidden
 }
@@ -96,6 +97,7 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
   display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto 1fr auto
 }
 .forward{position:absolute;inset:0;height:auto;z-index:0}
+.visorBackdrop{display:none}
 .aftPod,.metrics,.pitchPod,.lesson{
   position:relative;background:var(--hud-surface);border:1px solid var(--hud-line);
   border-radius:5px;color:#f3f7f6;box-shadow:0 3px 14px #0005
@@ -104,7 +106,9 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
 .aftPod .panelTitle{min-height:28px;padding:3px 9px;background:#172529;gap:4px}
 .aftPod .camLabel{font:600 13px var(--sans);gap:6px}.aftPod .cameraMeta{font:12px var(--sans);color:#d7e3e4;letter-spacing:0;text-transform:none}
 .aft{height:auto;aspect-ratio:2.05}
-.metrics{grid-area:1/3/4/4;justify-self:end;align-self:start;z-index:1;display:block;width:clamp(188px,15vw,228px);margin:0;padding:0;min-height:0;border-width:0 0 1px 2px;border-left-color:#94dfc5;border-radius:0 0 0 5px}
+.metrics,.pitchPod{background:rgb(4 13 19 / 62%);border-color:var(--instrument-line);box-shadow:none;text-shadow:0 1px 2px #02070b,0 0 3px #02070b}
+.metrics{--green:#bbefd6;--gold:#ffdb9a;--red:#ffc7b9}
+.metrics{grid-area:1/3/4/4;justify-self:end;align-self:start;z-index:1;display:block;width:clamp(188px,15vw,228px);margin:0;padding:0;min-height:0;border-width:0 0 1px 1px;border-radius:0 0 0 5px}
 .metricStrip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px}
 .metric{padding:0;border:0}.metric.clock{order:-1}
 .metric .caption{display:block;font:600 13px/1.2 var(--sans);color:#d8e6e8}
@@ -117,27 +121,28 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
 .rack{padding:9px}.rack .heading,.throwPanel .heading{margin:0 0 6px;gap:4px}
 .rack .heading span,.impulseInfo{font:12px/1.25 var(--sans);color:#d6e3e6}
 .tools{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
-.tool{display:grid;align-content:center;min-height:45px;padding:4px 4px 4px clamp(22px,1.8vw,32px);background:#13212a;border-color:#43525b}
+.tool{display:grid;align-content:center;min-height:45px;padding:4px 4px 4px clamp(22px,1.8vw,32px);background:rgb(14 31 39 / 22%);border-color:var(--instrument-line);text-shadow:inherit}
+.tool:hover:enabled{background:rgb(37 62 69 / 50%);border-color:rgb(182 221 220 / 68%)}
 .tool b,.tool small{white-space:normal;text-overflow:clip;overflow:visible}
 .tool b{font:600 13px/1.12 var(--sans);color:#f1f4f3}
 .tool small{margin-top:2px;font:12px/1.1 var(--sans);color:#d3dfe0}
 .tool canvas{position:absolute;left:1px;bottom:6px;width:clamp(22px,1.8vw,32px);height:20px}
 .tool .hotkey{font:10px/1 var(--mono);color:#c5d2d5;top:4px;left:5px}
-.tool:disabled{opacity:1;cursor:default}.tool.spent{opacity:.58}
-.tool[aria-pressed="true"]{background:#3b3020;border-color:#f8c574}
-.throwPanel{border-top:1px solid #465760;padding:7px 9px 9px;display:grid;grid-template-columns:minmax(0,1fr) 76px;column-gap:9px;align-items:center}
+.tool:disabled{opacity:1;cursor:default}.tool.spent{background:transparent;border-style:dashed}.tool.spent :is(b,small){color:#dbe6e5}
+.tool[aria-pressed="true"],.tool[aria-pressed="true"]:hover:enabled{background:rgb(89 63 29 / 45%);border-color:rgb(248 197 116 / 85%)}
+.throwPanel{border-top:1px solid var(--instrument-line);padding:7px 9px 9px;display:grid;grid-template-columns:minmax(0,1fr) 76px;column-gap:9px;align-items:center}
 .throwPanel .heading{grid-area:1/1;margin:0}.throwPanel h2{font-size:13px}
 .throwPanel #power{grid-area:2/1;margin:0;height:24px}
 .impulseInfo{grid-area:3/1/4/-1}
-#throw{grid-area:1/2/3/3;height:40px;min-height:0;padding:5px 7px;font-size:14px}
-.coastPanel{border-top:1px solid #45575e;padding:10px;gap:5px;min-height:0}.coastTitle{gap:8px}
+#throw{grid-area:1/2/3/3;height:40px;min-height:0;padding:5px 7px;font-size:14px;text-shadow:none}
+.coastPanel{border-top:1px solid var(--instrument-line);padding:10px;gap:5px;min-height:0}.coastTitle{gap:8px}
 .coastPanel p,.lesson p{font:14px/1.35 var(--sans);color:#eef3f3}
 .readout{font-size:clamp(19px,1.55vw,26px);line-height:1.13}
-.driftData{padding-top:5px;border-top:1px solid #45575e;display:flex;justify-content:space-between;gap:4px;flex-wrap:wrap}
+.driftData{padding-top:5px;border-top:1px solid var(--instrument-line);display:flex;justify-content:space-between;gap:4px;flex-wrap:wrap}
 .driftData .micro,.driftData span:last-child{font:12px/1.25 var(--sans);color:#d8e5e7;text-transform:none;letter-spacing:0}
-.velocity{padding:8px 10px;border-top:1px solid #45575e}
+.velocity{padding:8px 10px;border-top:1px solid var(--instrument-line)}
 .velocity dl{display:flex;flex-direction:column;gap:3px}
-.velocity h2{font-size:12px}.velocity h2 small,.velocity dt{font:12px/1.2 var(--sans);color:#ccdade}
+.velocity h2{font-size:12px}.velocity h2 small,.velocity dt{font:12px/1.2 var(--sans);color:#d8e6e8}
 .velocity dd{font:12px/1.25 var(--mono);color:#c5f4e2}
 .velocity dl>div{display:flex;flex-direction:row;justify-content:space-between;align-items:baseline;gap:4px}
 .velocity dd{white-space:nowrap;letter-spacing:-.04em;margin:0}
@@ -170,13 +175,14 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
   .aimControls{order:1;width:100%}.aimBtns{gap:4px}.aimBtns button{min-height:26px;padding:2px 7px}
   .hudStage{container-type:inline-size;--aft-width:min(41cqw,230px);--aft-aspect:2.05;--aft-title:21px;--sidebar-width:37.5%;grid-template-columns:minmax(0,1fr) var(--sidebar-width);grid-template-rows:auto auto auto;min-height:0;flex:none}
   .forward{grid-area:1/1/2/-1;position:relative;inset:auto;height:clamp(185px,28dvh,310px)}
+  .visorBackdrop{position:absolute;inset:0;display:block;z-index:-1;pointer-events:none}
   .aftPod{grid-area:1/1/2/-1;z-index:1;width:var(--aft-width)}.aft{aspect-ratio:var(--aft-aspect)}.aftPod .panelTitle{height:var(--aft-title);min-height:18px;padding:2px 5px}
   .aftPod .camLabel{font-size:12px}.aftPod .cameraMeta{display:none}
   .metrics,.pitchPod,.lesson{position:static;inset:auto;min-width:0;width:100%;margin:0;transform:none;border:0;border-top:1px solid #43545b;border-radius:0;box-shadow:none}
-  .metrics{grid-area:1/2/4/3;align-self:stretch;border-width:0 0 0 1px;border-left:1px solid var(--hud-line)}
+  .metrics{grid-area:1/2/4/3;align-self:stretch;border-width:0 0 0 1px;border-left:1px solid var(--instrument-line)}
   .metricStrip{gap:6px 4px;padding:5px}.metric .caption{font-size:12px}.metric strong,.metric.clock strong{font-size:16px}.metric small,#speedRef{font-size:11px}
   .metric small{display:block;margin:0}
-  .pitchPod{grid-area:3/1;align-self:end}.rack{padding:6px 4px}.rack .heading{align-items:start;flex-direction:column;margin-bottom:5px;gap:1px}
+  .pitchPod{grid-area:3/1;align-self:end;border-color:var(--instrument-line)}.rack{padding:6px 4px}.rack .heading{align-items:start;flex-direction:column;margin-bottom:5px;gap:1px}
   .tools{gap:3px}.tool{min-height:44px;padding:3px}.tool canvas,.tool .hotkey{display:none}
   .tool b{font-size:12px;overflow-wrap:anywhere}.tool small{font-size:11px}
   .throwPanel{padding:5px;grid-template-columns:minmax(0,1fr) 62px;gap:0 6px}#throw{height:38px}
@@ -229,6 +235,7 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
 <div class="clockControls"><button id="pause">Begin flight</button><label class="clockSlider" for="clockRate"><span>Play speed <output id="rateLabel" for="clockRate">1×</output></span><input id="clockRate" type="range" title="Choose 1×, 10×, 20× or 30× play speed" min="0" max="3" step="1" value="0" aria-label="Play speed"><small class="rateStops" aria-hidden="true"><i>1×</i><i>10×</i><i>20×</i><i>30×</i></small></label></div>
 </div></div>
 <div class="hudStage">
+<div class="view visorBackdrop" aria-hidden="true"><canvas id="visorBackdrop"></canvas></div>
 <div class="view forward"><canvas tabindex="0" id="forward" aria-label="Throw direction. Drag or use arrow keys to aim. Shift for fine aim."></canvas><div class="pauseFlag" id="paused" role="status"><span>PAUSED</span><small id="pausedLineup" hidden>Lineup live</small></div><span class="gameOverFlag" aria-hidden="true">GAME OVER</span></div>
 <article class="aftPod"><div class="panelTitle"><h2 class="camLabel"><span class="indicator"></span>Aft camera</h2><span class="cameraMeta">Reverse view</span></div><div class="view aft"><canvas id="aft" aria-label="Unmirrored view opposite the forward visor"></canvas><span class="gameOverFlag" aria-hidden="true">GAME OVER</span></div></article>
 <section class="panel metrics" aria-label="Flight instruments"><div class="metricStrip"><div class="metric"><span class="caption">Bar range</span><strong id="range"></strong><small>m</small></div><div class="metric"><span class="caption" title="Negative means the gap to the grab bars is shrinking">Range rate</span><strong id="rate"></strong><small>m/s</small></div><div class="metric"><span class="caption">Relative speed</span><strong id="speed"></strong><small>m/s</small><div id="speedGauge" role="meter" aria-label="Relative speed" aria-valuemin="0" aria-valuemax="0.12" aria-valuenow="0"><i></i></div><span id="speedRef"></span></div><div class="metric clock"><span class="caption">Oxygen reserve</span><strong id="oxygen"></strong></div></div>
@@ -594,15 +601,15 @@ const Visor = (() => {
     const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,c.width,c.height);
     atlas={w:c.width,h:c.height,data:ctx.getImageData(0,0,c.width,c.height).data};
   }
-  function background(canvas,ctx,w,h,cam,drag) {
-    const {forward,right,up,f}=cam, key=[w,h,cam.az,cam.el,!!atlas,drag].join('/');
+  function background(canvas,ctx,w,h,cam,drag,centerY) {
+    const {forward,right,up,f}=cam, key=[w,h,centerY,cam.az,cam.el,!!atlas,drag].join('/');
     let cache=skyCache.get(canvas);
     if(cache?.key===key){ctx.drawImage(cache.c,0,0,w,h);return;}
     const c=cache?.c||document.createElement('canvas');
     c.width=Math.min(Math.ceil(w),drag?260:550);c.height=Math.max(1,Math.round(c.width*h/w));
     const bc=c.getContext('2d'),im=bc.createImageData(c.width,c.height),data=im.data;
     for(let j=0;j<c.height;j++) {
-      const y=(h/2-(j+.5)*h/c.height)/f;
+      const y=(centerY-(j+.5)*h/c.height)/f;
       const row=add(forward,scale(up,y));
       for(let i=0;i<c.width;i++) {
         const x=((i+.5)*w/c.width-w/2)/f,dx=row[0]+x*right[0],dy=row[1]+x*right[1],dz=row[2]+x*right[2];
@@ -670,8 +677,23 @@ const Visor = (() => {
     for(const [a,b] of edges)for(const k of [0,.94])
       line3(ctx,cam,add(a,scale(sub(b,a),k)),add(a,scale(sub(b,a),k+.06)),'#b6f4c5',1.35);
   }
-  function label(ctx,x,y,text,color,align='left') {
-    ctx.font='600 12px "Segoe UI", Arial, sans-serif';ctx.textAlign=align;ctx.lineWidth=3.5;ctx.strokeStyle='#071018';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);
+  function captions(ctx,canvas,w,small) {
+    const stage=canvas.closest('.hudStage'),view=canvas.getBoundingClientRect();
+    const covers=small||!stage?[]:Array.from(stage.querySelectorAll('.metrics,.pitchPod,.aftPod'),p=>p.getBoundingClientRect());
+    return (x,y,text,color,align='left')=>{
+      ctx.font='600 12px "Segoe UI", Arial, sans-serif';
+      let left=0,right=w;
+      for(const box of covers){
+        if(view.top+y+3<=box.top||view.top+y-12>=box.bottom)continue;
+        if(box.left<=view.left+1)left=Math.max(left,box.right-view.left+3);
+        else right=Math.min(right,box.left-view.left-3);
+      }
+      if(x<left||x>right)return;
+      const width=ctx.measureText(text).width,offset=align==='center'?width/2:0;
+      if(width>right-left)return;
+      x=clamp(x,left+offset,right-width+offset);
+      ctx.textAlign=align;ctx.lineWidth=3.5;ctx.strokeStyle='#071018';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);
+    };
   }
   // Measure from the suit in metres. A coast that curves back toward the
   // viewer should brighten again even though those samples are later in time.
@@ -722,7 +744,7 @@ const Visor = (() => {
     }
     return {heads,visible,behind:dot(state.pos.v,cam.forward)<0};
   }
-  function course(ctx,cam,state,small,w,h) {
+  function course(ctx,cam,state,small,w,h,label) {
     if(!state.time&&!state.throws)return;
     const m=state.forecast,hit=m.hits[state.hitIndex];
     coastPath(ctx,cam,state,hit,small);
@@ -748,10 +770,10 @@ const Visor = (() => {
       const x=clamp(visible[0],halfLabel,w-halfLabel),height=14*(lines.length-1);
       const below=visible[1]+22;
       const y=clamp(below+height<=h-4?below:visible[1]-13-height,13,h-4-height);
-      lines.forEach((s,i)=>label(ctx,x,y+i*14,s,'#b4f7df','center'));
+      lines.forEach((s,i)=>label(x,y+i*14,s,'#b4f7df','center'));
     }else if(!visible && norm(state.pos.v)>1e-7){
       const direction=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
-      label(ctx,w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');
+      label(w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');
     }
     const pass=hit||m.near;
     if(pass.t<state.age-.01)return;
@@ -760,9 +782,9 @@ const Visor = (() => {
     const [x,y]=cam.screen(q);
     ctx.strokeStyle=hit && (!state.soft || Flight.softEnough(hit.speed))?'#97ecc6':'#ffc370';
     ctx.lineWidth=1.6;ctx.strokeRect(x-3.5,y-3.5,7,7);
-    if(!small)label(ctx,x+9,y-6,hit?'CONTACT':'NEAREST PASS',ctx.strokeStyle);
+    if(!small)label(x+9,y-6,hit?'CONTACT':'NEAREST PASS',ctx.strokeStyle);
   }
-  function targetMarker(ctx,cam,canvas,w,h,small) {
+  function targetMarker(ctx,cam,canvas,w,h,small,label) {
     const q=cam.world([0,0,0]),xy=q[2]>near?cam.screen(q):null;
     if(xy && xy[0]>20 && xy[0]<w-20 && xy[1]>24 && xy[1]<h-20){
       if(small)return;
@@ -776,9 +798,9 @@ const Visor = (() => {
     const t=Math.min((w/2-12)/(Math.abs(x)||.0001),(h/2-10)/(Math.abs(y)||.0001),small?Infinity:Math.min(w*.13,h*.19,92));
     const ex=w/2+x*t,ey=h/2+y*t,angle=Math.atan2(y,x);
     ctx.save();ctx.translate(ex,ey);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-5,-4);ctx.lineTo(-5,4);ctx.closePath();ctx.fillStyle='#a7dcc0';ctx.fill();ctx.restore();
-    label(ctx,clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),'STN','#dcffe9','center');
+    label(clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),'STN','#dcffe9','center');
   }
-  function drawStars(ctx,cam,w,h,state){
+  function drawStars(ctx,cam,w,h,state,sceneHeight){
     // Inertial bearings rotate into the station frame as it follows its orbit.
     const angle=state.mode==='Orbital'?-Flight.n*state.time:0,c=Math.cos(angle),s=Math.sin(angle);
     const cutoff=1-clamp(w*h/320000,.20,1);
@@ -789,20 +811,28 @@ const Visor = (() => {
       const q=cam.local([x,y,star.z]);
       if(q[2]<=0)continue;
       const [px,py]=cam.screen(q);
-      if(px<0||px>=w||py<0||py>=h)continue;
+      if(px<0||px>=w||py<0||py>=sceneHeight)continue;
       ctx.fillStyle=star.color;
       ctx.fillRect(px-star.size/2,py-star.size/2,star.size,star.size);
     }
   }
-  function render(canvas,az,el,state,small=false) {
+  function render(canvas,az,el,state,small=false,backdrop=null) {
     const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
     const ratio=Math.min(window.devicePixelRatio||1,1.75);
-    if(canvas.width!==Math.round(w*ratio)||canvas.height!==Math.round(h*ratio)){canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);}
-    const ctx=canvas.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
+    const width=Math.round(w*ratio),height=Math.round(h*ratio);
+    if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+    // On phones the rack sits below the aiming area. Extend the same projection
+    // under it while keeping the reticle, lens and touch coordinates in place.
+    const surface=backdrop?.clientHeight?backdrop:canvas,sceneHeight=surface.clientHeight;
+    if(surface!==canvas&&(surface.width!==width||surface.height!==Math.round(sceneHeight*ratio))){
+      surface.width=width;surface.height=Math.round(sceneHeight*ratio);
+    }
+    const ctx=surface.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
     const cam=camera(state.pos.p,az,el,w,h,small);
-    background(canvas,ctx,w,h,cam,!!(state.dragging||state.keyAiming));
-    drawStars(ctx,cam,w,h,state);
-    station(ctx,cam);course(ctx,cam,state,small,w,h);
+    background(surface,ctx,w,sceneHeight,cam,!!(state.dragging||state.keyAiming),h/2);
+    drawStars(ctx,cam,w,h,state,sceneHeight);
+    const label=captions(ctx,canvas,w,small);
+    station(ctx,cam);course(ctx,cam,state,small,w,h,label);
     for(const obj of state.objects){
       const where=Flight.motion(obj.start,state.time-obj.time,state.mode).p,q=cam.world(where);if(q[2]<near)continue;
       const [x,y]=cam.screen(q),r=clamp(cam.f*.085/q[2],1.8,9);
@@ -814,7 +844,7 @@ const Visor = (() => {
       const [x,y]=cam.screen(drift);
       ctx.strokeStyle='#b0e6cc';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.stroke();
       stroke(ctx,[x-9,y],[x-4,y],'#b0e6cc');stroke(ctx,[x+4,y],[x+9,y],'#b0e6cc');stroke(ctx,[x,y-8],[x,y-4],'#b0e6cc');
-      if(!small && x>15&&x<w-55&&y>30&&y<h-24)label(ctx,x+12,y+4,'DRIFT','#b0e6cc');
+      if(!small && x>15&&x<w-55&&y>30&&y<h-24)label(x+12,y+4,'DRIFT','#b0e6cc');
     }
     if(!small){
       ctx.strokeStyle='#c1d7d530';ctx.lineWidth=.8;
@@ -828,7 +858,12 @@ const Visor = (() => {
     }
     ctx.strokeStyle='#041018';ctx.lineWidth=4;ctx.stroke();
     ctx.strokeStyle='#70faff';ctx.lineWidth=2;ctx.stroke();
-    targetMarker(ctx,cam,canvas,w,h,small);
+    targetMarker(ctx,cam,canvas,w,h,small,label);
+    if(surface!==canvas){
+      const view=canvas.getContext('2d',{alpha:false});
+      view.save();view.resetTransform();
+      view.drawImage(surface,0,0,width,height,0,0,width,height);view.restore();
+    }
   }
   function toolArt(canvas,i) {
     canvas.width=140;canvas.height=58;
@@ -1057,7 +1092,7 @@ function trimHint(displacement,az,elevation){
 // Gear indices identify physical items in flight records and inventory masks.
 const rackOrder=Flight.gear.map((_,i)=>i).sort((a,b)=>Flight.gear[a].mass-Flight.gear[b].mass);
 const clockSpeeds=[1,10,20,30];
-const clock=Visor.clockText, visor=el('forward'), aft=el('aft');
+const clock=Visor.clockText, visor=el('forward'), aft=el('aft'), visorBackdrop=el('visorBackdrop');
 let flight, yaw=0,pitch=0,selected=5,power=95,running=false,started=false,dirty=true,drag=null;
 let lastTime=performance.now(),lastPaint=0,lastText=0,rate=1;
 let lossDebriefAt=null;
@@ -1284,7 +1319,7 @@ function frame(now) {
     el('visorHeading').textContent='HDG '+Readout.heading(yaw,2)+'°';
     el('visorElevation').textContent='EL '+Readout.signed(pitch,2)+'°';
     el('flightTime').textContent=clock(flight.time);
-    Visor.render(visor,yaw,pitch,flight);Visor.render(aft,yaw+180,-pitch,flight,true);lastPaint=now;dirty=false;
+    Visor.render(visor,yaw,pitch,flight,false,visorBackdrop);Visor.render(aft,yaw+180,-pitch,flight,true);lastPaint=now;dirty=false;
   }
   if(running && now-lastText>=135){instruments();lastText=now;}
   requestAnimationFrame(frame);

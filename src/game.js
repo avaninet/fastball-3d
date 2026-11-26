@@ -2,7 +2,7 @@ const el=id=>document.getElementById(id), {scale,unit,norm,dot,sub,clamp}=Flight
 // Gear indices identify physical items in flight records and inventory masks.
 const rackOrder=Flight.gear.map((_,i)=>i).sort((a,b)=>Flight.gear[a].mass-Flight.gear[b].mass);
 const clockSpeeds=[1,10,20,30];
-const clock=Visor.clockText, visor=el('forward'), aft=el('aft');
+const clock=Visor.clockText, visor=el('forward'), aft=el('aft'), visorBackdrop=el('visorBackdrop');
 let flight, yaw=0,pitch=0,selected=5,power=95,running=false,started=false,dirty=true,drag=null;
 let lastTime=performance.now(),lastPaint=0,lastText=0,rate=1;
 let lossDebriefAt=null;
@@ -229,7 +229,7 @@ function frame(now) {
     el('visorHeading').textContent='HDG '+Readout.heading(yaw,2)+'°';
     el('visorElevation').textContent='EL '+Readout.signed(pitch,2)+'°';
     el('flightTime').textContent=clock(flight.time);
-    Visor.render(visor,yaw,pitch,flight);Visor.render(aft,yaw+180,-pitch,flight,true);lastPaint=now;dirty=false;
+    Visor.render(visor,yaw,pitch,flight,false,visorBackdrop);Visor.render(aft,yaw+180,-pitch,flight,true);lastPaint=now;dirty=false;
   }
   if(running && now-lastText>=135){instruments();lastText=now;}
   requestAnimationFrame(frame);
