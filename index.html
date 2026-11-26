@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg">
     <meta name="twitter:image:alt" content="Fastball 3D mission patch and title beside a visor view of a yellow power drill floating toward the space station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gvsvgXESCCJVacV4e/Adv2aUiZ2qyr275yiBK+nORzg=' 'sha256-grtM02oHyVFY7JDTz3fvTYYKlNScI+lDCEcRxn9ific=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-aj4BrVoQ3YteBMSGrqTxv0t9HxYKRdbNdemD62CTyjk=' 'sha256-BqeXq6qOPxn6+5P+HjCsEM6h7EHu4IDYC0GFcXPg9Hs=' 'sha256-rIMw5G5rL/1OvvCBbVvkNzTHDyBjaZqSrO091s1Own8=' 'sha256-EKz3menBcDBC3pGCUiAt7s08ad6DVX2qkHXgLyn/MX0=' 'sha256-SUmhYg779YmcNZYXBkXWF/3nU92p2WDucnW6nGB0ikY=' 'sha256-uUSUTAeuwUOaQxfGUoTAPwh/Wm/YD8DlFheuTPTdZX0='; style-src 'sha256-XIMIHg9OaA2we3nJln+mhS6xMAAS46MXxaFMqc0GpWQ='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gvsvgXESCCJVacV4e/Adv2aUiZ2qyr275yiBK+nORzg=' 'sha256-grtM02oHyVFY7JDTz3fvTYYKlNScI+lDCEcRxn9ific=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-aj4BrVoQ3YteBMSGrqTxv0t9HxYKRdbNdemD62CTyjk=' 'sha256-BqeXq6qOPxn6+5P+HjCsEM6h7EHu4IDYC0GFcXPg9Hs=' 'sha256-rIMw5G5rL/1OvvCBbVvkNzTHDyBjaZqSrO091s1Own8=' 'sha256-EKz3menBcDBC3pGCUiAt7s08ad6DVX2qkHXgLyn/MX0=' 'sha256-SUmhYg779YmcNZYXBkXWF/3nU92p2WDucnW6nGB0ikY=' 'sha256-uUSUTAeuwUOaQxfGUoTAPwh/Wm/YD8DlFheuTPTdZX0='; style-src 'sha256-m+0uQ7b7iWH2OypIN5Ag+1zNbIqU8C0y4guHfkkgpac='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.3 · EVA return simulator</title>
@@ -1949,6 +1949,9 @@ main {
 /* On short phones the visor and the release must fit together. Keep the
    instruments readable by letting their own column scroll independently. */
 @media (max-width:740px) and (min-height:501px) and (max-height:700px) {
+  .flightHead {
+    order: 1;
+  }
   .flightHead p {
     display: none;
   }
@@ -1969,9 +1972,7 @@ main {
 }
 
 @media (max-width:740px) and (max-height:590px) and (min-height:501px) {
-  /* Put the scenario summary below the cockpit so the rack stays within reach. */
   .flightHead {
-    order: 1;
     margin: 2px 0;
   }
   .flightHead h1 {
