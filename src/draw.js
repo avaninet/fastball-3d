@@ -58,12 +58,10 @@ const Visor = (() => {
     ctx.beginPath();ctx.moveTo(...xy[0]);for(let i=1;i<xy.length;i++)ctx.lineTo(...xy[i]);ctx.closePath();
   }
   function station(ctx,cam) {
-    const sorted=Station.faces.filter(face=>dot(face.normal,cam.p)>face.plane)
-      .map(face=>[cam.world(face.center)[2],face]).sort((a,b)=>b[0]-a[0]);
-    for(const [,face] of sorted) {
+    Station.forEachVisibleFace(cam.p,face=>{
       const vertices=face.points.map(cam.world),whole=vertices.every(q=>q[2]>=near);
       const clipped=whole?vertices:clip(vertices);
-      if(clipped.length<3)continue;
+      if(clipped.length<3)return;
       const xy=clipped.map(cam.screen);
       // A clipped polygon no longer has the four material corners.
       const across=whole&&(face.tones||face.grid)?faceSpan(xy,0):null;
@@ -94,7 +92,7 @@ const Visor = (() => {
           if(visible.length>=3){polygon(ctx,visible.map(cam.screen));ctx.fill();}
         }
       }
-    }
+    });
     for(const [a,b] of edges)line3(ctx,cam,a,b,'#8ce8b47a',.8);
     for(const [a,b] of edges)for(const k of [0,.94])
       line3(ctx,cam,add(a,scale(sub(b,a),k)),add(a,scale(sub(b,a),k+.06)),'#b6f4c5',1.35);

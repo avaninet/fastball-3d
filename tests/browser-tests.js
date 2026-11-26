@@ -401,6 +401,71 @@
       }
     }finally{canvas.remove();}
   });
+  test('Both visors paint the nearest station part across joints and overlapping silhouettes',()=>{
+    const w=600,h=248,canvas=document.createElement('canvas');
+    canvas.style.cssText='position:fixed;left:-2000px;width:'+w+'px;height:'+h+'px';
+    document.body.append(canvas);
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    const paint=Station.forEachVisibleFace,colors=new Map();
+    const partColor=i=>((i+1)*0x45d9f3)&0xffffff;
+    Station.parts.forEach((part,i)=>part.faces.forEach(f=>colors.set(f,'#'+partColor(i).toString(16).padStart(6,'0'))));
+    let raster;
+    try{
+      // Give each component an opaque ID in the production drawing path. Read
+      // it before the transparent capture envelope and HUD are superimposed.
+      Station.forEachVisibleFace=(eye,draw)=>{
+        ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);
+        paint(eye,f=>draw({...f,color:colors.get(f),edge:colors.get(f),lines:[],tones:null,grid:null,stripes:null}));
+        raster=ctx.getImageData(0,0,canvas.width,canvas.height);
+      };
+      const opening=Flight.opening(0,0,false);
+      const approach=(time,v)=>Flight.add(opening.p,Flight.scale(v,time));
+      const v1=[-.0271,.0548,-.0155],v2=[-.0503,.0859,-.0063];
+      const poses=[
+        [approach(391,v1),133.86,-15],[approach(247,v1),109.26,-16.8],
+        [approach(30,v2),102.86,-18.8],[approach(64,v2),73.46,-17.6],
+        [[-9,15,-6],-58,18],[[3,.1,12],182,-68],[[1.2,-1.9,1.4],130,-16]
+      ];
+      let overlaps=0;
+      for(const [p,az,elevation] of poses)for(const small of [false,true]){
+        flight.pos.p=p;Visor.render(canvas,az,elevation,flight,small);
+        const cam=Visor.camera(p,az,elevation,w,h,small),density=canvas.width/w;
+        const planes=Station.parts.map(part=>part.faces.map(f=>[f.normal,f.plane-Flight.dot(f.normal,p)]));
+        let checked=0;
+        const pixel=(x,y)=>{
+          const k=(y*raster.width+x)*4,data=raster.data;
+          return (data[k]<<16)|(data[k+1]<<8)|data[k+2];
+        };
+        for(let y=3;y<raster.height-2;y+=7)for(let x=3;x<raster.width-2;x+=7){
+          const seen=pixel(x,y);
+          if([pixel(x-1,y),pixel(x+1,y),pixel(x,y-1),pixel(x,y+1)].some(v=>v!==seen))continue;
+          const u=((x+.5)/density-w/2)/cam.f,v=(h/2-(y+.5)/density)/cam.f;
+          const ray=Flight.add(cam.forward,Flight.add(Flight.scale(cam.right,u),Flight.scale(cam.up,v)));
+          let nearest=Infinity,id=0,hits=0;
+          // Independent ray/convex-solid intersection, with no draw ordering.
+          for(const [i,faces] of planes.entries()){
+            let enter=-Infinity,exit=Infinity;
+            for(const [normal,gap] of faces){
+              const rate=Flight.dot(normal,ray);
+              if(Math.abs(rate)<1e-10){if(gap<0){exit=-Infinity;break;}}
+              else if(rate<0)enter=Math.max(enter,gap/rate);
+              else exit=Math.min(exit,gap/rate);
+              if(enter>exit)break;
+            }
+            if(enter>=.09 && enter<exit){
+              hits++;
+              if(enter<nearest){nearest=enter;id=partColor(i);}
+            }
+          }
+          if(hits>1)overlaps++;
+          if(hits)checked++;
+          eq(seen===id,'station depth at '+[x,y,az,small]+': raster '+seen+' vs ray '+id);
+        }
+        eq(checked>5,'camera actually sees the assembly');
+      }
+      eq(overlaps>100,'checked rays cross multiple components');
+    }finally{Station.forEachVisibleFace=paint;canvas.remove();}
+  });
   test('Story bearings, paused lineup and historical battery',()=>{
     for(const mode of ['Straight-Line','Orbital']){
       configure(0,mode,false,true);eq(!running&&!started&&!el('assists').hidden,'Story staged');

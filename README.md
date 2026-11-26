@@ -82,12 +82,13 @@ Run these commands from `fastball-3d` with Node.js. The game and build have no p
 ```sh
 node scripts/build.cjs
 node scripts/build.cjs --check
+node tests/station.cjs
 node tests/balance.cjs
 node tests/difficulty.cjs
 node scripts/browser-qa.cjs
 ```
 
-Open the generated `qa-runner.html` for browser results, or pass a Chromium executable path to the last command to run all four CSS viewport sizes. The layout checks use both system fonts and an Arial/Courier fallback on short phones. Use a trusted local browser executable and flags. The balance harness also accepts an older HTML build for comparison and executes its embedded physics, so use builds you trust. `npm test` checks the distributable against its sources and runs the balance assertions. For the native Space-key, clipboard and PNG checks, start a matching ChromeDriver on port 9515 and run `node tests/native-browser.cjs` with Node 18 or newer. The approved starting build is tagged `prototype-baseline`.
+Open the generated `qa-runner.html` for browser results, or pass a Chromium executable path to the last command to run all four CSS viewport sizes. The layout checks use both system fonts and an Arial/Courier fallback on short phones. Use a trusted local browser executable and flags. The balance harness also accepts an older HTML build for comparison and executes its embedded physics, so use builds you trust. `npm test` verifies the distributable, the station joints and the flight-balance assertions. For the native Space-key, clipboard and PNG checks, start a matching ChromeDriver on port 9515 and run `node tests/native-browser.cjs` with Node 18 or newer. The approved starting build is tagged `prototype-baseline`.
 
 [Local test results and playtest questions](REVIEW.md) · [Difficulty study](DIFFICULTY.md) · [Project workflow](AGENTS.md) · [Historical prototype handoff](HANDOFF.md) · [Fastball Alpha v0.4 manual](reference/alpha-v0.4-manual.txt)
 
