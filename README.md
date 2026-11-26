@@ -2,6 +2,8 @@
 
 You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan back within reach of the station’s grab bars.
 
+[Play Fastball 3D in your browser](https://avaninet.github.io/fastball-3d/)
+
 **To play offline**, download `index.html` and open it in your browser. The game, cameras and artwork are all in that file. The cockpit targets Chromium 108+, Safari 16+ and Firefox 121+ for dynamic viewport units, container units and the CSS `:has()` selector. [Game file](index.html)
 
 **The tool goes through the forward crosshair. You recoil the other way.** On **Tether separation**, face away from the station before you throw. The tool will leave the forward visor and you can watch for the station in the aft camera. In the flight instruments, **Current coast** tells you whether you’ll reach the bars. If it says “Aim up and right,” that’s where to throw the *tool*. The recoil nudges your suit down and left relative to the same view.

@@ -1,6 +1,6 @@
 # Fastball 3D project instructions
 
-Work in this local repository on the dedicated 3D game. Use `REVIEW.md` and `DIFFICULTY.md` for open playtests. `HANDOFF.md` records the historical prototype. The 2D Fastball Alpha v0.4 game is the reference for teaching, character, visual identity and the flight log. The user intends to publish 3D to its own GitHub repository later. Continue locally until the user requests publication.
+Work in this repository on the dedicated 3D game. Use `REVIEW.md` and `DIFFICULTY.md` for open playtests. `HANDOFF.md` records the historical prototype. The 2D Fastball Alpha v0.4 game is the reference for teaching, character, visual identity and the flight log. The publication repository is `avaninet/fastball-3d`. GitHub Pages serves the standalone `index.html` from the root of `main`.
 
 ## Source map
 
