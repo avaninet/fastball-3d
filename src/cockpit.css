@@ -89,16 +89,16 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
   position:relative;isolation:isolate;flex:1;min-height:450px;background:#070e14;
   display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto 1fr auto
 }
-.forward{position:absolute;inset:0;height:auto}
+.forward{position:absolute;inset:0;height:auto;z-index:0}
 .aftPod,.metrics,.pitchPod,.lesson{
   position:relative;background:var(--hud-surface);border:1px solid var(--hud-line);
   border-radius:5px;color:#f3f7f6;box-shadow:0 3px 14px #0005
 }
-.aftPod{grid-area:1/3;justify-self:end;align-self:start;width:clamp(208px,23.5vw,450px);overflow:hidden;border-width:0 0 1px 1px;border-radius:0 0 0 5px}
+.aftPod{grid-area:1/1;justify-self:start;align-self:start;width:clamp(230px,28vw,525px);overflow:hidden;border-width:0 1px 1px 0;border-radius:0 0 5px 0}
 .aftPod .panelTitle{min-height:28px;padding:3px 9px;background:#172529;gap:4px}
 .aftPod .camLabel{font:600 13px var(--sans);gap:6px}.aftPod .cameraMeta{font:12px var(--sans);color:#d7e3e4;letter-spacing:0;text-transform:none}
 .aft{height:auto;aspect-ratio:2.05}
-.metrics{grid-area:1/1/4/2;align-self:start;display:block;width:clamp(188px,15vw,228px);margin:var(--inset);padding:0;min-height:0;border-left:2px solid #94dfc5}
+.metrics{grid-area:1/3/4/4;justify-self:end;align-self:start;z-index:1;display:block;width:clamp(188px,15vw,228px);margin:0;padding:0;min-height:0;border-width:0 0 1px 2px;border-left-color:#94dfc5;border-radius:0 0 0 5px}
 .metricStrip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px}
 .metric{padding:0;border:0}.metric.clock{order:-1}
 .metric .caption{display:block;font:600 13px/1.2 var(--sans);color:#d8e6e8}
@@ -106,7 +106,7 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
 .metric.clock strong{color:#ffdb94;font-size:1.65em}.metric strong.danger{color:var(--red)}.metric strong.warn{color:var(--gold)}
 .metric small,#speedRef{font:12px/1.15 var(--sans);color:#deeaeb}
 #speedGauge{margin:3px 0}
-.pitchPod{grid-area:3/3;align-self:end;justify-self:end;width:clamp(273px,25.5vw,395px);margin:8px var(--inset) var(--inset) 0;overflow:hidden}
+.pitchPod{grid-area:3/1;align-self:end;justify-self:start;width:clamp(273px,25.5vw,395px);margin:8px 0 0;overflow:hidden;border-width:1px 1px 0 0;border-radius:0 5px 0 0}
 .rack,.throwPanel,.coastPanel{border:0;border-radius:0;background:transparent}
 .rack{padding:9px}.rack .heading,.throwPanel .heading{margin:0 0 6px;gap:4px}
 .rack .heading span,.impulseInfo{font:12px/1.25 var(--sans);color:#d6e3e6}
@@ -158,30 +158,29 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
   .deck{--inset:6px;flex:none}.camTitle{flex-wrap:wrap;gap:2px 6px;padding:3px 6px;min-height:37px}
   .camLabel{font-size:13px;gap:4px}.clockControls{gap:6px}
   .camTitle{position:relative;z-index:2}
-  .bearingReadout{position:absolute;top:calc(100% + 6px);left:6px;display:grid;grid-template-columns:auto auto;gap:3px 8px;padding:3px 5px;border:0;background:#09131be8;color:#f2f8f9;font:11px var(--mono);pointer-events:none}
-  .flightTime{grid-column:1/-1;font:11px var(--sans)}
+  .bearingReadout{order:2;flex-basis:100%;gap:8px;padding:2px 0 0;border:0;color:#f2f8f9;font:11px var(--mono)}
+  .flightTime{font:11px var(--sans)}
   .clockSlider{width:90px}.clockSlider #clockRate{height:24px}.clockControls button{min-height:28px}
   .aimControls{order:1;width:100%}.aimBtns{gap:4px}.aimBtns button{min-height:26px;padding:2px 7px}
-  .hudStage{grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);grid-template-rows:auto auto auto;min-height:0;flex:none}
+  .hudStage{container-type:inline-size;--aft-width:min(41cqw,230px);--aft-aspect:2.05;--aft-title:21px;--sidebar-width:37.5%;grid-template-columns:minmax(0,1fr) var(--sidebar-width);grid-template-rows:auto auto auto;min-height:0;flex:none}
   .forward{grid-area:1/1/2/-1;position:relative;inset:auto;height:clamp(185px,28dvh,310px)}
-  .aftPod{grid-area:1/1/2/-1;width:34%;max-width:180px;z-index:1}.aftPod .panelTitle{min-height:18px;padding:2px 5px}
+  .aftPod{grid-area:1/1/2/-1;z-index:1;width:var(--aft-width)}.aft{aspect-ratio:var(--aft-aspect)}.aftPod .panelTitle{height:var(--aft-title);min-height:18px;padding:2px 5px}
   .aftPod .camLabel{font-size:12px}.aftPod .cameraMeta{display:none}
   .metrics,.pitchPod,.lesson{position:static;inset:auto;min-width:0;width:100%;margin:0;transform:none;border:0;border-top:1px solid #43545b;border-radius:0;box-shadow:none}
-  .metrics{grid-area:2/1/4/2;align-self:stretch;border-right:1px solid #43545b}
+  .metrics{grid-area:1/2/4/3;align-self:stretch;border-width:0 0 0 1px;border-left:1px solid var(--hud-line)}
   .metricStrip{gap:6px 4px;padding:5px}.metric .caption{font-size:12px}.metric strong,.metric.clock strong{font-size:16px}.metric small,#speedRef{font-size:11px}
   .metric small{display:block;margin:0}
-  .pitchPod{grid-area:2/2/4/3;align-self:start}.rack{padding:6px 4px}.rack .heading{align-items:start;flex-direction:column;margin-bottom:5px;gap:1px}
+  .pitchPod{grid-area:3/1;align-self:end}.rack{padding:6px 4px}.rack .heading{align-items:start;flex-direction:column;margin-bottom:5px;gap:1px}
   .tools{gap:3px}.tool{min-height:44px;padding:3px}.tool canvas,.tool .hotkey{display:none}
   .tool b{font-size:12px;overflow-wrap:anywhere}.tool small{font-size:11px}
   .throwPanel{padding:5px;grid-template-columns:minmax(0,1fr) 62px;gap:0 6px}#throw{height:38px}
   .coastPanel{padding:6px;gap:4px}.coastTitle{gap:4px}.coastPanel p{font-size:13px}
   .velocity{padding:6px}.velocity h2{font-size:12px}.velocity dt,.velocity dd{font-size:11px}.statusLine{padding:5px 8px}
-  .lesson{grid-area:2/2;align-self:start;padding:5px}.lesson .heading{flex-wrap:wrap;gap:3px}.lesson p{font-size:13px}.lesson button{min-height:25px}
-  .hudStage:has(.lesson:not([hidden])) .pitchPod{grid-area:3/2}
-  .hudStage:has(.lesson:not([hidden])) .forward{height:clamp(138px,17dvh,200px)}
+  .lesson{grid-area:2/1;align-self:start;padding:5px}.lesson .heading{flex-wrap:wrap;gap:3px}.lesson p{font-size:13px}.lesson button{min-height:25px}
+  .hudStage:has(.lesson:not([hidden])) .forward{height:clamp(150px,calc(20vw + 77px),205px)}
   main:has(.lesson:not([hidden])) #brief{display:none}
-  .pauseFlag:has(small:not([hidden])){inset:3% 0 auto}
-  .is-paused .bearingReadout{visibility:hidden}
+  .pauseFlag,.pauseFlag:has(small:not([hidden])){inset:auto var(--sidebar-width) 4px 0}
+  .is-lost .forward .gameOverFlag{inset:calc(var(--aft-width) / var(--aft-aspect) + var(--aft-title)) var(--sidebar-width) 0 0;font-size:clamp(18px,7vw,34px)}
   .logPanes{grid-template-columns:1fr}.dialogFoot{flex-wrap:wrap;padding:9px}.dialogBody{padding:15px}
 }
 @media(max-width:365px){
@@ -195,7 +194,7 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
   .bearingReadout{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);max-width:33%;flex-wrap:wrap;justify-content:center;gap:3px 6px;padding:3px 5px;border:0;background:#09131be8;pointer-events:none;font-size:11px}
   .clockSlider{width:88px}.clockSlider .rateStops{display:none}.clockSlider #clockRate{height:24px;display:block}.clockSlider{display:flex;align-items:center;gap:3px;width:135px}.clockSlider span{gap:2px;white-space:nowrap}
   .clockControls button,.aimBtns button{min-height:25px;font-size:12px;padding:2px 5px}
-  .hudStage{min-height:275px}.aftPod{width:21.5vw;max-width:195px}.aftPod .panelTitle{min-height:18px;padding:1px 5px}.aftPod .cameraMeta{display:none}.aftPod .camLabel{font-size:12px}.aft{aspect-ratio:2.7}
+  .hudStage{min-height:275px}.aftPod{width:26vw;max-width:235px}.aftPod .panelTitle{min-height:18px;padding:1px 5px}.aftPod .cameraMeta{display:none}.aftPod .camLabel{font-size:12px}.aft{aspect-ratio:2.85}
   .metrics{width:clamp(194px,25vw,240px);max-height:calc(100dvh - 123px);overflow-y:auto;scrollbar-width:thin}
   .metricStrip{padding:4px 6px;gap:3px 5px}
   .metric .caption,.metric small,#speedRef{font-size:11px}.metric strong{font-size:15px}#speedGauge{margin:1px 0;height:4px}
@@ -206,19 +205,11 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
   .throwPanel #power{grid-area:2/1/3/3}.throwPanel h2,#throw{font-size:12px}#throw{grid-area:2/3;height:28px}
   .coastPanel{padding:4px 6px;gap:2px}.coastPanel p{font-size:12px;line-height:1.25}.readout{font-size:16px}.driftData{padding-top:2px}
   .velocity{padding:3px 6px}.velocity dl{gap:2px;margin:2px 0}.velocity dt,.velocity dd,.velocity h2 small{font-size:11px}
-  .lesson{inset:auto auto var(--inset) 48%;width:36%;padding:4px 6px}.lesson .heading{margin:0}.lesson p{font-size:12px;line-height:1.2}.lesson button{min-height:24px;padding:2px 5px}
+  .lesson{grid-area:1/2/4/3;inset:auto 4px var(--inset);width:auto;max-width:370px;max-height:calc(50% - 24px);overflow:auto;scrollbar-width:thin;transform:none;padding:4px 6px}.lesson .heading{margin:0}.lesson p{font-size:12px;line-height:1.2}.lesson button{min-height:24px;padding:2px 5px}
   .deck:has(.aimControls:not([hidden])) .bearingReadout{font-size:11px}
   .statusLine{font-size:12px;padding:3px 6px;min-height:22px}
 }
 
 @media(min-width:741px) and (min-height:501px) and (max-height:680px){
   .hudStage{min-height:495px}
-}
-@media(min-width:600px) and (max-width:719px) and (max-height:500px){
-  .hudStage{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);grid-template-rows:auto auto auto;align-items:start;min-height:0;flex:none}
-  .forward{position:relative;grid-area:1/1/2/-1;height:clamp(140px,41dvh,195px)}
-  .aftPod{grid-area:1/1/2/-1;width:26%}
-  .pitchPod,.metrics,.lesson{position:static;width:100%;min-width:0;max-height:none;margin:0;transform:none;border:0;border-top:1px solid var(--hud-line);box-shadow:none;border-radius:0}
-  .pitchPod{grid-area:2/2/4/3;align-self:start}.metrics{grid-area:2/1/4/2;border-right:1px solid var(--hud-line)}.lesson{grid-area:2/2}.hudStage:has(.lesson:not([hidden])) .pitchPod{grid-area:3/2}
-  .tool{min-height:37px}.tool b,.tool small{font-size:12px}
 }

@@ -163,6 +163,34 @@ const Visor = (() => {
   function label(ctx,x,y,text,color,align='left') {
     ctx.font='600 12px "Segoe UI", Arial, sans-serif';ctx.textAlign=align;ctx.lineWidth=3.5;ctx.strokeStyle='#071018';ctx.strokeText(text,x,y);ctx.fillStyle=color;ctx.fillText(text,x,y);
   }
+  // Measure from the suit in metres. A coast that curves back toward the
+  // viewer should brighten again even though those samples are later in time.
+  function depthWeight(range){return 14/(14+range);}
+  function coastInk(weight){
+    return 'rgb('+Math.round(100+91*weight)+','+Math.round(172+82*weight)+','+Math.round(171+59*weight)+')';
+  }
+  function coastPath(ctx,cam,state,hit,small){
+    let previous=cam.world(state.pos.p),dashOffset=0;
+    function segment(point){
+      const current=cam.world(point);
+      let a=previous,b=current;
+      previous=current;
+      if(a[2]<near&&b[2]<near){dashOffset=0;return;}
+      if(a[2]<near)a=intersect(a,b);else if(b[2]<near)b=intersect(b,a);
+      const start=cam.screen(a),end=cam.screen(b);
+      const weight=(depthWeight(norm(a))+depthWeight(norm(b)))/2;
+      ctx.lineDashOffset=dashOffset;
+      stroke(ctx,start,end,coastInk(weight),(small?1.1:1.4)+weight);
+      dashOffset=(dashOffset+Math.hypot(end[0]-start[0],end[1]-start[1]))%10;
+    }
+    ctx.save();ctx.setLineDash([5,5]);
+    for(const {p,t} of state.forecast.path){
+      if(hit&&t>=hit.t)break;
+      if(t>state.age)segment(p);
+    }
+    if(hit)segment(hit.p);
+    ctx.restore();
+  }
   // From the suit, all points on a straight coast have one screen bearing.
   // Space curved arrows in pixels and retain one end-on mark on a flat projection.
   function courseGlyphs(cam,state,w,h){
@@ -180,28 +208,37 @@ const Visor = (() => {
       if(!previous){previous=at;continue;}
       const dx=at[0]-previous[0],dy=at[1]-previous[1];
       if(Math.hypot(dx,dy)<14)continue;
-      heads.push({at,angle:Math.atan2(dy,dx),t});previous=at;
+      heads.push({at,angle:Math.atan2(dy,dx),t,range:norm(q)});previous=at;
     }
     return {heads,visible,behind:dot(state.pos.v,cam.forward)<0};
   }
   function course(ctx,cam,state,small,w,h) {
     if(!state.time&&!state.throws)return;
-    const m=state.forecast,hit=m.hits[state.hitIndex],end=hit?.t??Infinity;
-    let last=state.pos.p;
-    ctx.setLineDash([5,5]);
-    for(const {p,t} of m.path)if(t>state.age && t<end){line3(ctx,cam,last,p,'#a2efd4',small?1.3:1.8);last=p;}
-    if(hit)line3(ctx,cam,last,hit.p,'#a2efd4',1.6);
-    ctx.setLineDash([]);
+    const m=state.forecast,hit=m.hits[state.hitIndex];
+    coastPath(ctx,cam,state,hit,small);
     const {heads,visible,behind}=courseGlyphs(cam,state,w,h);
-    for(const {at,angle} of heads){
+    for(const {at,angle,range} of heads){
+      const weight=depthWeight(range),length=(small?3.8:4.6)+(small?4:6)*weight;
       ctx.save();ctx.translate(...at);ctx.rotate(angle);
-      stroke(ctx,[-5,-3],[0,0],'#a2efd4',1.6);stroke(ctx,[0,0],[-5,3],'#a2efd4',1.6);
+      ctx.beginPath();ctx.moveTo(-length,-length*.62);ctx.lineTo(0,0);ctx.lineTo(-length,length*.62);
+      ctx.lineJoin='round';ctx.lineWidth=3.4;ctx.strokeStyle='#0b1b22';ctx.stroke();
+      ctx.lineWidth=1.4+.65*weight;ctx.strokeStyle=coastInk(weight);ctx.stroke();
       ctx.restore();
     }
     if(!heads.length && visible){
       ctx.strokeStyle='#a2efd4';ctx.beginPath();ctx.arc(...visible,7,0,Math.PI*2);ctx.stroke();
-      const caption=small&&w<180?'COAST':'COAST END-ON';
-      label(ctx,clamp(visible[0],50,w-50),clamp(visible[1]+22,15,h-5),caption,'#b4f7df','center');
+      const lines=[small&&w<180?'END-ON':'COAST END-ON'];
+      if(state.mode==='Straight-Line'){
+        const range=norm(sub((hit||m.path.at(-1)).p,state.pos.p));
+        const metres=range<.1?'<0.1':range.toFixed(range<10?1:0);
+        lines.push(metres+' m '+(hit?'to contact':'at O₂ expiry'));
+      }
+      ctx.font='600 12px "Segoe UI", Arial, sans-serif';
+      const halfLabel=Math.min(w/2,Math.max(...lines.map(s=>ctx.measureText(s).width))/2+3);
+      const x=clamp(visible[0],halfLabel,w-halfLabel),height=14*(lines.length-1);
+      const below=visible[1]+22;
+      const y=clamp(below+height<=h-4?below:visible[1]-13-height,13,h-4-height);
+      lines.forEach((s,i)=>label(ctx,x,y+i*14,s,'#b4f7df','center'));
     }else if(!visible && norm(state.pos.v)>1e-7){
       const direction=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
       label(ctx,w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');

@@ -53,7 +53,7 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 
 ## Read the approach
 
-- **Look for the miss early.** The mint marks in both cameras trace your committed coast. When you look straight down that path it can appear as a ring. Read the time and distance in **Current coast** to tell a future pass from one already behind you. Its aiming hint follows the forward visor as you turn.
+- **Look for the miss early.** The mint marks in both cameras trace your committed coast. The brighter, thicker dashes are closer to your suit. Arrowheads get smaller with distance. Looking straight down a Straight-Line coast, you see a ring with the distance to contact or to your predicted position at oxygen expiry. Read the time and distance in **Current coast** to tell a future pass from one already behind you. Its aiming hint follows the forward visor as you turn.
 - **Check speed as well as distance.** A negative **Range rate** means the gap to the nearest bars is shrinking. You can still slide past them sideways. **Relative speed** includes motion in all three directions. The gauge marks the soft-capture threshold, and the velocity panel below breaks the motion into radial, along-track and cross-track components.
 - **Save a small correction.** A heavy tool can reverse outward drift. A light tool can shift a near miss without undoing that first pitch. **Throw power** shows the recoil for your selected tool and power. Once **Current coast** predicts a good grab, another throw can spoil it.
 - **Brake along your drift.** If **Current coast** warns of fast contact, throw in the direction the suit is moving. The recoil will slow you. When you are crossing the station face, that bearing can be quite different from the bearing to the station.

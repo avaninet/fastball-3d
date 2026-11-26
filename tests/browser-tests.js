@@ -83,17 +83,19 @@
     configure(0,'Straight-Line');check(false);keys('p');check(true);click('pause');check(false);
     enterLesson('storyEntry');check(false);click('away');click('throw');click('lessonAction');check(true);
     const r=visor.getBoundingClientRect(),midX=r.left+r.width/2,midY=r.top+r.height/2;
-    eq(!el('pausedLineup').hidden&&flag.getBoundingClientRect().bottom<midY,'Story reticle stays clear');
+    const flagBox=flag.getBoundingClientRect();
+    eq(!el('pausedLineup').hidden&&(flagBox.bottom<midY-8||flagBox.top>midY+8),'Story reticle stays clear');
     eq(document.elementFromPoint(midX,midY)===visor,'Story visor receives input');
     click('lessonAction');eq(flight.done==='capture','coast to debrief');check(false);
   });
   test('Wide visor, inset aft feed and nine-slot rack leave a clear aiming area',()=>{
     configure(0,'Straight-Line');scrollTo(0,0);
     const f=visor.getBoundingClientRect(),a=aft.closest('.aftPod').getBoundingClientRect();
+    const stage=visor.closest('.hudStage').getBoundingClientRect();
     eq(f.width>=innerWidth*.92,'visor spans the cockpit');
     eq(a.top>=f.top&&a.right<=f.right&&a.bottom<=f.bottom,'aft feed contained by visor');
-    close(a.top,f.top,1);close(a.right,f.right,1);
-    eq(a.width<=f.width*.35,'compact aft picture in picture');
+    close(a.top,f.top,1);close(a.left,f.left,1);
+    eq(a.width>=Math.min(f.width*.25,525)-1&&a.width<=f.width*.42,'larger aft inset leaves the middle free');
     for(const [dx,dy] of [[0,0],[-18,0],[18,0],[0,-18],[0,18]]){
       eq(document.elementFromPoint(f.x+f.width/2+dx,f.y+f.height/2+dy)===visor,'reticle receives aim input');
     }
@@ -101,10 +103,13 @@
     eq(new Set(slots.map(s=>s.left)).size===3&&new Set(slots.map(s=>s.top)).size===3,'3 × 3 rack');
     const sidebar=el('coast').closest('.metrics'),rack=el('tools').closest('.pitchPod').getBoundingClientRect();
     const side=sidebar.getBoundingClientRect();
-    eq(side.right<=rack.left+1&&sidebar.contains(el('oxygen'))&&sidebar.contains(el('velX')),'unified instruments to the left of rack');
-    if(innerWidth>=741){
-      eq(rack.right>f.right-f.width*.07&&rack.bottom<=f.bottom&&rack.top>=a.bottom,'lower-right rack clears aft feed');
-      eq(side.top-f.top<f.height*.12&&side.left-f.left<f.width*.07&&side.height>side.width,'tall upper-left instrument sidebar');
+    close(rack.left,stage.left,1);close(rack.bottom,stage.bottom,1);
+    close(side.top,stage.top,1);close(side.right,stage.right,1);
+    eq(rack.top>=a.bottom&&a.right<=side.left&&rack.right<=side.left+1,'three corner panels clear each other');
+    eq(side.height>side.width&&sidebar.contains(el('oxygen'))&&sidebar.contains(el('velX')),'tall combined instrument sidebar');
+    for(const id of ['oxygen','coast','advice']){
+      const node=el(id),bounds=node.getBoundingClientRect();
+      eq(node.contains(document.elementFromPoint(bounds.x+bounds.width/2,bounds.y+bounds.height/2)),id+' visible above forward visor');
     }
     const button=el('throw'),size=button.getBoundingClientRect();
     for(const tool of rackOrder){
@@ -204,6 +209,11 @@
           eq(textRect(oxygenLabel).right<=oxygenLabel.closest('.metrics').getBoundingClientRect().right,'full oxygen caption');
         }
       }
+      frame.style.width='667px';frame.style.height='375px';
+      enterLesson('storyEntry');scrollTo(0,0);
+      const view=visor.getBoundingClientRect(),cx=view.left+view.width/2,cy=view.top+view.height/2;
+      eq(document.elementFromPoint(cx,cy+12)===visor,'landscape Story cue clears the reticle');
+      eq(el('throw').getBoundingClientRect().bottom<=innerHeight,'landscape Story release is reachable');
     }finally{frame.style.cssText=original;}
   });
   const named=[
@@ -542,6 +552,37 @@
     }
   });
 
+  test('Coast depth is visible in both cameras and an end-on range ends at contact or oxygen expiry',()=>{
+    for(const [model,speed] of [['Orbital',.07],['Straight-Line',.07],['Straight-Line',-.07]]){
+      const velocity=model==='Orbital'?[-.042,.058,-.015]:[0,speed,0];
+      fixture(model,false,model==='Orbital'?[12,-19,8]:[0,-20,0],velocity);advance(.1);
+      const [az,elevation]=Flight.angles(velocity);
+      for(const canvas of [visor,aft]){
+        const ctx=canvas.getContext('2d'),dashes=[],labels=[];
+        const stroke=ctx.stroke,fillText=ctx.fillText;
+        ctx.stroke=function(){
+          if(this.getLineDash().length)dashes.push({width:this.lineWidth,red:parseInt(this.strokeStyle.slice(1,3),16)});
+          stroke.call(this);
+        };
+        ctx.fillText=function(...args){labels.push(args[0]);fillText.apply(this,args);};
+        try{Visor.render(canvas,az,elevation,flight,canvas===aft);}
+        finally{ctx.stroke=stroke;ctx.fillText=fillText;}
+        const closeDash=dashes[0],farDash=dashes.at(-1);
+        eq(closeDash.width>farDash.width&&closeDash.red>farDash.red,'nearer coast is thicker and brighter');
+        if(model==='Straight-Line'){
+          const hit=flight.forecast.hits[flight.hitIndex],end=hit||flight.forecast.path.at(-1);
+          const metres=Math.round(norm(sub(end.p,flight.pos.p)));
+          eq(labels.includes(metres+' m '+(hit?'to contact':'at O₂ expiry')),'end-on distance from suit');
+        }else{
+          const cam=Visor.camera(flight.pos.p,az,elevation,640,320,canvas===aft);
+          const arrows=Visor.courseGlyphs(cam,flight,640,320).heads;
+          eq(arrows.length>0,'curved coast has arrows');
+          for(const arrow of arrows)close(arrow.range,norm(sub(Flight.motion(flight.anchor,arrow.t,model).p,flight.pos.p)));
+        }
+      }
+    }
+  });
+
   test('Empty rack ends a missed flight at the last actual release',()=>{
     for(const mode of ['Straight-Line','Orbital'])for(const soft of [false,true]){
       configure(0,mode,soft,true);click('toStation');set('power',55);
@@ -586,8 +627,11 @@
       const flag=canvas.parentElement.querySelector('.gameOverFlag'),style=getComputedStyle(flag);
       const bounds=flag.getBoundingClientRect(),view=canvas.getBoundingClientRect();
       eq(style.display==='grid'&&style.placeItems==='center'&&flag.textContent==='GAME OVER','centered title');
-      close(bounds.left+bounds.width/2,view.left+view.width/2,.5);
-      close(bounds.top+bounds.height/2,view.top+view.height/2,.5);
+      const split=canvas===visor&&deck.querySelector('.rack').getBoundingClientRect().top>=view.bottom-1;
+      const right=split?deck.querySelector('.metrics').getBoundingClientRect().left:view.right;
+      const top=split?deck.querySelector('.aftPod').getBoundingClientRect().bottom:view.top;
+      close(bounds.left+bounds.width/2,(view.left+right)/2,1);
+      close(bounds.top+bounds.height/2,(top+view.bottom)/2,1);
       const visual=getComputedStyle(canvas);
       eq(visual.animationName==='visor-power-down'||visual.filter.includes('brightness(0.18)'),'camera power-down');
     }
