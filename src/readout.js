@@ -1,4 +1,8 @@
 const Readout={
+  clock(time){
+    const seconds=Math.max(0,Math.floor(time+1e-7));
+    return Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+  },
   signed(value,digits,plus=true){
     const rounded=Number(value.toFixed(digits));
     return (plus && rounded>=0?'+':'')+rounded.toFixed(digits);
@@ -6,6 +10,9 @@ const Readout={
   heading(value,digits){
     const wrapped=((value%360)+360)%360;
     return (Number(wrapped.toFixed(digits))%360).toFixed(digits);
+  },
+  bearing(azimuth,elevation){
+    return 'HDG '+this.heading(azimuth,2)+'° / EL '+this.signed(elevation,2)+'°';
   },
   speed(value){
     const ordinary=value.toFixed(3);

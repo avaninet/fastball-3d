@@ -1991,6 +1991,7 @@ main {
   .rack .heading {
     flex-direction: row;
     align-items: baseline;
+    margin-bottom: 2px;
   }
   .tool b {
     line-height: 1.02;
@@ -2003,9 +2004,6 @@ main {
   }
   .tool {
     min-height: 32px;
-  }
-  .rack .heading {
-    margin-bottom: 2px;
   }
 }
 

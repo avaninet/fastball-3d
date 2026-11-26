@@ -2,11 +2,14 @@ const el=id=>document.getElementById(id), {scale,unit,norm,dot,sub,clamp}=Flight
 // Gear indices identify physical items in flight records and inventory masks.
 const rackOrder=Flight.gear.map((_,i)=>i).sort((a,b)=>Flight.gear[a].mass-Flight.gear[b].mass);
 const clockSpeeds=[1,10,20,30];
-const clock=Visor.clockText, visor=el('forward'), aft=el('aft'), visorBackdrop=el('visorBackdrop');
+const clock=Readout.clock, visor=el('forward'), aft=el('aft'), visorBackdrop=el('visorBackdrop');
 let flight, yaw=0,pitch=0,selected=5,power=95,running=false,started=false,dirty=true,drag=null;
 let lastTime=performance.now(),lastPaint=0,lastText=0,rate=1;
 let lossDebriefAt=null;
 let previewCache=null,coachCache=null;
+let frameInterrupted=false;
+const heldKeys=new Map(),presses=new Map();
+let inputEpoch=0, inputSince=0, sliderPress=null;
 const hex=n=>(n>>>0).toString(16).toUpperCase().padStart(8,'0');
 const seedLabel=seed=>typeof seed==='number'?hex(seed):seed;
 const weightClass=g=>g.mass<1?'Light':g.mass<3?'Medium':'Heavy';
@@ -19,13 +22,14 @@ function randomSeed(index=3){
   return index===5?'DB1-'+hex(dodgeballSeeds[value%dodgeballSeeds.length]):'E-'+hex(value);
 }
 function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector);dirty=true;}}
-function setMsg(msg){el('message').textContent=msg;}
+function writeText(node,text){if(node.textContent!==text)node.textContent=text;}
+function setMsg(msg){writeText(el('message'),msg);}
 function stationDirection(){return scale(flight.pos.p,-1);}
 function forecastFrom(anchor,skipInitial){
   const left=Math.max(0,flight.limit-flight.time);
   const route=Flight.forecast(anchor,left,flight.mode,skipInitial,flight.soft);
   if(flight.debrisPieces){
-    const grab=route.hits.find(h=>!flight.soft||Flight.softEnough(h.speed));
+    const grab=route.hits.find(h=>Flight.canGrab(h,flight.soft));
     route.debris=Debris.forecast(anchor,flight.time,grab?.t??left,flight.mode,flight.debrisPieces);
   }
   return route;
@@ -57,8 +61,7 @@ function describePreview(preview){
   const clearance=debris?debris.nearest.body.short+' clears by '+Readout.clearance(Math.max(0,debris.nearest.gap))+' m. ':'';
   const hit=preview.forecast.hits[0];
   if(hit){
-    const fast=preview.soft&&!Flight.softEnough(hit.speed);
-    const event=fast?'Fast entry':'Grab';
+    const event=Flight.canGrab(hit,preview.soft)?'Grab':'Fast entry';
     return clearance+event+(hit.t===0?' now':' in '+clock(Math.ceil(hit.t)))+' · '+Readout.speed(hit.speed)+' m/s';
   }
   const near=preview.forecast.near;
@@ -72,7 +75,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   flight={
     index,mode,soft,seed,story,initial,lesson,limit:Flight.oxygenReserve,
     debrisPieces:index===5?Debris.seededPieces(parseInt(seed.slice(4),16)):index===4?Debris.pieces:null,
-    skippedGuidance:false,checkAt:null,checked:false,noTrimAt:null,linedUp:false,prepared:null,
+    skippedGuidance:false,checkAt:null,checked:false,stagedPitch:null,
     log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},
     anchor:null,age:0,hitIndex:0,forecast:null,time:0,throws:0,mask:Flight.fullRack,
     objects:[],misses:0,done:'',finishedAt:null
@@ -125,7 +128,7 @@ function finish(result) {
   }
   const {budget,speed}=FlightLog.resultReadout(flight);
   el('endBudget').textContent=budget;
-  el('endStats').textContent=speed+' · '+clock(flight.time)+' flight time · '+Readout.count(flight.throws,'throw')+(flight.misses?' · '+Readout.count(flight.misses,'fast pass','fast passes'):'');
+  el('endStats').textContent=speed+' · '+clock(flight.time)+' flight time · '+Readout.count(flight.throws,'throw')+(flight.misses?' · '+Readout.count(flight.misses,'fast entry','fast entries'):'');
   setMsg(el('endTitle').textContent+'. '+budget+' · '+el('endStats').textContent);
   el('debriefShare').hidden=!isSeeded(flight.index) && flight.index!==4;
   el('copyEndSeed').hidden=el('endSeed').hidden=!isSeeded(flight.index);
@@ -162,14 +165,14 @@ function advance(dt) {
   const hits=flight.forecast.hits;
   while(flight.hitIndex<hits.length && hits[flight.hitIndex].t<=end+1e-8) {
     const h=hits[flight.hitIndex++];
-    if(!flight.soft || Flight.softEnough(h.speed)) {
+    if(Flight.canGrab(h,flight.soft)) {
       flight.time+=Math.max(0,h.t-flight.age);flight.age=h.t;flight.pos=Flight.motion(flight.anchor,h.t,flight.mode);
       Equipment.advance(flight);
       finish('capture');return;
     }
     flight.log.fast.push({time:flight.time-flight.age+h.t,p:h.p.slice(),speed:h.speed});
     flight.misses++;
-    setMsg('Fast pass at '+Readout.speed(h.speed)+' m/s. '+(flight.mask?'Brake while within reach, or circle back for a slower grab.':'Keep coasting. A slower grab is still ahead.'));
+    setMsg('Fast entry at '+Readout.speed(h.speed)+' m/s. '+(flight.mask?'Brake while within reach, or circle back for a slower grab.':'Keep coasting. A slower grab is still ahead.'));
   }
   flight.time+=step;flight.age=end;flight.pos=Flight.motion(flight.anchor,end,flight.mode);
   Equipment.advance(flight);
@@ -220,6 +223,7 @@ function throwTool() {
   Equipment.launch(flight,selected,power,aim);
   flight.mask=Flight.rackAfterThrow(flight.mask,selected,flight.story);
   flight.throws++;
+  flight.stagedPitch=null;
   if(!flight.story)selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
   setMsg(g.name+' released at '+power+'%. '+(flight.story?'Reloaded and ready.':'Read the committed coast before spending another tool.'));
   reseat(Flight.inside(old.p)&&flight.misses>0);
@@ -228,14 +232,14 @@ function throwTool() {
   else setClockStop(0);
   // The forecast includes later entries and Orbital slowdowns inside the bars.
   const hits=flight.forecast.hits;
-  const grab=hits.find(hit=>!flight.soft || Flight.softEnough(hit.speed));
+  const grab=hits.find(hit=>Flight.canGrab(hit,flight.soft));
   if(grab?.t===0){finish('capture');return;}
   if(!flight.mask && !grab && !flight.forecast.debris?.hit){
     const reachesBars=hits.length>0 || Flight.inside(old.p);
     finish(reachesBars?'overspeed':'stranded');return;
   }
   if(!running)invalidateInput();
-  flight.noTrimAt=null;started=true;running=true;
+  started=true;running=true;
   if(flight.lesson===0&&!flight.checked)scheduleHalfwayCheck();
   lastTime=performance.now();dirty=true;updateRack();instruments();
 }
@@ -244,15 +248,15 @@ function describeSide(point,bar) {
   const axis=diff.reduce((a,b,i,arr)=>Math.abs(b)>Math.abs(arr[a])?i:a,0);
   return side[2*axis+(diff[axis]>0?1:0)];
 }
-function nav() {
+function nav(status=Flight.coastStatus(flight)) {
   const c=el('coast'),a=el('advice'),s=flight;
+  const {kind,hit:h,near:n}=status;
   c.className='readout';
-  if(s.done){c.textContent=outcomes[s.done];c.classList.add(s.done==='capture'?'good':'danger');a.textContent='Flight time '+clock(s.time)+' · '+Readout.count(s.throws,'tool')+' released.';return;}
+  if(kind==='finished'){c.textContent=outcomes[s.done];c.classList.add(s.done==='capture'?'good':'danger');a.textContent='Flight time '+clock(s.time)+' · '+Readout.count(s.throws,'throw')+'.';return;}
   if(!started && !s.throws){
     c.textContent=s.story?'Ready for first pitch':'Ready to begin';
     a.textContent=s.story?'Line up while staged. Throw starts the oxygen clock.':'The tool follows the crosshair. Your suit recoils the other way. Begin flight starts the clock.';return;
   }
-  const h=s.forecast.hits[s.hitIndex];
   const hazard=s.forecast.debris?.hit;
   if(hazard){
     const left=Math.max(0,hazard.t-s.age);
@@ -267,14 +271,14 @@ function nav() {
       if(aim){
         const [az,elev]=Flight.angles(aim.dir);
         a.textContent=trimHint(aim.dir,yaw,pitch)+' Throw '+Flight.gear[aim.tool].name.toLowerCase()+
-          ' at 100%. HDG '+Readout.heading(az,0)+'°, EL '+Readout.signed(elev,0)+'°.';
+          ' at 100%. '+Readout.bearing(az,elev)+'.';
       }else a.textContent=s.mask?'No clear single throw found by Coach. Try an oblique brake in Preview throw.':'The rack is empty. Brace for contact.';
     }
     return;
   }
   if(h){
-    const tooFast=s.soft&&!Flight.softEnough(h.speed);
-    c.textContent=(tooFast?'Fast contact in ':'Contact in ')+clock(Math.ceil(Math.max(0,h.t-s.age)));c.classList.add(tooFast?'warn':'good');
+    const tooFast=kind==='fastEntry';
+    c.textContent=(tooFast?'Fast entry in ':'Contact in ')+clock(Math.ceil(Math.max(0,h.t-s.age)));c.classList.add(tooFast?'warn':'good');
     if(tooFast){
       a.textContent='Projected '+Readout.speed(h.speed)+' m/s. '+(s.mask?'Throw along measured drift to brake before reaching the bars.':'Stay on this coast. Orbital drift will bring you within reach at a safe speed.');
     }else{
@@ -290,52 +294,60 @@ function nav() {
     a.textContent='Hold this coast for '+Readout.clearance(clearPass.gap)+' m of clearance. Then trim back toward the bars.';
     return;
   }
-  if(s.misses && Flight.inside(s.pos.p)){c.textContent='Inside after fast pass';c.classList.add('warn');a.textContent='Throw along your drift to brake while the bars are still within reach, or coast through and return.';return;}
-  const n=Flight.coastPass(s.forecast,s.age);
-  if(s.misses && n.d<1e-6 && n.t<=s.age){
+  if(kind==='inside'){c.textContent='Inside the grab bars';c.classList.add('warn');a.textContent='Throw along your drift to brake while the bars are still within reach, or coast through and return.';return;}
+  if(kind==='cleared'){
     const last=s.log.fast.at(-1);
-    c.textContent='Cleared after fast pass';
+    c.textContent='Cleared after fast entry';
     a.textContent='Last entry '+clock(s.time-last.time)+' ago at '+Readout.speed(last.speed)+' m/s. Set up a slower return.';
     c.classList.add('warn');return;
   }
-  if(!s.throws && s.index===0 && n.t<=s.age+.03){
+  let advice;
+  if(kind==='receding'){
     c.textContent='Drifting away';
-    a.textContent='Turn the visor away from the station. Throw along the crosshair to push yourself back. Watch the aft camera.';
-    c.classList.add('warn');return;
+    advice='The gap has been opening since this coast began.';
+  }else if(kind==='past'){
+    c.textContent='Opening the gap';
+    advice='Closest pass '+Readout.clearance(n.d)+' m '+describeSide(n.p,n.bar)+', '+clock(s.age-n.t)+' ago.';
+  }else if(kind==='expiry'){
+    c.textContent=Readout.clearance(n.d)+' m short at expiry';
+    advice='Closest at oxygen expiry in '+clock(Math.ceil(n.t-s.age))+', '+describeSide(n.p,n.bar)+'.';
+  }else{
+    c.textContent='Miss by '+Readout.clearance(n.d)+' m';
+    advice='Nearest pass '+describeSide(n.p,n.bar)+' in '+clock(Math.ceil(n.t-s.age))+'.';
   }
-  if(n.t<=s.age+.03){c.textContent='Opening the gap';a.textContent='Closest pass '+Readout.clearance(n.d)+' m '+describeSide(n.p,n.bar)+', '+clock(s.age-n.t)+' ago. '+trimHint(sub(s.pos.p,Flight.nearest(s.pos.p)),yaw,pitch);}
-  else if(n.t>=s.forecast.path.at(-1).t-.03){c.textContent=Readout.clearance(n.d)+' m short at expiry';a.textContent='Closest at oxygen expiry in '+clock(Math.ceil(n.t-s.age))+', '+describeSide(n.p,n.bar)+'. '+trimHint(sub(n.p,n.bar),yaw,pitch);}
-  else{c.textContent='Miss by '+Readout.clearance(n.d)+' m';a.textContent='Nearest pass '+describeSide(n.p,n.bar)+' in '+clock(Math.ceil(n.t-s.age))+'. '+trimHint(sub(n.p,n.bar),yaw,pitch);}
+  const hint=stagedPitchMatches()?'':trimHint(n.t>s.age?sub(n.p,n.bar):sub(s.pos.p,Flight.nearest(s.pos.p)),yaw,pitch);
+  writeText(a,hint?advice+' '+hint:advice);
   c.classList.add('warn');
 }
 function instruments() {
   const {p,v}=flight.pos,bar=Flight.nearest(p),distance=Flight.clearance(p);
   const rr=distance>1e-8?dot(unit(sub(p,bar)),v):0,sp=norm(v);
-  el('range').textContent=distance.toFixed(1);el('rate').textContent=Readout.signed(rr,3);el('rate').className=rr<0?'good':rr>0?'warn':'';
-  el('speed').textContent=Readout.speed(sp);el('speed').className=flight.soft&&!Flight.softEnough(sp)?'danger':'';
+  writeText(el('range'),distance.toFixed(1));writeText(el('rate'),Readout.signed(rr,3));el('rate').className=rr<0?'good':rr>0?'warn':'';
+  writeText(el('speed'),Readout.speed(sp));el('speed').className=flight.soft&&!Flight.softEnough(sp)?'danger':'';
   const gauge=el('speedGauge'),ceiling=Math.max(.12,Math.ceil(sp/.04)*.04);
   gauge.style.setProperty('--fill',(100*sp/ceiling)+'%');
   gauge.style.setProperty('--tick',(100*Flight.limit/ceiling)+'%');
   gauge.classList.toggle('over',flight.soft&&!Flight.softEnough(sp));
-  gauge.setAttribute('aria-valuemax',ceiling.toFixed(3));gauge.setAttribute('aria-valuenow',String(sp));
+  gauge.setAttribute('aria-valuemax',ceiling.toFixed(3));gauge.setAttribute('aria-valuenow',sp.toFixed(3));
   const threshold=flight.soft?'Soft limit':'Reference';
-  el('speedRef').textContent=threshold+' '+Flight.limit.toFixed(3);
+  writeText(el('speedRef'),threshold+' '+Flight.limit.toFixed(3));
   gauge.setAttribute('aria-valuetext',Readout.speed(sp)+' metres per second. '+threshold+' '+Flight.limit.toFixed(3));
-  for(const [i,axis] of ['X','Y','Z'].entries())el('vel'+axis).textContent=Readout.signed(v[i],4);
-  el('suitMass').textContent=Flight.mass(flight.mask).toFixed(1)+' kg';
+  for(const [i,axis] of ['X','Y','Z'].entries())writeText(el('vel'+axis),Readout.signed(v[i],4));
+  writeText(el('suitMass'),Flight.mass(flight.mask).toFixed(1)+' kg');
   const [az,elv]=Flight.angles(v);
-  el('driftAngles').textContent=sp<.00001?'Stationary':'HDG '+Readout.heading(az,0)+'° / EL '+Readout.signed(elv,0)+'°';
-  el('oxygen').textContent=clock(Math.ceil(flight.limit-flight.time));
+  writeText(el('driftAngles'),sp<.00001?'Stationary':Readout.bearing(az,elv));
+  writeText(el('oxygen'),clock(Math.ceil(flight.limit-flight.time)));
   el('flightDeck').classList.toggle('is-paused',started&&!running&&!flight.done);
   el('flightDeck').classList.toggle('is-lost',!!flight.done&&flight.done!=='capture');
   el('assists').inert=!!flight.done;
   el('lesson').inert=!!flight.done;
   el('clockRate').disabled=!!flight.done;
   el('pause').disabled=lossDebriefAt!==null;
-  el('pause').textContent=flight.done?'Debrief':running?'Pause':started?'Resume':'Begin flight';
+  writeText(el('pause'),flight.done?'Debrief':running?'Pause':started?'Resume':'Begin flight');
   el('pausedLineup').hidden=!flight.story;
-  updateLessonCue();
-  nav();
+  const status=Flight.coastStatus(flight);
+  updateLessonCue(status);
+  nav(status);
 }
 function canPitch(){return !!flight && !flight.done && !document.hidden && !document.querySelector('dialog[open]') && (running||flight.story);}
 function freezeClock(){
@@ -359,19 +371,36 @@ function paintVisors(){
   Visor.render(visor,yaw,pitch,flight,false,visorBackdrop,preview,aim);
   Visor.render(aft,yaw+180,-pitch,flight,true,null,preview,aim);
 }
-function frame(now) {
-  requestAnimationFrame(frame);
+function updateFrame(now) {
   EarthSky.frame(now);
   sync(now);
   updateLossDebrief(now);
   if(dirty || running&&now-lastPaint>=32) {
     if(dirty && !running){nav();updateLessonCue();}
-    el('visorHeading').textContent='HDG '+Readout.heading(yaw,2)+'°';
-    el('visorElevation').textContent='EL '+Readout.signed(pitch,2)+'°';
-    el('flightTime').textContent=clock(flight.time);
+    writeText(el('visorHeading'),'HDG '+Readout.heading(yaw,2)+'°');
+    writeText(el('visorElevation'),'EL '+Readout.signed(pitch,2)+'°');
+    writeText(el('flightTime'),clock(flight.time));
     paintVisors();lastPaint=now;dirty=false;
   }
   if(running && now-lastText>=135){instruments();lastText=now;}
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  if(frameInterrupted && !running && !dirty)return;
+  try{
+    updateFrame(now);
+    frameInterrupted=false;
+  }catch(error){
+    console.error('Fastball cockpit update failed',error);
+    frameInterrupted=true;
+    running=false;
+    invalidateInput();
+    updateRack();
+    dirty=false;
+    el('flightDeck').classList.toggle('is-paused',started&&!flight.done);
+    el('pause').textContent=flight.done?'Debrief':started?'Resume':'Begin flight';
+    setMsg('Cockpit update interrupted. Flight paused. Use the clock button to continue.');
+  }
 }
 el('showPreview').onchange=()=>{dirty=true;};
 el('dodgeCoach').onchange=()=>{coachCache=null;dirty=true;nav();};
@@ -381,10 +410,8 @@ for(const [slot,i] of rackOrder.entries()) {
   const key=document.createElement('span');key.className='hotkey';key.textContent=keyNumber;
   b.setAttribute('aria-keyshortcuts',String(keyNumber));
   const img=document.createElement('canvas');img.setAttribute('aria-hidden','true');const name=document.createElement('b');name.textContent=g.name;
-  const size=document.createElement('small');b.append(key,img,name,size);el('tools').append(b);Visor.toolArt(img,i);b.onclick=()=>choose(i);
+  const size=document.createElement('small');b.append(key,img,name,size);el('tools').append(b);Equipment.toolArt(img,i);b.onclick=()=>choose(i);
 }
-const heldKeys=new Map(),presses=new Map();
-let inputEpoch=0, inputSince=0, sliderPress=null;
 function invalidateInput(){
   inputEpoch++;inputSince=performance.now();presses.clear();
   if(sliderPress?.ended)sliderPress=null;
@@ -482,7 +509,7 @@ visor.onpointerup=e=>endDrag(e,true);visor.onpointercancel=e=>endDrag(e,false);v
 function cockpitKey(e){
   const target=e.target;
   return target instanceof Element && !target.closest('dialog') &&
-    (target===visor || target===el('power') || target.matches(pitchTargets));
+    (target===visor || target.matches('input[type=range],input[type=checkbox]') || target.matches(pitchTargets));
 }
 document.addEventListener('keyup',e=>{
   const key=e.code||e.key;
@@ -496,12 +523,19 @@ document.addEventListener('keydown',e=>{
   const altBracket=(key==='['||key===']')&&(e.getModifierState('AltGraph')||(e.ctrlKey&&e.altKey));
   if((e.altKey||e.ctrlKey)&&!altBracket)return;
   const target=e.target instanceof Element?e.target:document.body;
+  if(target.isContentEditable || target.matches('textarea,select,input:not([type=range]):not([type=checkbox])'))return;
+  const visorOrInput=target===visor || target.matches('input[type=range],input[type=checkbox]');
+  if(key===' ' && target===visor && running){e.preventDefault();return;}
   const activation=target.matches(pitchTargets)&&(key==='enter'||key===' ');
   const arrow=['arrowleft','arrowright','arrowup','arrowdown'].includes(key);
+  if(arrow && target.matches('input[type=range]')){
+    if(target===el('power'))sliderPress=null;
+    return;
+  }
   const digit=/^(?:Digit|Numpad)([1-9])$/.exec(code)?.[1] || (/^[1-9]$/.test(key)?key:null);
   const decrease=key==='['||code==='BracketLeft'||code==='NumpadSubtract';
   const increase=key===']'||code==='BracketRight'||code==='NumpadAdd';
-  const pitchKey=arrow||digit||decrease||increase||(key==='enter'&&target===visor);
+  const pitchKey=arrow||digit||decrease||increase||(key==='enter'&&visorOrInput);
   if(key!=='p'&&!activation&&!pitchKey)return;
   if(!e.repeat)heldKeys.set(code,canPitch()||key==='p'?inputEpoch:-1);
   if(e.repeat&&heldKeys.get(code)!==inputEpoch){if(cockpitKey(e))e.preventDefault();return;}
@@ -514,11 +548,10 @@ document.addEventListener('keydown',e=>{
     return;
   }
   if(target===el('power'))sliderPress=null;
-  if(target.matches('input,select,textarea'))return;
   const step=e.shiftKey?.25:2;
   if(decrease||increase){e.preventDefault();changePower(power+(decrease?-1:1));return;}
   if(digit){e.preventDefault();choose(rackOrder[Number(digit)-1]);return;}
-  if(key==='enter'&&target===visor){e.preventDefault();if(!e.repeat)throwTool();return;}
+  if(key==='enter'&&visorOrInput){e.preventDefault();if(!e.repeat)throwTool();return;}
   if(!key.startsWith('arrow'))return;
   e.preventDefault();if(key==='arrowleft')yaw+=step;if(key==='arrowright')yaw-=step;
   if(key==='arrowup')pitch=clamp(pitch+step,-90,90);if(key==='arrowdown')pitch=clamp(pitch-step,-90,90);dirty=true;
@@ -635,7 +668,7 @@ document.addEventListener('visibilitychange',()=>{
   if(document.hidden){sync();freezeClock();}
   lastTime=performance.now();updateRack();instruments();
 });
-new ResizeObserver(()=>{dirty=true;}).observe(document.querySelector('.deck'));
+Visor.observeCockpit(visor,()=>{dirty=true;});
 const earth=el('earthArt');
-function loadSky(){Visor.loadEarth(earth);dirty=true;}
+function loadSky(){EarthSky.load(earth);dirty=true;}
 if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;

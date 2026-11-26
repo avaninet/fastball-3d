@@ -122,7 +122,7 @@ const FlightLog = (() => {
       rows.push('<path d="M 0 '+y+' h 25" stroke="'+item.color+'" stroke-width="2" stroke-dasharray="'+(item.dash||'none')+'"/><path d="M 28 '+y+' l -7 -3 v 6 Z" fill="'+item.color+'"/>',
         '<text x="36" y="'+(y+4)+'" fill="'+item.color+'">'+item.name+'</text>');
       rows.push('<text x="300" y="'+(y+4)+'" text-anchor="end">'+(i?item.gap.toFixed(2)+' m':'Closest 3D suit–box gap')+'</text>',
-        '<text x="416" y="'+(y+4)+'" text-anchor="end">'+(i?Visor.clockText(item.time):'Flight time')+'</text>');
+        '<text x="416" y="'+(y+4)+'" text-anchor="end">'+(i?Readout.clock(item.time):'Flight time')+'</text>');
     }
     return '<g class="debrisKey" fill="#d5dcdf" font-size="13">'+rows.join('')+'</g>';
   }
@@ -189,7 +189,7 @@ const FlightLog = (() => {
   }
   function precise(t){
     const ms=Math.round(t*1000);
-    return Visor.clockText(Math.floor(ms/1000))+'.'+String(ms%1000).padStart(3,'0');
+    return Readout.clock(Math.floor(ms/1000))+'.'+String(ms%1000).padStart(3,'0');
   }
   function resultReadout(flight){
     const rescued=flight.done==='capture';
@@ -216,13 +216,13 @@ const FlightLog = (() => {
     const seed=flight.index===4?'':seedLabel(flight.seed);
     const keyHeight=tracks.length?66:0;
     const rules=[flight.mode,flight.story?'Story':'Manual',flight.soft?'Soft capture':'Any-speed capture'].join(' · ');
-    const elapsed=precise(flight.time),oxygen=Visor.clockText(Math.ceil(flight.limit-flight.time));
+    const elapsed=precise(flight.time),oxygen=Readout.clock(Math.ceil(flight.limit-flight.time));
     const {budget,speed}=resultReadout(flight),releases=flight.log.releases;
     const clearance=flight.done==='capture'?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
-    const passCount=flight.misses?Readout.count(flight.misses,'fast pass','fast passes'):'';
+    const passCount=flight.misses?Readout.count(flight.misses,'fast entry','fast entries'):'';
     const passDetails=[clearance,passCount].filter(Boolean).join('   ·   ');
     const recordY=509+keyHeight+(passDetails?20:0);
-    const records=releases.slice(0,9).map((r,i)=>(i+1)+'.  '+Visor.clockText(r.time)+'  '+Flight.gear[r.tool].name+'  '+r.power+'%');
+    const records=releases.slice(0,9).map((r,i)=>(i+1)+'.  '+Readout.clock(r.time)+'  '+Flight.gear[r.tool].name+'  '+r.power+'%');
     if(releases.length>9)records.push('10. ...and then some');
     const rows=Math.max(1,Math.min(5,records.length)),height=recordY+10+rows*17;
     const label=(x,y,text,size,color,attrs='')=>'<text x="'+x+'" y="'+y+'" font-size="'+size+'" fill="'+color+'" '+attrs+'>'+escape(text)+'</text>';
@@ -253,7 +253,7 @@ const FlightLog = (() => {
     el('logTitle').textContent=flight.initial.name+' · Flight log';
     el('logSummary').textContent=[result,flight.mode,flight.soft?'Soft ≤ '+Flight.limit.toFixed(3)+' m/s':'Any-speed capture',
       isSeeded(flight.index)?'Seed '+seedLabel(flight.seed):'',precise(flight.time)+' elapsed',
-      Visor.clockText(Math.ceil(flight.limit-flight.time))+' oxygen',(flight.story||flight.skippedGuidance)?Readout.count(flight.throws,'throw'):tools+'/'+Flight.gear.length+' tools aboard',
+      Readout.clock(Math.ceil(flight.limit-flight.time))+' oxygen',(flight.story||flight.skippedGuidance)?Readout.count(flight.throws,'throw'):tools+'/'+Flight.gear.length+' tools aboard',
       budget,speed,flight.done==='capture'?'':'Closest approach flown '+Readout.clearance(closest,2)+' m'].filter(Boolean).join('  ·  ');
     el('logPanes').innerHTML=[0,2].map(axis=>pane(flight,segments,grid,axis,tracks)).join('');
     const key=el('logDebrisKey');
@@ -265,7 +265,7 @@ const FlightLog = (() => {
     for(const r of flight.log.releases){
       const item=document.createElement('li'),detail=document.createElement('small');
       const [az,elev]=Flight.angles(r.dir);
-      item.textContent=precise(r.time)+' · '+Flight.gear[r.tool].name+' · '+r.power+'% · HDG '+Readout.heading(az,2)+'° / EL '+num(elev)+'°';
+      item.textContent=precise(r.time)+' · '+Flight.gear[r.tool].name+' · '+r.power+'% · '+Readout.bearing(az,elev);
       detail.textContent='XYZ position ('+r.p.map(num).join(', ')+') m · velocity ('+r.v.map(v=>Readout.signed(v,4,false)).join(', ')+') m/s';
       item.append(detail);list.append(item);
     }

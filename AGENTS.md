@@ -29,6 +29,7 @@ Work in this repository on the dedicated 3D game. Use `REVIEW.md` and `DIFFICULT
 | `package.json` | Release version, supported Node version and test commands |
 | `.github/workflows/check.yml` | Offline build, balance, font-specific browser and native input checks in CI |
 | `reference/` | Flight examples, station measurements and the Alpha manual |
+| `tests/dodgeball.cjs` | Dodgeball collisions and playable routes under both flight models |
 | `tests/difficulty.cjs` | Reproducible pilot study on the original drift families |
 | `tests/balance.cjs` | Named routes, seeded pilot errors, fast-entry and recovery exercises against the built game’s physics |
 | `tests/native-browser.cjs` | ChromeDriver checks for native Space activation, clipboard handling and PNG export |

@@ -38,6 +38,6 @@ The hatch and mount share X = 0 and Z = +0.28. The mount spans Y = −1.32 to �
 
 Parts meet face to face. The axial stack separates into Z intervals, the lateral assemblies separate along X, and the core and hatch separate along Y. For either camera, the renderer paints the far interval first on each side of the eye. Each convex part then contributes its camera-facing surfaces. Rings, stripes and panel lines draw with their parent surface so a nearer component covers them together.
 
-The mint grab envelope is a flight overlay measuring 14 × 3.2 × 14 in X, Y and Z. Its open gaps remain usable for capture. Tool sprites pass through those gaps unless their trajectory crosses a solid.
+The mint grab envelope is a flight overlay measuring 14 × 3.2 × 14 m in X, Y and Z. Its thin axis points along track (Y). Its open gaps remain usable for capture. Tool sprites pass through those gaps unless their trajectory crosses a solid.
 
 When changing a mount, update both mating faces and the dimensional table. Run `node tests/station.cjs` to check contact across every joint and containment within the grab envelope. The browser suite also checks the painted surfaces against independent depth samples in both visors.

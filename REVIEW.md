@@ -1,8 +1,14 @@
-# Fastball 3D v0.3 · Local flight review
+# Fastball 3D v0.4 · Local flight review
 
 [Play the standalone build](index.html) · [Example Orbital flight log](reference/orbital-flight-log.png)
 
 Every flight gives Tommi ten minutes of oxygen. Manual flights allow nine throws. Story tools reload immediately at constant suit and gear mass. The extra tools raise the full-rack velocity-change budget from 0.329 to 0.456 m/s. A player can spend a light tool to trim a miss or keep a second substantial impulse for a return. Story uses the shorter teaching separations.
+
+## November 26 audit follow-up
+
+The review used v0.2 commit `1089b69`. The v0.3 checkout already included the compact cockpit, assisted scoring after Skip guidance, keyboard-layout support, capped replay input, accessibility labels, CSP hashes and pinned CI actions. Version 0.4 builds on the local Dodgeball release `54318bf`.
+
+A 35-throw Story approach now forecasts and records the same high-speed Orbital capture. In First rescue, throwing the first battery toward the station leads to a staged full-power recovery and a second correction that reaches the bars. Turning, selecting a tool or changing power updates the lesson cue. Completed flights show the outcome. Wide separation and the coast readout now agree about which way the suit is drifting.
 
 ## Three first-play priorities
 
@@ -18,7 +24,7 @@ The cockpit now keeps the pitch controls together and describes the committed co
 
 The gap from the nearest point of the capture envelope increases by one third for manual flights. The envelope, initial drift velocities and soft-capture threshold retain their previous values. Standard retries restore the same scaled opening. Story replays restore the original opening. Skipping guidance keeps the remaining oxygen, position, velocity and release log. The debrief records an assisted result. Retry opens a fresh manual flight.
 
-| Opening | Story initial clearance | Manual initial clearance | v0.3 soft route, Straight-Line / Orbital | Prior soft route, Straight-Line / Orbital |
+| Opening | Story initial clearance | Manual initial clearance | v0.4 soft route, Straight-Line / Orbital | Prior soft route, Straight-Line / Orbital |
 | --- | ---: | ---: | --- | --- |
 | Tether separation | 18.13 m | 24.18 m | 7:19 / 7:31 | 5:24 / 5:26 |
 | Lateral drift | 16.52 m | 22.03 m | 7:19 / 7:17 | 5:26 / 5:21 |
@@ -40,7 +46,7 @@ After the last release the full remaining forecast decides whether a grab is pos
 
 The comparison uses the same 128 generated `D-` seed numbers beginning at decimal 104729, the same planning method, and the previous build at `164cc05`. Straight-back repeats use the battery, then the drill and pouch at 60 and 120 seconds when needed. Planned routes select release bearing, equipment and power from the simulated 3D state.
 
-| Strategy on 128 generated openings | Previous Straight-Line / Orbital | v0.3 Straight-Line / Orbital |
+| Strategy on 128 generated openings | Previous Straight-Line / Orbital | v0.4 Straight-Line / Orbital |
 | --- | --- | --- |
 | Face away, 95% battery, any speed | 11 / 5 | 5 / 5 |
 | Repeat straight back, any speed | 30 / 34 | 25 / 26 |
@@ -48,7 +54,7 @@ The comparison uses the same 128 generated `D-` seed numbers beginning at decima
 | Planned soft return | 128 / 128 | 128 / 128 |
 | Planned soft return after 30 seconds of drift | 128 / 128 | 128 / 128 |
 
-The v0.3 planner also found a soft return on **256/256 independent generated openings in both models**. That set started at hexadecimal 726800 and advanced by 1543 for each seed. In the dedicated fast-entry exercise, nominal braking and post-pass return both succeeded on 96/96 cases in each model. With up to 5° and five power points of recovery error, the post-pass return succeeded on 95/96 Straight-Line and 94/96 Orbital cases.
+The v0.4 planner also found a soft return on **256/256 independent generated openings in both models**. That set started at hexadecimal 726800 and advanced by 1543 for each seed. In the dedicated fast-entry exercise, nominal braking and post-pass return both succeeded on 96/96 cases in each model. With up to 5° and five power points of recovery error, the post-pass return succeeded on 95/96 Straight-Line and 94/96 Orbital cases.
 
 ## How much throw error is tolerable?
 
@@ -74,10 +80,10 @@ The aft camera sits in the upper-left corner of the forward visor. The transluce
 
 Browser checks verify that miss hints follow the forward visor in both flight models. Two nine-release flights test the spacing of numbered callouts in both log projections, including throws made at almost the same position.
 
-The browser suite exercises all nine keyboard slots, early debrief, a valid last-tool intercept, a final fast pass, the shared ten-minute reserve, slider timing, gauge states, signed velocity, Story lessons, release history and backdrop dismissal, including the nested flight log. It also checks the core cockpit controls against four actual CSS viewports, including 390 × 844 portrait and 844 × 390 landscape. The browser suite also checks tablet rack labels at 768 and 1024 px and header bounds down to 320 px. Follow the [README](README.md) to run the balance and browser checks.
+The browser suite exercises all nine keyboard slots, early debrief, a valid last-tool intercept, a final fast entry, the shared ten-minute reserve, slider timing, gauge states, signed velocity, Story lessons, release history and backdrop dismissal, including the nested flight log. It also checks the core cockpit controls against four actual CSS viewports, including 390 × 844 portrait and 844 × 390 landscape. The browser suite also checks tablet rack labels at 768 and 1024 px and header bounds down to 320 px. Follow the [README](README.md) to run the balance and browser checks.
 
-The audited v0.2 build had 66 checks per viewport. The v0.3 suite has 69, including assisted scoring, physical key positions and replay input limits. It also checks Space keyup and repeat cancellation, setup edits after a pasted replay, near-zero misses, two-pass Orbital coasts, lesson recovery and pointer cancellation. Short-screen checks cover both First rescue and manual controls at nine sizes, including 1366 × 625, 1280 × 600, 1024 × 650, 375 × 553 and 320 × 568. The fixture supports the DejaVu fonts used by Linux CI and exercises an Arial/Courier fallback. The legacy tap checks exercise mouse and touch releases followed by a plain mouse click. Physical iPhone and iPad taps still need a device test. Two last-tool Orbital tests coast to a soft grab at 1× and 30×. One slows before entry. The other enters fast and slows to capture speed inside at 43.847572 s.
+There are 81 browser checks per viewport. New coverage reproduces the 35-battery Story approach in Orbital, follows a wrong-way First rescue pitch through to capture, edits a staged pitch, distinguishes outward drift from a past flyby, operates cockpit shortcuts with sliders and checkboxes focused, and resumes after a simulated paint failure. Short-screen checks cover both First rescue and manual controls at nine sizes, including 1366 × 625, 1280 × 600, 1024 × 650, 375 × 553 and 320 × 568. The fixture supports the DejaVu fonts used by Linux CI and exercises an Arial/Courier fallback. The legacy tap checks exercise mouse and touch releases followed by a plain mouse click. Physical iPhone and iPad taps still need a device test. Two last-tool Orbital tests coast to a soft grab at 1× and 30×. One slows before entry. The other enters fast and slows to capture speed inside at 43.847572 s.
 
-The station check verifies all 28 parts and their mounting faces. The browser suite exercises GPU and software Earth projection, camera occlusion and the released-tool sprites. Native browser coverage includes Space activation, clipboard fallback and PNG export. The flight log and share-card examples were recaptured from the four-release, soft-capture Orbital flight on seed D-00019919.
+The balance harness checks the first crossing on all six faces at 1.5, 3, 8 and 12 m/s with both grab rules. The Dodgeball suite checks debris collisions and routes home. The station check verifies all 28 parts and their mounting faces. The browser suite exercises GPU and software Earth projection, camera occlusion and the released-tool sprites. Native browser coverage includes Space activation, clipboard fallback and PNG export. The flight log and share-card examples were recaptured from the four-release, soft-capture Orbital flight on seed D-00019919.
 
-Windows Chrome 158 passed the full suite at all four viewports with the native font stack and again with embedded DejaVu Sans and DejaVu Sans Mono. The native key, clipboard and PNG paths were also exercised in Chrome. Hosted CI and physical-device testing remain open.
+Windows Chrome 158 passed the full suite at all four viewports with the native font stack and again with embedded DejaVu Sans and DejaVu Sans Mono. Native Chrome input checks also covered mouse focus, a single Enter release, slider arrows and checkbox Space. Clipboard fallback and flight-card PNG export passed. Hosted CI and physical-device testing remain open.

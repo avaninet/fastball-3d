@@ -16,7 +16,7 @@ const Flight = (() => {
   const named = [
     {name:'Tether separation', p:[12,-19,8], v:[0.016,-0.019,0.010], brief:'A broken tether. A slow outward drift. Bring Capt. Tommi Dylan back to the grab bars.'},
     {name:'Lateral drift', p:[-7,-18,9], v:[0.050,0.008,-0.018], brief:'You are sliding across the station face. Take some sideways speed out of your first pitch.'},
-    {name:'Wide separation', p:[19,-26,10], v:[0.027,-0.027,0.012], brief:'The station is falling behind. Spend a heavy tool early and leave yourself time to trim.'}
+    {name:'Wide separation', p:[19,-26,10], v:[0.027,-0.027,0.012], brief:'The station is pulling ahead of you. Spend a heavy tool early and leave yourself time to trim.'}
   ];
   const add = (a,b) => a.map((x,i)=>x+b[i]);
   const sub = (a,b) => a.map((x,i)=>x-b[i]);
@@ -35,7 +35,7 @@ const Flight = (() => {
   const impulse = (tool,mask) => gear[tool].mass*gear[tool].speed/mass(mask);
   const budgets = [0];
   for (let mask=1;mask<=fullRack;mask++) {
-    budgets[mask]=Math.max(...gear.map((g,i)=>(mask & (1<<i)) ? impulse(i,mask)+budgets[mask^(1<<i)] : 0));
+    budgets[mask]=Math.max(...gear.map((_,i)=>(mask & (1<<i)) ? impulse(i,mask)+budgets[mask^(1<<i)] : 0));
   }
   function release(s,tool,power,dir,mask) {
     return {p:s.p.slice(),v:sub(s.v,scale(unit(dir),impulse(tool,mask)*clamp(power,10,100)/100))};
@@ -52,6 +52,16 @@ const Flight = (() => {
   const clearance = p => norm(sub(p,nearest(p)));
   const inside = p => p.every((x,i)=>Math.abs(x)<=half[i]+1e-8);
   const softEnough = speed => speed<=limit+1e-9;
+  const canGrab = (hit,soft) => !soft || softEnough(hit.speed);
+  // A fast Story pitch can cross the envelope tolerance in nanoseconds.
+  // Resolve the full ten-minute bracket to near machine precision.
+  function bisectCrossing(value,lo,hi,left){
+    for(let i=0;i<50;i++){
+      const mid=(lo+hi)/2;
+      if(left*value(mid)>0)lo=mid;else hi=mid;
+    }
+    return (lo+hi)/2;
+  }
   // Split each coordinate into monotone intervals at every zero of its velocity.
   // For this orbit each velocity is A sin(nt) + B cos(nt) + C.
   function extrema(A,B,C,end) {
@@ -79,14 +89,10 @@ const Flight = (() => {
     const tolerance=32*Number.EPSILON*Math.max(...coeff.map(Math.abs));
     const roots=cuts.filter(x=>Math.abs(value(x))<=tolerance);
     for(let i=1;i<cuts.length;i++){
-      let a=cuts[i-1],b=cuts[i];
+      const a=cuts[i-1],b=cuts[i];
       const left=value(a);
       if(left*value(b)>=0)continue;
-      for(let j=0;j<46;j++){
-        const mid=(a+b)/2;
-        if(left*value(mid)>0)a=mid;else b=mid;
-      }
-      roots.push((a+b)/2);
+      roots.push(bisectCrossing(value,a,b,left));
     }
     return roots.sort((a,b)=>a-b);
   }
@@ -113,12 +119,7 @@ const Flight = (() => {
           if(Math.abs(pb-face)<1e-9) candidates.push(b);
           if((pa-face)*(pb-face)>=0) continue;
           if(mode==='Straight-Line') {candidates.push(a+(b-a)*(face-pa)/(pb-pa)); continue;}
-          let lo=a,hi=b;
-          for(let k=0;k<35;k++) {
-            const t=(lo+hi)/2;
-            if((motion(s,t,mode).p[i]-face)*(pa-face)>0) lo=t; else hi=t;
-          }
-          candidates.push((lo+hi)/2);
+          candidates.push(bisectCrossing(t=>motion(s,t,mode).p[i]-face,a,b,pa-face));
         }
       }
     }
@@ -170,6 +171,18 @@ const Flight = (() => {
     const next=forecast.passes.find(p=>p.t>=age);
     const last=forecast.passes.at(-1);
     return next??(last && last.t>forecast.near.t?last:forecast.near);
+  }
+  function coastStatus(state){
+    if(state.done)return {kind:'finished'};
+    const {forecast,age}=state,hit=forecast.hits[state.hitIndex];
+    if(hit)return {kind:canGrab(hit,state.soft)?'grab':'fastEntry',hit};
+    if(inside(state.pos.p))return {kind:'inside'};
+    const near=coastPass(forecast,age);
+    if(state.misses && near.d<1e-6 && near.t<=age)return {kind:'cleared',near};
+    if(near.t===0)return {kind:'receding',near};
+    if(near.t<=age)return {kind:'past',near};
+    if(near.t>=forecast.path.at(-1).t-.03)return {kind:'expiry',near};
+    return {kind:'miss',near};
   }
   function seedStream(seed) {
     let a=seed>>>0;
@@ -262,5 +275,5 @@ const Flight = (() => {
     return story?base:manualOpening(base);
   }
   return {gear,fullRack,named,opening,half,limit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,rackAfterThrow,impulse,budgets,
-    release,motion,nearest,clearance,inside,softEnough,entries,forecast,coastPass,seedStream,transfer,command,applyCommand,randomStart};
+    release,motion,nearest,clearance,inside,softEnough,canGrab,entries,forecast,coastPass,coastStatus,seedStream,transfer,command,applyCommand,randomStart};
 })();

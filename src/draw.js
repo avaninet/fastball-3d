@@ -98,16 +98,32 @@ const Visor = (() => {
     for(const [a,b] of edges)for(const k of [0,.94])
       line3(ctx,cam,add(a,scale(sub(b,a),k)),add(a,scale(sub(b,a),k+.06)),'#b6f4c5',1.35);
   }
-  function captions(ctx,canvas,w,small) {
-    const stage=canvas.closest('.hudStage'),view=canvas.getBoundingClientRect();
-    const covers=small||!stage?[]:Array.from(stage.querySelectorAll('.metrics,.pitchPod,.aftPod'),p=>p.getBoundingClientRect());
+  const cockpitPanels=new WeakMap();
+  function observeCockpit(canvas,onChange){
+    const deck=canvas.closest('.deck');
+    const panels=[...deck.querySelectorAll('.metrics,.pitchPod,.aftPod,.lesson,.bearingReadout')];
+    function measure(){
+      const view=canvas.getBoundingClientRect();
+      const boxes=panels.map(panel=>{
+        const r=panel.getBoundingClientRect();
+        return {left:r.left-view.left,right:r.right-view.left,top:r.top-view.top,bottom:r.bottom-view.top,
+          clipsCaption:panel.matches('.metrics,.pitchPod,.aftPod')};
+      });
+      cockpitPanels.set(canvas,boxes);
+      onChange();
+    }
+    const observer=new ResizeObserver(measure);
+    for(const node of [deck,canvas,...panels])observer.observe(node);
+    measure();
+  }
+  function captions(ctx,covers,w) {
     return (x,y,text,color,align='left')=>{
       ctx.font='600 12px '+cockpitFonts.sans;
       let left=0,right=w;
       for(const box of covers){
-        if(view.top+y+3<=box.top||view.top+y-12>=box.bottom)continue;
-        if(box.left<=view.left+1)left=Math.max(left,box.right-view.left+3);
-        else right=Math.min(right,box.left-view.left-3);
+        if(!box.clipsCaption||y+3<=box.top||y-12>=box.bottom)continue;
+        if(box.left<=1)left=Math.max(left,box.right+3);
+        else right=Math.min(right,box.left-3);
       }
       if(x<left||x>right)return;
       const width=ctx.measureText(text).width,offset=align==='center'?width/2:0;
@@ -169,7 +185,7 @@ const Visor = (() => {
   function course(ctx,cam,state,small,w,h,label,preview=false) {
     if(!preview&&!state.time&&!state.throws)return;
     const m=state.forecast;
-    const stationHit=preview&&state.soft?m.hits.find(entry=>Flight.softEnough(entry.speed)):m.hits[state.hitIndex];
+    const stationHit=preview&&state.soft?m.hits.find(entry=>Flight.canGrab(entry,state.soft)):m.hits[state.hitIndex];
     const impact=m.debris?.hit;
     const hit=impact&&(!stationHit||impact.t<=stationHit.t)?impact:stationHit;
     coastPath(ctx,cam,state,hit,small,preview);
@@ -228,7 +244,7 @@ const Visor = (() => {
     if(!hit)line3(ctx,cam,pass.p,pass.bar,'#f3b76a',1);
     const q=cam.world(pass.p);if(q[2]<near)return;
     const [x,y]=cam.screen(q);
-    ctx.strokeStyle=hit && (!state.soft || Flight.softEnough(hit.speed))?'#97ecc6':'#ffc370';
+    ctx.strokeStyle=hit && Flight.canGrab(hit,state.soft)?'#97ecc6':'#ffc370';
     ctx.lineWidth=1.6;ctx.strokeRect(x-3.5,y-3.5,7,7);
     if(!small)label(x+9,y-6,hit?'CONTACT':'NEAREST PASS',ctx.strokeStyle);
   }
@@ -297,18 +313,16 @@ const Visor = (() => {
       const a=[x-size,y-sign*size],b=[x+size,y+sign*size];
       stroke(ctx,a,b,'#1d1520',3.3);stroke(ctx,a,b,color,1.6);
     }
-    const remaining=clockText(Math.ceil(Math.max(0,hit.t-age)));
+    const remaining=Readout.clock(Math.ceil(Math.max(0,hit.t-age)));
     const title=preview?'THROW':small?'HIT':hit.body.short.toUpperCase()+' HIT';
     label(x+10,y+(preview?17:-9),title+' +'+remaining,color);
     ctx.restore();
   }
-  function targetMarker(ctx,cam,canvas,w,h,small,label) {
+  function targetMarker(ctx,cam,covers,w,h,small,label) {
     const q=cam.world([0,0,0]),xy=q[2]>near?cam.screen(q):null;
     if(xy && xy[0]>20 && xy[0]<w-20 && xy[1]>24 && xy[1]<h-20){
       if(small)return;
-      const rect=canvas.getBoundingClientRect();
-      const top=document.elementFromPoint(rect.left+xy[0],rect.top+xy[1]);
-      if(!top?.closest('.pitchPod,.metrics,.aftPod,.lesson,.bearingReadout'))return;
+      if(!covers.some(box=>xy[0]>=box.left && xy[0]<box.right && xy[1]>=box.top && xy[1]<box.bottom))return;
     }
     let x=q[0],y=-q[1];if(Math.hypot(x,y)<.001){x=0;y=-1;}
     const len=Math.hypot(x,y);x/=len;y/=len;
@@ -349,7 +363,8 @@ const Visor = (() => {
     const cam=camera(state.pos.p,az,el,w,h,small,!!state.forecast.debris);
     EarthSky.draw(ctx,w,sceneHeight,h/2,cam);
     drawStars(ctx,cam,w,h,state,sceneHeight);
-    const label=captions(ctx,canvas,w,small);
+    const covers=small?[]:cockpitPanels.get(canvas)??[];
+    const label=captions(ctx,covers,w);
     station(ctx,cam);
     if(state.forecast.debris)debrisScene(ctx,cam,state,small);
     Equipment.draw(ctx,cam,w,sceneHeight,state.objects,small);
@@ -388,13 +403,12 @@ const Visor = (() => {
     }
     ctx.strokeStyle='#041018';ctx.lineWidth=4;ctx.stroke();
     ctx.strokeStyle='#70faff';ctx.lineWidth=2;ctx.stroke();
-    targetMarker(ctx,cam,canvas,w,h,small,label);
+    targetMarker(ctx,cam,covers,w,h,small,label);
     if(surface!==canvas){
       const view=canvas.getContext('2d',{alpha:false});
       view.save();view.resetTransform();
       view.drawImage(surface,0,0,width,height,0,0,width,height);view.restore();
     }
   }
-  function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-  return {render,camera,courseGlyphs,loadEarth:EarthSky.load,toolArt:Equipment.toolArt,clockText};
+  return {render,camera,courseGlyphs,observeCockpit};
 })();

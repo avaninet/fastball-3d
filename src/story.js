@@ -59,10 +59,14 @@ function showLossCall(result) {
 }
 
 const lessons=[
-  {title:'First rescue',index:0,mode:'Straight-Line',soft:false},
-  {title:'Trim an oblique miss',index:1,mode:'Straight-Line',soft:false},
-  {title:'Brake for the bars',index:1,mode:'Straight-Line',soft:true},
-  {title:'Read the orbital bend',index:0,mode:'Orbital',soft:false}
+  {title:'First rescue',index:0,mode:'Straight-Line',soft:false,
+    cue:'Without a tether or thrusters, a drifting astronaut is presumed lost. Newton’s third law gives Tommi one last pitch. Fling a wrench away from the station as hard as you can and it pushes you back. For this gap, choose Face away and throw the heavier battery at 95%.'},
+  {title:'Trim an oblique miss',index:1,mode:'Straight-Line',soft:false,
+    cue:'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss, then line up a correction.'},
+  {title:'Brake for the bars',index:1,mode:'Straight-Line',soft:true,
+    cue:'This approach crosses the bars above the soft limit. Line up the practice pitch, then press Throw. Compare range rate with relative speed.'},
+  {title:'Read the orbital bend',index:0,mode:'Orbital',soft:false,
+    cue:'Repeat the first rescue’s Face away battery pitch at 95%. Watch the coast bend in the rotating frame and compare its nearest pass with the straight return.'}
 ];
 function beginLesson(i){
   const lesson=lessons[i];
@@ -87,41 +91,50 @@ function updateLessonEnd(){
   next.hidden=i===null || !lessons[i+1] || flight.done!=='capture';
   if(!next.hidden)next.textContent=lessons[i+1].title;
 }
-function updateLessonCue(){
+function stagedPitchMatches(){
+  const staged=flight.stagedPitch;
+  return !!staged && staged.yaw===yaw && staged.pitch===pitch && staged.tool===selected &&
+    staged.power===power && staged.time===flight.time;
+}
+function updateLessonCue(status=Flight.coastStatus(flight)){
   if(flight.lesson===null)return;
-  const i=flight.lesson,h=flight.forecast.hits[flight.hitIndex];
-  el('lessonTitle').textContent=lessons[i].title;
+  const i=flight.lesson,staged=stagedPitchMatches();
+  writeText(el('lessonTitle'),lessons[i].title);
   const action=el('lessonAction');
   let cue='',label='';
-  if(!flight.throws){
-    const cues=[
-      'Without a tether or thrusters, a drifting astronaut is presumed lost. Newton’s third law gives Tommi one last pitch. Fling a wrench away from the station as hard as you can and it pushes you back. For this gap, choose Face away and throw the heavier battery at 95%.',
-      'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss, then line up a correction.',
-      'This approach crosses the bars above the soft limit. Line up the practice pitch, then press Throw. Compare range rate with relative speed.',
-      'Repeat the first rescue’s Face away battery pitch at 95%. Watch the coast bend in the rotating frame and compare its nearest pass with the straight return.'
-    ];
-    cue=cues[i];if(i===2){label='Line up practice pitch';if(flight.linedUp)cue='The 95% battery is lined up. Press Throw, then read the predicted entry speed.';}
+  if(status.kind==='finished'){
+    cue=flight.done==='capture'?'Grab bars secured.':'Flight over. Retry from the debrief.';
+    if(flight.done==='capture' && lessons[i+1])cue+=' Open the debrief for the next lesson.';
+  }else if(!flight.throws){
+    cue=lessons[i].cue;
+    if(i===2){
+      label='Line up practice pitch';
+      if(staged)cue='The 95% battery is lined up. Press Throw, then read the predicted entry speed.';
+    }
+  }else if(staged && !running){
+    cue=flight.stagedPitch.partial
+      ?'Battery lined up at full power. Throw to counter the drift, then line up another correction.'
+      :'Correction staged. Read the selected tool, bearing and recoil, then press Throw to resume at 1×.';
   }else if(flight.checkAt!==null){
     cue='Find the station in the aft camera. Read Current coast to see where your recoil leads. The clock pauses for one course check.';
     label='Coast to halfway';
-  }else if(h && (!flight.soft || Flight.softEnough(h.speed))){
+  }else if(status.kind==='grab'){
     cue='The coast enters the full grab-bar envelope. Check the entry speed and coast to the grab.';label='Coast to grab';
-  }else if(h){
-    cue='The grab will be too fast. A pitch along the measured drift slows the suit. Line up the brake, then throw. To experience a fast pass, let the clock run and coast clear for another entry.';
+  }else if(status.kind==='fastEntry'){
+    cue='The grab will be too fast. A pitch along the measured drift slows the suit. Line up the brake, then throw. To experience a fast entry, let the clock run and coast clear for another entry.';
     label='Line up brake';
-  }else if(Flight.inside(flight.pos.p)&&flight.misses){
+  }else if(status.kind==='inside'){
     cue='You are within reach. Throw along the measured drift to slow down for a grab, or coast through and return.';
+    label='Line up brake';
   }else{
-    const near=Flight.coastPass(flight.forecast,flight.age);
+    const near=status.near;
     const miss=near.t>flight.age?sub(near.p,near.bar):sub(flight.pos.p,Flight.nearest(flight.pos.p));
-    cue=trimHint(miss,yaw,pitch)+' A light pitch that way pushes your suit back toward the bars. Line up a correction and check its tool and power.';
+    const advice=status.kind==='receding'?'A heavy pitch can counter your outward drift.':'A pitch that way nudges your suit back toward the bars.';
+    cue=[trimHint(miss,yaw,pitch),advice,'Line up a correction and check its tool and power.'].filter(Boolean).join(' ');
     label='Line up correction';
   }
-  if(!running && flight.prepared===flight.throws && flight.throws){cue='Correction staged. Read the selected tool, bearing and recoil, then press Throw to resume at 1×.';label='';}
-  if(!running && flight.noTrimAt===flight.time){cue='No single throw reaches a tested return from here. Aim a heavier pitch to reduce the miss, then check again.';label='';}
-  if(flight.done)label='';
-  if(el('lessonCue').textContent!==cue)el('lessonCue').textContent=cue;
-  action.textContent=label;action.hidden=!label;
+  writeText(el('lessonCue'),cue);
+  writeText(action,label);action.hidden=!label;
 }
 function storyCorrection(){
   const s=flight.pos,left=flight.limit-flight.time;
@@ -129,7 +142,7 @@ function storyCorrection(){
   for(const i of rackOrder){
     if(!(flight.mask&(1<<i)))continue;
     const candidates=[];
-    if(hit && flight.soft && !Flight.softEnough(hit.speed)){
+    if(flight.soft && (hit ? !Flight.softEnough(hit.speed) : Flight.inside(s.p))){
       const magnitude=norm(s.v)-.068;
       if(magnitude>0)candidates.push(scale(unit(s.v),-magnitude));
     }else{
@@ -141,27 +154,38 @@ function storyCorrection(){
       const command=Flight.command(dv,i,flight.mask);
       const next=Flight.applyCommand(s,command,flight.mask);
       const contacts=Flight.entries(next,left,flight.mode,Flight.inside(s.p)&&flight.misses>0,flight.soft);
-      if(contacts.some(hit=>!flight.soft||Flight.softEnough(hit.speed)))return command;
+      if(contacts.some(entry=>Flight.canGrab(entry,flight.soft)))return command;
     }
   }
+  // Story reloads the battery. Aim its strongest impulse toward an intercept,
+  // then plan the next pitch from the resulting measured coast.
+  if(flight.story && left>0){
+    const dv=Flight.transfer(s,Flight.nearest(s.p),left*.8,flight.mode);
+    return {...Flight.command(dv,5,flight.mask),power:100,partial:true};
+  }
+}
+function stageLessonPitch(partial=false){
+  flight.stagedPitch={yaw,pitch,tool:selected,power,time:flight.time,partial};
 }
 function lessonAction(){
   if(!flight.story || flight.lesson===null || !canPitch())return;
   if(!sync()||flight.done)return;
   if(!flight.throws && flight.lesson===2){
     const [az,elev]=Flight.angles(flight.pos.p);
-    setView(Flight.direction(az+14,elev));choose(5);changePower(95);flight.linedUp=true;
+    setView(Flight.direction(az+14,elev));choose(5);changePower(95);stageLessonPitch();
   }else if(flight.checkAt!==null){
     advance(Math.max(0,flight.checkAt-flight.time));
   }else{
     const h=flight.forecast.hits[flight.hitIndex];
-    if(h && (!flight.soft || Flight.softEnough(h.speed))){
+    if(h && Flight.canGrab(h,flight.soft)){
       advance(Math.max(0,h.t-flight.age)+1e-7);
     }else{
       freezeClock();
       const c=storyCorrection();
-      if(c){choose(c.tool);changePower(c.power);setView(Flight.direction(c.az,c.el));flight.prepared=flight.throws;}
-      else flight.noTrimAt=flight.time;
+      if(c){
+        choose(c.tool);changePower(c.power);setView(Flight.direction(c.az,c.el));
+        stageLessonPitch(c.partial);
+      }
     }
   }
   dirty=true;instruments();
@@ -179,7 +203,7 @@ el('lessonAction').onclick=lessonAction;
 el('skipLesson').onclick=()=>{
   if(!flight.story||flight.lesson===null||!canPitch())return;
   if(!sync()||flight.done)return;
-  flight.lesson=null;flight.checkAt=null;flight.story=false;flight.skippedGuidance=true;
+  flight.lesson=null;flight.checkAt=null;flight.stagedPitch=null;flight.story=false;flight.skippedGuidance=true;
   el('assists').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
   invalidateInput();if(!running)pause();
   setMsg('Guidance off. Each tool has one release left. This rescue counts as assisted. Retry for a manual score.');updateRack();instruments();

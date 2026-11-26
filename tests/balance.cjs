@@ -4,6 +4,22 @@ const html=fs.readFileSync(process.argv[2] || path.join(__dirname,'../index.html
 const src=html.match(/<script id="physics">([\s\S]+?)<\/script>/)[1];
 const F=vm.runInNewContext(src+';Flight',{Math}), modes=['Straight-Line','Orbital'];
 const {norm,scale,unit,add,clamp}=F;
+if(!process.argv[2]){
+  // Propagate backwards from a known crossing on each face, then forecast the
+  // entire flight. All four speeds used to lose entries to face rounding.
+  for(const [speed,time] of [[1.5,5.037035],[3,5.037035],[8,5.012345],[12,5.012345]]){
+    for(let axis=0;axis<3;axis++)for(const sign of [-1,1]){
+      const p=[0,0,0],v=[0,0,0];
+      p[axis]=sign*F.half[axis];v[axis]=-sign*speed;
+      const opening=F.motion({p,v},-time,'Orbital');
+      for(const soft of [false,true]){
+        const hit=F.entries(opening,F.oxygenReserve,'Orbital',false,soft)[0];
+        assert.ok(hit && Math.abs(hit.t-time)<1e-8,'high-speed Orbital face entry');
+        assert.ok(F.inside(hit.p) && Math.abs(hit.speed-speed)<1e-8,'first-contact position and speed');
+      }
+    }
+  }
+}
 // Historical builds can still be supplied for comparison. The E family is
 // part of v0.2 and later, and both old families retain their original starts.
 if(!process.argv[2] || F.coastPass){

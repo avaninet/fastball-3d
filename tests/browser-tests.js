@@ -653,6 +653,82 @@
       eq(keys(key,false,target)&&keys(key,false,target,true)&&keyup(target,key),'native repeat and release on '+id);
     }
   });
+  test('Focused cockpit sliders and checkboxes keep flight shortcuts',()=>{
+    configure(4,'Straight-Line',false,true);
+    for(const id of ['power','clockRate','showPreview','dodgeCoach']){
+      const input=el(id);
+      input.focus();
+      const target=document.activeElement,before=flight.throws;
+      eq(target===input,'keyboard focus on '+id);
+      keys('3',false,target);eq(selected===rackOrder[2],'tool shortcut on '+id);
+      set('power',80);keys(']',false,target);eq(power===81,'power shortcut on '+id);
+      if(input.type==='range'){
+        const bearing=yaw;
+        eq(keys('ArrowRight',false,target) && yaw===bearing,'native slider arrow');
+      }else eq(keys(' ',false,target),'native checkbox Space');
+      keys('Enter',false,target);keys('Enter',false,target,true);
+      eq(flight.throws===before+1,'one release on '+id);
+    }
+    eq(!keys(' ',false,visor),'live visor Space does not scroll');
+  });
+  test('A wrong-way First rescue pitch can be recovered using lesson actions',()=>{
+    beginLesson(0);click('toStation');click('throw');click('lessonAction');
+    eq(stagedPitchMatches() && flight.stagedPitch.partial && selected===5 && power===100,'heavy recovery pitch');
+    eq(el('lessonCue').textContent.includes('another correction'),'explains the second pitch');
+    click('throw');click('lessonAction');
+    eq(stagedPitchMatches() && !flight.stagedPitch.partial,'return pitch found');
+    click('throw');
+    if(flight.checkAt!==null)click('lessonAction');
+    click('lessonAction');
+    eq(flight.done==='capture' && el('lessonCue').textContent.startsWith('Grab bars secured'),'completed rescue');
+  });
+  test('Lesson cues follow the live aim, tool, power and flight outcome',()=>{
+    beginLesson(2);
+    const cue=()=>el('lessonCue').textContent;
+    for(const change of [()=>keys('ArrowRight'),()=>click('tool6'),()=>set('power',10)]){
+      click('lessonAction');eq(cue().includes('is lined up'),'practice staged');
+      change();instruments();eq(!cue().includes('is lined up'),'practice edited');
+    }
+    beginLesson(1);click('away');click('throw');click('lessonAction');
+    eq(cue().startsWith('Correction staged') && !/Aim |Turn |Pitch straight/.test(el('advice').textContent),'staged trim matches coast guidance');
+    keys('ArrowUp');instruments();eq(!cue().startsWith('Correction staged') && !el('lessonAction').hidden,'can re-stage after turning');
+    beginLesson(0);click('pause');advance(600);
+    eq(flight.done==='oxygen' && cue().includes('Retry') && el('lessonAction').hidden,'terminal loss cue');
+  });
+  test('Coast distinguishes an outward start from a past flyby',()=>{
+    configure(2,'Straight-Line');
+    eq(el('coast').textContent==='Drifting away' && !el('advice').textContent.includes('ago'),'receding at release');
+    advance(20);instruments();eq(el('coast').textContent==='Drifting away','still on outward coast');
+    fixture('Straight-Line',false,[10,-10,0],[0,.1,0]);
+    advance(180);instruments();
+    eq(el('coast').textContent==='Opening the gap' && el('advice').textContent.includes('ago'),'real closest pass');
+  });
+  test('High-speed Story Orbital forecast, capture and flight log agree',()=>{
+    configure(0,'Orbital',false,true);click('away');set('power',100);
+    for(let i=0;i<35;i++)click('throw');
+    const hit=flight.forecast.hits[0],at=flight.time+hit.t;
+    eq(hit.speed>3 && el('coast').textContent.startsWith('Contact'),'fast inbound forecast');
+    advance(600);
+    eq(flight.done==='capture' && Flight.inside(flight.pos.p),'grab at the boundary');
+    close(flight.time,at);close(norm(flight.pos.v),hit.speed);
+    const {closest}=FlightLog.reconstruct(flight);close(closest,0);
+  });
+  test('A failed cockpit paint pauses the clock and allows a fresh resume',()=>{
+    configure(0,'Straight-Line');
+    const render=Visor.render,schedule=window.requestAnimationFrame;
+    try{
+      window.requestAnimationFrame=()=>0;
+      Visor.render=()=>{throw Error('Simulated paint failure');};
+      dirty=true;frame(performance.now());
+      eq(!running && el('throw').disabled && el('message').textContent.includes('interrupted'),'visible pause after paint error');
+      const stopped=flight.time;
+      frame(performance.now()+20);close(flight.time,stopped);
+      Visor.render=render;click('pause');frame(performance.now());
+      eq(running && !frameInterrupted && !el('throw').disabled,'resumed after paint recovered');
+    }finally{
+      Visor.render=render;window.requestAnimationFrame=schedule;
+    }
+  });
   test('Replay input accepts the length boundary and discards trailing prose punctuation',()=>{
     const code='#seed=E-ff&level=Orbital';
     eq(Replays.parse(code.padStart(512)).seed==='E-000000FF','512-character challenge');
@@ -688,7 +764,7 @@
     beginLesson(3);click('away');click('throw');
     flight.pos={p:[200,200,200],v:[.2,.2,.2]};reseat();
     click('lessonAction');
-    eq(!running&&el('lessonCue').textContent.startsWith('No single throw')&&el('lessonAction').hidden,'failed correction staged');
+    eq(!running&&stagedPitchMatches()&&flight.stagedPitch.partial&&el('lessonAction').hidden,'partial correction staged');
     click('pause');advance(2);click('pause');
     eq(el('message').textContent.includes('paused')&&!el('lessonAction').hidden,'new coast time permits another correction');
   });
@@ -756,7 +832,7 @@
         eq(flight.checkAt===null&&!el('lessonAction').textContent.includes('Coast to'),'no scheduled check');
         const coast=flight.forecast.near.t*.60;
         tick(coast,30);eq(running&&!flight.checked,'clock continues past halfway');
-        click('lessonAction');eq(!running&&flight.prepared===flight.throws,'requested correction staged '+i);
+        click('lessonAction');eq(!running&&stagedPitchMatches(),'requested correction staged '+i);
         if(i===1)eq(Flight.gear[selected].mass<=1.2,'light correction');
         if(i===2)eq(dot(Flight.direction(yaw,pitch),unit(flight.pos.v))>.999,'brake measured drift');
         click('throw');
@@ -849,16 +925,16 @@
     eq(el('velX').textContent==='+0.0000'&&!el('rate').textContent.startsWith('-0.000'),'rounded zero');
     eq(Readout.heading(-.001,2)==='0.00'&&Readout.heading(-720.001,2)==='0.00','wrapped rounded headings');
     eq(Readout.speed(.0800001)!=='0.080'&&Readout.speed(.08)==='0.080','threshold detail');
-    eq(Readout.count(1,'fast pass','fast passes')==='1 fast pass'&&Readout.count(1,'throw')==='1 throw','singular');
+    eq(Readout.count(1,'fast entry','fast entries')==='1 fast entry'&&Readout.count(1,'throw')==='1 throw','singular');
     fixture('Straight-Line',true,[0,-1.7,0],[0,.09,0]);advance(2);
     choose(6);changePower(100);setView(flight.pos.v);click('throw');
     eq(flight.done==='capture','single brake after one fast entry');
     const card=document.createElement('div');card.innerHTML=FlightLog.card(flight);
     const challenge=card.querySelector('desc').textContent;
-    eq(challenge.includes('1 throw ·')&&challenge.endsWith('1 fast pass'),'singular challenge text');
+    eq(challenge.includes('1 throw ·')&&challenge.endsWith('1 fast entry'),'singular challenge text');
     el('debrief').close();
     configure(3,'Orbital');eq(el('seedTag').textContent.startsWith('Copy replay'),'correct action label');
-    click('throw');advance(600);eq(el('advice').textContent.includes('1 tool released'),'singular coast');
+    click('throw');advance(600);eq(el('advice').textContent.includes('1 throw'),'singular coast');
   });
   test('Keyboard aim repeats and a real-time stall pauses at 30×',()=>{
     configure(0,'Straight-Line');

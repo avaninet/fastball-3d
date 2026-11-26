@@ -41,6 +41,17 @@ async function main() {
       await button('#pause', 'space');
       assert.equal(await read("el('pause').textContent"), label);
     }
+    for (const [slot,id] of ['power','clockRate','showPreview'].entries()) {
+      await button('#'+id, 'click');
+      assert.equal(await read('document.activeElement.id'), id);
+      const throws = await read('flight.throws'), power = await read('el("power").valueAsNumber');
+      const keys = [String(slot+1), power===100?'[':']', '\uE007'];
+      await post('/actions', {actions: [{type: 'key', id: 'cockpit', actions:
+        keys.flatMap(value=>[{type:'keyDown',value},{type:'keyUp',value}])}]});
+      assert.equal(await read('flight.throws'), throws+1);
+      assert.equal(await read('flight.log.releases.at(-1).tool'), await read('rackOrder['+slot+']'));
+      assert.equal(await read('flight.log.releases.at(-1).power'), power+(power===100?-1:1));
+    }
     await button('#manual', 'space');
     await button('#guide summary', 'space');
     assert.equal(await read("document.querySelector('#guide details').open"), true);
