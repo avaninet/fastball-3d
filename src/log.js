@@ -127,10 +127,19 @@ const FlightLog = (() => {
   }
   function resultReadout(flight){
     const rescued=flight.done==='capture';
-    const original=Flight.budgets[Flight.fullRack];
-    const recovered=rescued?Flight.budgets[flight.mask]:0;
+    let budget;
+    if(flight.skippedGuidance){
+      budget='Assisted flight · compare throw count and speed';
+    }else if(flight.story){
+      budget='Unlimited tools · auto-reload';
+    }else{
+      const original=Flight.budgets[Flight.fullRack];
+      const recovered=rescued?Flight.budgets[flight.mask]:0;
+      const percent=(100*recovered/original).toFixed(1);
+      budget='Δv brought home '+recovered.toFixed(3)+' / '+original.toFixed(3)+' m/s ('+percent+'%)';
+    }
     return {
-      budget:flight.story?'Unlimited tools · auto-reload':'Δv brought home '+recovered.toFixed(3)+' / '+original.toFixed(3)+' m/s ('+(100*recovered/original).toFixed(1)+'%)',
+      budget,
       speed:(rescued?'Grab speed ':'Final relative speed ')+Readout.speed(Flight.norm(flight.pos.v))+' m/s'
     };
   }
@@ -141,7 +150,7 @@ const FlightLog = (() => {
     const rules=[flight.mode,flight.story?'Story':'Manual',flight.soft?'Soft capture':'Any-speed capture'].join(' · ');
     const elapsed=precise(flight.time),oxygen=Visor.clockText(Math.ceil(flight.limit-flight.time));
     const {budget,speed}=resultReadout(flight),releases=flight.log.releases;
-    const clearance=flight.done==='capture'?'':'Closest clearance '+Readout.clearance(closest,2)+' m';
+    const clearance=flight.done==='capture'?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
     const passCount=flight.misses?Readout.count(flight.misses,'fast pass','fast passes'):'';
     const passDetails=[clearance,passCount].filter(Boolean).join('   ·   ');
     const recordY=509+(passDetails?20:0);
@@ -175,8 +184,8 @@ const FlightLog = (() => {
     el('logTitle').textContent=flight.initial.name+' · Flight log';
     el('logSummary').textContent=[result,flight.mode,flight.soft?'Soft ≤ '+Flight.limit.toFixed(3)+' m/s':'Any-speed capture',
       flight.index===3?'Seed '+seedLabel(flight.seed):'',precise(flight.time)+' elapsed',
-      Visor.clockText(Math.ceil(flight.limit-flight.time))+' oxygen',flight.story?Readout.count(flight.throws,'throw'):tools+'/'+Flight.gear.length+' tools aboard',
-      budget,speed,flight.done==='capture'?'':'Closest clearance '+Readout.clearance(closest,2)+' m'].filter(Boolean).join('  ·  ');
+      Visor.clockText(Math.ceil(flight.limit-flight.time))+' oxygen',(flight.story||flight.skippedGuidance)?Readout.count(flight.throws,'throw'):tools+'/'+Flight.gear.length+' tools aboard',
+      budget,speed,flight.done==='capture'?'':'Closest approach flown '+Readout.clearance(closest,2)+' m'].filter(Boolean).join('  ·  ');
     el('logPanes').innerHTML=[0,2].map(axis=>pane(flight,segments,grid,axis)).join('');
     el('logEvents').textContent=['Start 0:00',...flight.log.fast.map(h=>'Fast entry '+precise(h.time)+' at '+Readout.speed(h.speed)+' m/s'),result+' '+precise(flight.time)].join('  ·  ');
     const list=el('logThrows');list.replaceChildren();

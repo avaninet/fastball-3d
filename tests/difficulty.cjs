@@ -116,7 +116,7 @@ function plannedRoutes(initial,mode,soft,deadline,story,mask=F.fullRack,setupDel
         }else{
           const dv=F.transfer(p.s,target,leftToTarget,mode);
           const {tool}=choosePitch(norm(dv),p.mask);
-          const c=F.command(p.s,dv,tool,p.mask);p.pitch(tool,c.power,F.direction(c.az,c.el));
+          const c=F.command(dv,tool,p.mask);p.pitch(tool,c.power,F.direction(c.az,c.el));
         }
         if(p.wait(12))break;
       }

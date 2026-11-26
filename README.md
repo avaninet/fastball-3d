@@ -1,4 +1,4 @@
-# Fastball 3D v0.2
+# Fastball 3D v0.3
 
 You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan back within reach of the station’s grab bars.
 
@@ -39,15 +39,15 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 | Require a soft capture | Off by default. Turn it on to require **0.080 m/s or slower** within the bars. A fast entry carries you through. You can still brake inside the volume or come back around. |
 | Story flight | Unlimited auto-reloading tools and a closer opening with **Face station**, **Face away** and **Face drift**. Line up before the clock starts or while paused. **Throw** starts or resumes flight at 1×. |
 
-**First rescue** is the optional walkthrough with exact pitches. It stages a first throw, pauses for a halfway course check, then offers an oblique miss, a braking lesson and an Orbital comparison. Only **First rescue** pauses automatically for a course check. In later lessons you can choose when to stage a correction. **Skip guidance** gives you manual control with the nine tools currently aboard. Each can then be thrown once. **Retry** after skipping starts the standard manual opening with a full rack and a fresh clock. Replay the lesson anytime from **Guide**.
+**First rescue** is the optional walkthrough with exact pitches. It stages a first throw, pauses for a halfway course check, then offers an oblique miss, a braking lesson and an Orbital comparison. Only **First rescue** pauses automatically for a course check. In later lessons you can choose when to stage a correction. **Skip guidance** gives you manual control with the nine tools currently aboard. Each can then be thrown once. A flight that starts in the lesson is scored as assisted even if you skip before the first throw. Compare throw count and speed on that flight. **Retry** after skipping starts the standard manual opening with a full rack and a fresh clock. Replay the lesson anytime from **Guide**.
 
 ## Cockpit controls
 
 | Action | Mouse, touch or keyboard |
 | --- | --- |
 | Look / aim | Drag the forward visor or tap a point to center it. Arrow keys turn 2°. Hold **Shift** for 0.25° steps. Use the **STN** cue to find the station when it’s off-screen. |
-| Select equipment | Click or tap the rack, or press **1–9** in ascending weight order. Manual flight selects the lightest remaining tool after a release. Story keeps the reloaded tool selected. |
-| Set power and release | Drag **Throw power**, or use **[** and **]** for one percentage point at a time. Press **Throw**, or **Enter** with the forward visor focused. In Story, every tool reloads immediately. Suit and gear mass stays constant, so a repeat throw at the same power gives the same recoil. |
+| Select equipment | Click or tap the rack, or press **1–9** on the number row or numpad in ascending weight order. Manual flight selects the lightest remaining tool after a release. Story keeps the reloaded tool selected. |
+| Set power and release | Drag **Throw power**, or use the two key positions immediately to the right of **P** (US **[** and **]**). Numpad **−** and **+** also change power in one-point steps. Press **Throw**, or **Enter** with the forward visor focused. In Story, every tool reloads immediately. Suit and gear mass stays constant, so a repeat throw at the same power gives the same recoil. |
 | Preview the next throw | Tick **Preview throw** under **Current coast** in either flight model. The solid violet path shows where the suit would coast with this aim, tool and power. The dashed mint path shows where it’s already going. Turn the preview off at any time. |
 | Pause / resume | Use the clock button or **P**. In manual flight you can read instruments while paused and resume to aim. Opening **Guide** or **New flight** pauses a running flight. Close the dialog and press **Resume** when ready. |
 | Speed up a coast | Drag **Play speed** to **1×**, **10×**, **20×** or **30×**. Every throw resets it to 1×. A clock interruption longer than one real second pauses the simulation. |
@@ -77,7 +77,7 @@ After a random flight, win or lose, open **Share → View flight card** for the 
 
 ## Build and check
 
-Run these commands from `fastball-3d` with Node.js. The game and build have no package dependencies.
+Run these commands from `fastball-3d` with Node.js 18 or newer. The game and build have no package dependencies.
 
 ```sh
 node scripts/build.cjs
@@ -88,10 +88,16 @@ node tests/difficulty.cjs
 node scripts/browser-qa.cjs
 ```
 
-Open the generated `qa-runner.html` for browser results, or pass a Chromium executable path to the last command to run all four CSS viewport sizes. The layout checks use both system fonts and an Arial/Courier fallback on short phones. Use a trusted local browser executable and flags. The balance harness also accepts an older HTML build for comparison and executes its embedded physics, so use builds you trust. `npm test` verifies the distributable, the station joints and the flight-balance assertions. For the native Space-key, clipboard and PNG checks, start a matching ChromeDriver on port 9515 and run `node tests/native-browser.cjs` with Node 18 or newer. The approved starting build is tagged `prototype-baseline`.
+Open the generated `qa-runner.html` for browser results, or pass a Chromium executable path to the last command to run all four CSS viewport sizes. Each run reports all four results. The short-window tests resize the cockpit again for laptop windows down to 1280 × 600 and phone viewports down to 375 × 553 and 320 × 568. On the shortest phones the rack spans the screen, the instrument panel scrolls, and the scenario summary follows the cockpit.
+
+By default the checks use installed system fonts plus an Arial/Courier fallback. CI sets `FASTBALL_QA_FONT_DIR` to the directory containing DejaVu Sans and DejaVu Sans Mono (regular and bold). The runner embeds those four font files in its test page. To reproduce the CI font metrics on Debian or Ubuntu with `fonts-dejavu-core` installed, run `FASTBALL_QA_FONT_DIR=/usr/share/fonts/truetype/dejavu node scripts/browser-qa.cjs google-chrome`.
+
+Use a trusted local browser executable and flags. The balance harness also accepts an older HTML build for comparison and executes its embedded physics, so use builds you trust. `npm test` verifies the distributable, the station joints and the flight-balance assertions. For the native Space-key, clipboard and PNG checks, start a matching ChromeDriver on port 9515 and run `npm run test:native` with Node 18 or newer. For standalone hosting, configure the HTTP response header `Content-Security-Policy: frame-ancestors 'none'` at the host. The offline page embeds hashes for its scripts and stylesheet. The approved starting build is tagged `prototype-baseline`.
 
 [Local test results and playtest questions](REVIEW.md) · [Difficulty study](DIFFICULTY.md) · [Project workflow](AGENTS.md) · [Historical prototype handoff](HANDOFF.md) · [Fastball Alpha v0.4 manual](reference/alpha-v0.4-manual.txt)
 
 an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere
 
 [avani@avaninet.com](mailto:avani@avaninet.com)
+
+[License and permissions](LICENSE)

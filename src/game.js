@@ -41,7 +41,13 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   const initial=Flight.opening(index,seed,story);
   lossDebriefAt=null;
   invalidateInput();
-  flight={index,mode,soft,seed,story,limit:Flight.oxygenReserve,lesson,skippedGuidance:false,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:''};
+  flight={
+    index,mode,soft,seed,story,initial,lesson,limit:Flight.oxygenReserve,
+    skippedGuidance:false,checkAt:null,checked:false,noTrimAt:null,linedUp:false,prepared:null,
+    log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},
+    anchor:null,age:0,hitIndex:0,forecast:null,time:0,throws:0,mask:Flight.fullRack,
+    objects:[],misses:0,done:'',finishedAt:null
+  };
   selected=5;power=95;el('power').value=power;setClockStop(0);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
   el('name').textContent=initial.name;el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays she pitches with friends. Today her tether snaps and her suit thrusters jam.':initial.brief;el('modeTag').textContent=mode;
@@ -57,7 +63,7 @@ const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'
 function finish(result) {
   running=false;flight.done=result;flight.finishedAt=new Date();invalidateInput();dirty=true;
   el('retry').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
-  const won=result==='capture',drill=!flight.log.releases.some(r=>r.tool===4);
+  const won=result==='capture',drill=!flight.skippedGuidance&&!flight.log.releases.some(r=>r.tool===4);
   el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
   el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”')+' — Commander Julian Bern':'The reserve ran out before a successful grab. Retry to test a different pitch.';
   if(result==='stranded'){
@@ -127,7 +133,7 @@ function updateRack() {
     const b=el('tool'+i),present=!!(flight.mask&(1<<i));b.disabled=!present||!canPitch();
     b.classList.toggle('spent',!present);
     const detail=present?g.mass.toFixed(1)+' kg':'Released';
-    b.setAttribute('aria-label',g.name+', '+detail);
+    b.setAttribute('aria-label',b.getAttribute('aria-keyshortcuts')+' '+g.name+' '+detail);
     b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=detail;
   }
   const budget=el('budget');
@@ -258,6 +264,7 @@ function paintVisors(){
   Visor.render(aft,yaw+180,-pitch,flight,true,null,preview);
 }
 function frame(now) {
+  requestAnimationFrame(frame);
   EarthSky.frame(now);
   sync(now);
   updateLossDebrief(now);
@@ -269,7 +276,6 @@ function frame(now) {
     paintVisors();lastPaint=now;dirty=false;
   }
   if(running && now-lastText>=135){instruments();lastText=now;}
-  requestAnimationFrame(frame);
 }
 el('showPreview').onchange=()=>{dirty=true;};
 for(const [slot,i] of rackOrder.entries()) {
@@ -376,23 +382,32 @@ document.addEventListener('keyup',e=>{
 document.addEventListener('keydown',e=>{
   if(typeof e.key!=='string'||!e.key)return;
   const code=e.code||e.key,key=e.key.toLowerCase();
-  if(!e.repeat)heldKeys.set(code,canPitch()||key==='p'?inputEpoch:-1);
-  if(e.repeat && heldKeys.get(code)!==inputEpoch){if(cockpitKey(e))e.preventDefault();return;}
-  if(document.querySelector('dialog[open]')||e.altKey||e.ctrlKey||e.metaKey)return;
+  if(document.querySelector('dialog[open]')||e.metaKey)return;
+  const altBracket=(key==='['||key===']')&&(e.getModifierState('AltGraph')||(e.ctrlKey&&e.altKey));
+  if((e.altKey||e.ctrlKey)&&!altBracket)return;
   const target=e.target instanceof Element?e.target:document.body;
+  const activation=target.matches(pitchTargets)&&(key==='enter'||key===' ');
+  const arrow=['arrowleft','arrowright','arrowup','arrowdown'].includes(key);
+  const digit=/^(?:Digit|Numpad)([1-9])$/.exec(code)?.[1] || (/^[1-9]$/.test(key)?key:null);
+  const decrease=key==='['||code==='BracketLeft'||code==='NumpadSubtract';
+  const increase=key===']'||code==='BracketRight'||code==='NumpadAdd';
+  const pitchKey=arrow||digit||decrease||increase||(key==='enter'&&target===visor);
+  if(key!=='p'&&!activation&&!pitchKey)return;
+  if(!e.repeat)heldKeys.set(code,canPitch()||key==='p'?inputEpoch:-1);
+  if(e.repeat&&heldKeys.get(code)!==inputEpoch){if(cockpitKey(e))e.preventDefault();return;}
   if(key==='p'){e.preventDefault();if(!e.repeat)pause();return;}
-  if(target.matches(pitchTargets) && (key==='enter'||key===' ')){
+  if(activation){
     e.preventDefault();if(canPitch()&&!e.repeat)target.click();return;
   }
   if(!canPitch()){
-    if(target===visor || target===el('power')){if(key!=='tab')e.preventDefault();}
+    if(target===visor||target===el('power'))e.preventDefault();
     return;
   }
   if(target===el('power'))sliderPress=null;
   if(target.matches('input,select,textarea'))return;
   const step=e.shiftKey?.25:2;
-  if(/^[1-9]$/.test(key)){choose(rackOrder[Number(key)-1]);return;}
-  if(key==='['||key===']'){e.preventDefault();changePower(power+(key==='['?-1:1));return;}
+  if(decrease||increase){e.preventDefault();changePower(power+(decrease?-1:1));return;}
+  if(digit){e.preventDefault();choose(rackOrder[Number(digit)-1]);return;}
   if(key==='enter'&&target===visor){e.preventDefault();if(!e.repeat)throwTool();return;}
   if(!key.startsWith('arrow'))return;
   e.preventDefault();if(key==='arrowleft')yaw+=step;if(key==='arrowright')yaw-=step;

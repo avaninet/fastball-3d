@@ -3,7 +3,7 @@ const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const html=fs.readFileSync(process.argv[2] || path.join(__dirname,'../index.html'),'utf8');
 const src=html.match(/<script id="physics">([\s\S]+?)<\/script>/)[1];
 const F=vm.runInNewContext(src+';Flight',{Math}), modes=['Straight-Line','Orbital'];
-const {norm,scale,unit,add,dot,clamp}=F;
+const {norm,scale,unit,add,clamp}=F;
 // Historical builds can still be supplied for comparison. The E family is
 // part of v0.2 and later, and both old families retain their original starts.
 if(!process.argv[2] || F.coastPass){
@@ -17,6 +17,8 @@ if(!process.argv[2] || F.coastPass){
     }
   }
 }
+// Older standalone builds took the current state as an unused first argument.
+const buildCommand = F.command.length===4 ? F.command : (_state,dv,tool,mask)=>F.command(dv,tool,mask);
 function valid(hit,soft){return hit && (!soft || hit.speed<=F.limit+1e-9);}
 function plan(s,mode,mask,left,soft,skipInitial=false) {
   const rack=F.gear.map((_,i)=>i).filter(i=>mask&(1<<i));
@@ -31,7 +33,7 @@ function plan(s,mode,mask,left,soft,skipInitial=false) {
       const finish=avail.filter(i=>F.impulse(i,bag)*1.005>=mag).sort((a,b)=>F.impulse(a,bag)-F.impulse(b,bag))[0];
       const tool=finish ?? avail.sort((a,b)=>F.impulse(b,bag)-F.impulse(a,bag))[0];
       if(tool===undefined) break;
-      const c=F.command(p,dv,tool,bag); actions.push({...c,delay});
+      const c=buildCommand(p,dv,tool,bag); actions.push({...c,delay});
       p=F.applyCommand(p,c,bag);bag^=1<<tool;
       if(finish!==undefined || step===count-1) {
         const hit=F.entries(p,left-delay,mode,skipInitial && delay===0,soft).find(h=>valid(h,soft));
@@ -79,7 +81,7 @@ for(const mode of modes){
     const p=[(draw()-.5)*5,-1.6-8,(draw()-.5)*5],v=[(draw()-.5)*.012,.10+draw()*.035,(draw()-.5)*.012];
     const s={p,v},hits=F.entries(s,320,mode);assert.ok(hits[0]?.speed>F.limit);
     const deadline=320,leadTime=hits[0].t-18,approach=F.motion(s,leadTime,mode);
-    const braking=F.command(approach,scale(unit(approach.v),-(norm(approach.v)-.061)),4,bag);
+    const braking=buildCommand(approach,scale(unit(approach.v),-(norm(approach.v)-.061)),4,bag);
     const bv=F.applyCommand(approach,braking,bag);
     if(valid(F.entries(bv,deadline-leadTime,mode)[0],true))braked++;
     let after=hits[0].t+1;
@@ -129,7 +131,7 @@ function recipe(initial,mode,soft,kind){
     const entry=F.entries(state,duration-elapsed,mode)[0];
     if(entry && entry.speed>F.limit && entry.t>18){
       const wait=entry.t-18;state=F.motion(state,wait,mode);elapsed+=wait;
-      const command=F.command(state,scale(unit(state.v),.061-norm(state.v)),4,mask);
+      const command=buildCommand(state,scale(unit(state.v),.061-norm(state.v)),4,mask);
       pitch(4,command.power,unit(state.v));
     }
   }

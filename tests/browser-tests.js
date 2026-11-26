@@ -545,6 +545,17 @@
     click('throw');eq(!(flight.mask&(1<<5))&&el('tool5').disabled&&selected!==5,'manual battery is single-use');
     eq(el('suitMass').textContent===Flight.mass(flight.mask).toFixed(1)+' kg','manual mass falls');
   });
+  test('A guided coast handed to manual controls keeps its assisted result',()=>{
+    beginLesson(0);click('away');click('throw');click('skipLesson');tick(600,30);
+    eq(flight.done==='capture','the assisted coast still reaches the bars');
+    eq(el('endBudget').textContent.includes('Assisted')&&!el('endBudget').textContent.includes('%'),'no manual score');
+    eq(!el('endCopy').textContent.includes('Upmass Hero'),'no manual award');
+    click('viewLog');
+    eq(el('logSummary').textContent.includes('Assisted')&&el('logSummary').textContent.includes('1 throw'),'log retains assisted release');
+    el('flightLog').close();click('retry');
+    eq(!flight.skippedGuidance&&!flight.story&&!flight.throws&&running,'fresh manual retry');
+    eq(FlightLog.resultReadout(flight).budget.includes('Δv'),'manual scoring restored');
+  });
   test('Tablet rack, landscape oxygen and narrow headers display complete labels',()=>{
     configure(0,'Straight-Line');
     const frame=window.frameElement,original=frame.style.cssText;
@@ -582,13 +593,13 @@
       eq(el('throw').getBoundingClientRect().bottom<=innerHeight,'landscape Story release is reachable');
     }finally{frame.style.cssText=original;}
   });
-  test('Throw and the reticle fit short phones with system and fallback fonts',()=>{
+  test('Throw and the reticle fit phone and laptop windows with both font stacks',()=>{
     const frame=window.frameElement,root=document.documentElement;
     const savedFrame=frame.style.cssText,savedRoot=root.style.cssText;
     try{
       for(const fallback of [false,true]){
         if(fallback){root.style.setProperty('--sans','Arial, sans-serif');root.style.setProperty('--mono','"Courier New", monospace');}
-        for(const [w,h] of [[360,640],[375,667],[667,375],[1366,768]]){
+        for(const [w,h] of [[320,568],[375,553],[360,640],[375,667],[667,375],[1024,650],[1280,600],[1366,625],[1366,768]]){
           frame.style.width=w+'px';frame.style.height=h+'px';
           for(const story of [false,true]){
             if(story)beginLesson(0);else configure(0,'Straight-Line');
@@ -597,11 +608,31 @@
             const context=w+'x'+h+' '+(story?'lesson':'manual')+' '+(fallback?'fallback':'system');
             eq(t.bottom<=h && t.top>=0 && document.elementFromPoint(t.x+t.width/2,t.y+t.height/2)===el('throw'),context+' Throw bottom '+t.bottom);
             eq(document.elementFromPoint(v.x+v.width/2,v.y+v.height/2)===visor,context+' reticle');
-            if(w===1366)eq(root.scrollHeight<=h,context+' page height '+root.scrollHeight);
+            if(w>=1024)eq(root.scrollHeight<=h,context+' page height '+root.scrollHeight);
           }
         }
       }
     }finally{frame.style.cssText=savedFrame;root.style.cssText=savedRoot;}
+  });
+  test('Physical hotkeys work across layouts and locked visors preserve browser keys',()=>{
+    const send=(type,key,code,extra={})=>visor.dispatchEvent(new KeyboardEvent(type,{key,code,bubbles:true,cancelable:true,...extra}));
+    configure(0,'Straight-Line');
+    send('keydown','&','Digit1');eq(selected===rackOrder[0],'unshifted French number row');
+    send('keydown','4','Numpad4');eq(selected===rackOrder[3],'numpad selection');
+    const before=power;
+    send('keydown','ü','BracketLeft');eq(power===before-1,'physical left bracket');
+    send('keydown','+','NumpadAdd');eq(power===before,'numpad power');
+    send('keydown',']','Digit9',{ctrlKey:true,altKey:true});eq(power===before+1&&selected===rackOrder[3],'AltGr bracket changes power');
+    eq(send('keydown','1','Digit1',{ctrlKey:true})&&selected===rackOrder[3],'browser tab shortcut');
+    click('pause');
+    for(const key of ['F5','F11','F12',' ','PageDown','Home','Escape','a','Tab']){
+      eq(send('keydown',key,key)&&send('keydown',key,key,{repeat:true})&&send('keyup',key,key),'browser owns '+key);
+    }
+    eq(!send('keydown','ArrowLeft','ArrowLeft'),'paused visor still owns aiming keys');
+    for(const [slot,i] of rackOrder.entries()){
+      const button=el('tool'+i);
+      eq(button.getAttribute('aria-label')===[slot+1,Flight.gear[i].name,button.querySelector('small').textContent].join(' '),'spoken slot '+slot);
+    }
   });
   test('Locked cockpit preserves native repeat and Space activation on other controls',()=>{
     const keyup=(target,key)=>target.dispatchEvent(new KeyboardEvent('keyup',{key,bubbles:true,cancelable:true}));
@@ -613,6 +644,16 @@
       const target=el(id);
       eq(keys(key,false,target)&&keys(key,false,target,true)&&keyup(target,key),'native repeat and release on '+id);
     }
+  });
+  test('Replay input accepts the length boundary and discards trailing prose punctuation',()=>{
+    const code='#seed=E-ff&level=Orbital';
+    eq(Replays.parse(code.padStart(512)).seed==='E-000000FF','512-character challenge');
+    eq(Replays.parse(code.padStart(513))===null,'overlong input rejected before trimming');
+    eq(Replays.parse('Try this ('+code+').]').mode==='Orbital','sentence punctuation');
+    eq(Replays.parse('#seed=invalid!')===null,'invalid seed');
+    eq(!Replays.openHash('#notes='+'.'.repeat(512)),'unrelated long anchor ignored');
+    eq(Replays.openHash('#seed='+'.'.repeat(512))&&el('setup').open,'overlong replay offers setup');
+    eq(el('seed').getAttribute('aria-invalid')==='true'&&!el('seed').value,'overlong fragment discarded');
   });
   test('Pasted challenge imports once and keeps subsequent setup edits',()=>{
     configure(3,'Straight-Line');click('new');
@@ -1050,7 +1091,7 @@
       eq(flight.mask===0&&flight.throws===9&&flight.done==='stranded','flight ends on ninth throw');
       completeLossTransition();
       close(flight.time,flight.log.releases.at(-1).time);eq(flight.time<10,'no expiry wait');
-      click('viewLog');eq(el('logSummary').textContent.includes('Out of tools')&&el('logSummary').textContent.includes('0/9'),'stranded log');
+      click('viewLog');eq(el('logSummary').textContent.includes('Out of tools')&&el('logSummary').textContent.includes('0/9')&&el('logSummary').textContent.includes('Closest approach flown'),'stranded log');
       eq(el('logThrows').children.length===9,'all releases in log');
       el('flightLog').close();click('retry');eq(flight.mask===Flight.fullRack&&!flight.done,'retry restores all nine');
     }

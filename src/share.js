@@ -1,10 +1,17 @@
 const Replays=(()=>{
   const defaults={mode:'Straight-Line',soft:false,story:false};
+  const maxLength=512;
   function parse(value,rules=defaults){
+    if(typeof value!=='string'||value.length>maxLength)return null;
     let code=value.trim(),mode=rules.mode,soft=rules.soft,story=rules.story;
     // A shared challenge may be embedded in a sentence or followed by prose.
     const fragmentStart=code.lastIndexOf('#seed=');
-    if(fragmentStart>=0)code=code.slice(fragmentStart).split(/[\s<>"\x27]/,1)[0].replace(/[.,;:!?)\]]+$/,'');
+    if(fragmentStart>=0){
+      code=code.slice(fragmentStart).split(/[\s<>"\x27]/,1)[0];
+      let end=code.length;
+      while(end && '.,;:!?)]'.includes(code[end-1]))end--;
+      code=code.slice(0,end);
+    }
     if(code.startsWith('#')||/^(https?|file):\/\//i.test(code)){
       let hash=code;
       if(!code.startsWith('#')){
@@ -33,16 +40,18 @@ const Replays=(()=>{
     // An offline friend can paste the fragment without a copy of the sender's file path.
     return /^https?:$/.test(url.protocol)?url.origin+url.pathname+hash:hash;
   }
+  function hasSeed(hash){
+    return new URLSearchParams(hash.slice(1,maxLength+1)).has('seed');
+  }
   function updateAddress(active){
     if(!['file:','http:','https:'].includes(location.protocol))return;
-    const hasSeed=new URLSearchParams(location.hash.slice(1)).has('seed');
     const hash=active.index===3?fragment(active):'';
-    if((!hash&&!hasSeed)||location.hash===hash)return;
+    if((!hash&&!hasSeed(location.hash))||location.hash===hash)return;
     const url=new URL(location.href);url.hash=hash;
     try{history.replaceState(history.state,'',url.href);}catch{/* Some local viewers isolate history. */}
   }
   function openHash(hash){
-    if(!new URLSearchParams(hash.slice(1)).has('seed'))return false;
+    if(!hasSeed(hash))return false;
     const replay=parse(hash);
     const needsConfirmation=flight&&((started&&!flight.done)||el('setup').open);
     for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
@@ -51,7 +60,7 @@ const Replays=(()=>{
     }else{
       if(!flight)start(0,'Straight-Line',false);
       updateAddress(flight); // Cancel keeps the current flight and its address.
-      openSetup();el('scenario').value='3';el('seed').value=hash;updateSetup();
+      openSetup();el('scenario').value='3';el('seed').value=hash.length<=maxLength?hash:'';updateSetup();
     }
     return true;
   }

@@ -78,7 +78,7 @@ function storyCorrection(){
       }
     }
     for(const dv of candidates){
-      const command=Flight.command(s,dv,i,flight.mask);
+      const command=Flight.command(dv,i,flight.mask);
       const next=Flight.applyCommand(s,command,flight.mask);
       const contacts=Flight.entries(next,left,flight.mode,Flight.inside(s.p)&&flight.misses>0,flight.soft);
       if(contacts.some(hit=>!flight.soft||Flight.softEnough(hit.speed)))return command;
@@ -122,5 +122,5 @@ el('skipLesson').onclick=()=>{
   flight.lesson=null;flight.checkAt=null;flight.story=false;flight.skippedGuidance=true;
   el('assists').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
   invalidateInput();if(!running)pause();
-  setMsg('Manual flight. The nine tools aboard now have one release each. Retry starts the standard manual opening.');updateRack();instruments();
+  setMsg('Guidance off. Each tool has one release left. This rescue counts as assisted. Retry for a manual score.');updateRack();instruments();
 };

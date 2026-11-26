@@ -17,13 +17,6 @@
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 15px/1.45 var(--sans);
-}
-
 button,select,input {
   font: inherit;
 }
@@ -77,18 +70,7 @@ header {
   border-bottom: 1px solid var(--line);
 }
 
-.topbar,main {
-  margin: 0 auto;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.brand,.headerActions,.tags,.panelTitle,.camLabel,.dialogHead,.heading,.clockControls,.aimControls,.coastTitle {
+.brand,.headerActions,.tags,.panelTitle,.camLabel,.dialogHead,.heading,.clockControls,.coastTitle {
   display: flex;
   align-items: center;
 }
@@ -133,13 +115,6 @@ header {
 
 .quiet {
   background: transparent;
-}
-
-.flightHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
 }
 
 h1,h2,h3,p {
@@ -246,36 +221,15 @@ h1 {
   cursor: grabbing;
 }
 
-.aimControls {
-  justify-content: space-between;
-  gap: 7px;
-}
-
-.aimBtns {
-  display: flex;
-  gap: 5px;
-}
-
 .aimBtns button,.clockControls button {
   min-height: 29px;
   font-size: 12px;
   padding: 4px 8px;
 }
 
-.coastPanel {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
 .coastTitle .trace {
   width: 19px;
   border-top: 2px dashed var(--green);
-}
-
-.readout {
-  font-weight: 650;
-  letter-spacing: -.04em;
 }
 
 .good {
@@ -290,16 +244,8 @@ h1 {
   color: var(--red)!important;
 }
 
-.metric {
-  min-width: 0;
-}
-
-.metric strong {
-  white-space: nowrap;
-}
-
 .metric small {
-  margin-left: 4px;
+  display: block;
 }
 
 .heading {
@@ -313,31 +259,8 @@ h1 {
   color: var(--mute);
 }
 
-.tools {
-  display: grid;
-}
-
-.tool {
-  position: relative;
-  text-align: left;
-  min-width: 0;
-}
-
 .tool[aria-pressed=true] {
   box-shadow: inset 0 -2px var(--gold);
-}
-
-.tool canvas {
-  object-fit: contain;
-  display: block;
-}
-
-.tool b,.tool small {
-  display: block;
-}
-
-.tool .hotkey {
-  position: absolute;
 }
 
 .powerDisplay {
@@ -352,21 +275,6 @@ input[type=range] {
   height: 20px;
   margin: 3px 0 8px;
   cursor: pointer;
-}
-
-#throw {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  font-size: 14px;
-}
-
-.statusLine {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
 }
 
 .statusLine span:first-child {
@@ -391,17 +299,6 @@ dialog::backdrop {
 
 .dialogBody {
   padding: 23px;
-}
-
-.dialogHead {
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.dialogHead h2 {
-  font-size: 24px;
-  letter-spacing: -.035em;
 }
 
 .x {
@@ -589,7 +486,7 @@ input[type=radio],input[type=checkbox] {
   animation: game-over-title .8s ease-out both;
 }
 
-.is-lost :is(.rack,.throwPanel,.aimControls,.lesson,.clockSlider,#pause:disabled) {
+.is-lost :is(.rack,.throwPanel,.aimBtns,.lesson,.clockSlider,#pause:disabled) {
   filter: grayscale(1) brightness(.45);
 }
 
@@ -768,23 +665,19 @@ input[type=radio],input[type=checkbox] {
 }
 
 .dialogHead {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
   border-bottom: 1px solid #54645f;
   padding-bottom: 10px;
 }
 
 .dialogHead h2 {
+  font-size: 24px;
+  letter-spacing: -.035em;
   color: var(--gold);
   border-left: 3px solid var(--gold);
   padding-left: 9px;
-}
-
-.clockSlider .rateStops {
-  display: flex;
-  justify-content: space-between;
-  margin: -5px 2px 0;
-  pointer-events: none;
-  color: var(--mute);
-  font: 9px/1 var(--mono);
 }
 
 .rateStops i {
@@ -818,6 +711,10 @@ input[type=radio],input[type=checkbox] {
 #seedPreview,#endShareStatus,#cardStatus {
   font-size: 12px;
   color: var(--green);
+}
+
+#setupBrief {
+  margin-top: 7px;
 }
 
 #seed[aria-invalid=true] {
@@ -880,17 +777,26 @@ input[type=radio],input[type=checkbox] {
 /* The visor fills the stage. Only the instrument panels take pointer input
    away from it, so open space between the panels remains available for aiming. */
 body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 var(--sans);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
 .topbar,main {
+  margin: 0 auto;
   width: 100%;
   padding-inline: clamp(8px,1.55vw,34px);
 }
 
 .topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   height: 52px;
 }
 
@@ -902,6 +808,10 @@ main {
 }
 
 .flightHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
   margin: 12px 0;
 }
 
@@ -960,12 +870,15 @@ main {
 }
 
 .clockControls {
-  padding: 0;
   gap: 12px;
 }
 
 .clockSlider .rateStops {
-  font-size: 10px;
+  display: flex;
+  justify-content: space-between;
+  margin: -5px 2px 0;
+  pointer-events: none;
+  font: 10px/1 var(--mono);
   color: #d8e6e9;
 }
 
@@ -978,13 +891,10 @@ main {
   color: #ffce85;
 }
 
-.aimControls {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-}
-
 .aimBtns {
+  display: flex;
+  gap: 5px;
+  align-items: center;
   flex-wrap: wrap;
 }
 
@@ -1006,7 +916,6 @@ main {
 .forward {
   position: absolute;
   inset: 0;
-  height: auto;
   z-index: 0;
 }
 
@@ -1053,7 +962,6 @@ main {
 }
 
 .aft {
-  height: auto;
   aspect-ratio: 2.05;
 }
 
@@ -1068,18 +976,11 @@ main {
   --green: #bbefd6;
   --gold: #ffdb9a;
   --red: #ffc7b9;
-}
-
-.metrics {
   grid-area: 1/3/4/4;
   justify-self: end;
   align-self: start;
   z-index: 1;
-  display: block;
   width: clamp(188px,15vw,228px);
-  margin: 0;
-  padding: 0;
-  min-height: 0;
   border-width: 0 0 1px 1px;
   border-radius: 0 0 0 5px;
 }
@@ -1092,8 +993,7 @@ main {
 }
 
 .metric {
-  padding: 0;
-  border: 0;
+  min-width: 0;
 }
 
 .metric.clock {
@@ -1107,6 +1007,7 @@ main {
 }
 
 .metric strong {
+  white-space: nowrap;
   font: 600 clamp(17px,1.45vw,24px)/1.3 var(--mono);
   color: #c6f8e5;
   letter-spacing: -.045em;
@@ -1162,11 +1063,15 @@ main {
 }
 
 .tools {
+  display: grid;
   grid-template-columns: repeat(3,minmax(0,1fr));
   gap: 4px;
 }
 
 .tool {
+  position: relative;
+  text-align: left;
+  min-width: 0;
   display: grid;
   align-content: center;
   min-height: 45px;
@@ -1182,9 +1087,7 @@ main {
 }
 
 .tool b,.tool small {
-  white-space: normal;
-  text-overflow: clip;
-  overflow: visible;
+  display: block;
 }
 
 .tool b {
@@ -1199,6 +1102,8 @@ main {
 }
 
 .tool canvas {
+  object-fit: contain;
+  display: block;
   position: absolute;
   left: 1px;
   bottom: 6px;
@@ -1207,6 +1112,7 @@ main {
 }
 
 .tool .hotkey {
+  position: absolute;
   font: 10px/1 var(--mono);
   color: #c5d2d5;
   top: 4px;
@@ -1258,6 +1164,11 @@ main {
 }
 
 #throw {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   grid-area: 1/2/3/3;
   height: 40px;
   min-height: 0;
@@ -1267,6 +1178,9 @@ main {
 }
 
 .coastPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   border-top: 1px solid var(--instrument-line);
   padding: 10px;
   gap: 5px;
@@ -1283,6 +1197,8 @@ main {
 }
 
 .readout {
+  font-weight: 650;
+  letter-spacing: -.04em;
   font-size: clamp(19px,1.55vw,26px);
   line-height: 1.13;
 }
@@ -1393,6 +1309,9 @@ main {
 }
 
 .statusLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   background: #142025;
   border-top: 1px solid #405058;
   padding: 6px 13px;
@@ -1404,6 +1323,12 @@ main {
 :where(#forward,.tool,#throw,#power,#pause,#clockRate,.aimBtns button):focus-visible {
   outline: 2px solid #8bf5ff;
   outline-offset: -2px;
+}
+
+@media (min-width:741px) and (max-width:1120px) and (min-height:501px) {
+  .pitchPod {
+    min-width: 302px;
+  }
 }
 
 @media (max-width:1120px) and (min-height:501px) {
@@ -1426,9 +1351,6 @@ main {
   }
   .lesson {
     width: 34%;
-  }
-  .aimBtns button {
-    font-size: 12px;
   }
   .flightTime {
     font-size: 11px;
@@ -1500,12 +1422,6 @@ main {
     --inset: 6px;
     flex: none;
   }
-  .camTitle {
-    flex-wrap: wrap;
-    gap: 2px 6px;
-    padding: 3px 6px;
-    min-height: 37px;
-  }
   .camLabel {
     font-size: 13px;
     gap: 4px;
@@ -1514,6 +1430,10 @@ main {
     gap: 6px;
   }
   .camTitle {
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    padding: 3px 6px;
+    min-height: 37px;
     position: relative;
     z-index: 2;
   }
@@ -1532,17 +1452,12 @@ main {
   .clockSlider {
     width: 90px;
   }
-  .clockSlider #clockRate {
-    height: 24px;
-  }
   .clockControls button {
     min-height: 28px;
   }
-  .aimControls {
+  .aimBtns {
     order: 1;
     width: 100%;
-  }
-  .aimBtns {
     gap: 4px;
   }
   .aimBtns button {
@@ -1623,13 +1538,7 @@ main {
   .metric small,#speedRef {
     font-size: 11px;
   }
-  .metric small {
-    display: block;
-    margin: 0;
-  }
   .pitchPod {
-    grid-area: 3/1;
-    align-self: end;
     border-color: var(--instrument-line);
   }
   .rack {
@@ -1678,9 +1587,6 @@ main {
   }
   .velocity {
     padding: 6px;
-  }
-  .velocity h2 {
-    font-size: 12px;
   }
   .velocity dt,.velocity dd {
     font-size: 11px;
@@ -1737,9 +1643,6 @@ main {
   }
   .tool {
     padding-left: 4px;
-  }
-  .tool canvas,.tool .hotkey {
-    display: none;
   }
 }
 
@@ -1807,7 +1710,6 @@ main {
     display: none;
   }
   .clockSlider #clockRate {
-    height: 24px;
     display: block;
   }
   .clockSlider {
@@ -1822,7 +1724,6 @@ main {
   }
   .clockControls button,.aimBtns button {
     min-height: 25px;
-    font-size: 12px;
     padding: 2px 5px;
   }
   .hudStage {
@@ -1843,7 +1744,7 @@ main {
     font-size: 12px;
   }
   .aft {
-    aspect-ratio: 2.85;
+    aspect-ratio: 3.35;
   }
   .metrics {
     width: clamp(194px,25vw,240px);
@@ -1906,9 +1807,6 @@ main {
     column-gap: 4px;
     grid-template-columns: max-content minmax(0,1fr) 60px;
   }
-  .throwPanel .heading {
-    grid-area: 1/1;
-  }
   .impulseInfo {
     grid-area: 1/2/2/4;
     justify-self: end;
@@ -1970,9 +1868,6 @@ main {
     min-height: 24px;
     padding: 2px 5px;
   }
-  .deck:has(.aimControls:not([hidden])) .bearingReadout {
-    font-size: 11px;
-  }
   .statusLine {
     font-size: 12px;
     padding: 3px 6px;
@@ -1980,9 +1875,50 @@ main {
   }
 }
 
-@media (min-width:741px) and (min-height:501px) and (max-height:680px) {
+@media (min-width:741px) and (min-height:501px) and (max-height:800px) {
+  .flightHead {
+    margin: 4px 0;
+  }
+  .flightHead h1 {
+    font-size: 24px;
+  }
+  .flightHead p {
+    display: none;
+  }
   .hudStage {
-    min-height: 495px;
+    min-height: 0;
+  }
+  .metrics {
+    align-self: stretch;
+    overflow-y: auto;
+    contain: size;
+    scrollbar-width: thin;
+  }
+}
+
+@media (min-width:741px) and (min-height:501px) and (max-height:720px) {
+  .topbar {
+    height: 40px;
+  }
+  .brand img {
+    width: 32px;
+    height: 32px;
+  }
+  .aftPod {
+    width: 25vw;
+  }
+  .aft {
+    aspect-ratio: 3;
+  }
+  .pitchPod {
+    margin-top: 2px;
+  }
+  .tool {
+    min-height: 35px;
+    padding-block: 2px;
+  }
+  .rack,.throwPanel {
+    padding-block: 4px;
   }
 }
 
@@ -1996,7 +1932,6 @@ main {
     gap: 4px;
   }
   .metrics {
-    min-height: 0;
     overflow-y: auto;
     scrollbar-width: thin;
     contain: size;
@@ -2009,7 +1944,66 @@ main {
   }
 }
 
+@media (max-width:740px) and (max-height:590px) and (min-height:501px) {
+  /* Put the scenario summary below the cockpit so the rack stays within reach. */
+  .flightHead {
+    order: 1;
+    margin: 2px 0;
+  }
+  .flightHead h1 {
+    font-size: 18px;
+  }
+  .hudStage .forward,.hudStage:has(.lesson:not([hidden])) .forward {
+    height: 140px;
+  }
+  .aftPod {
+    width: 33%;
+  }
+  .hudStage {
+    --sidebar-width: 37.5%;
+  }
+  .pitchPod {
+    grid-column: 1/-1;
+  }
+  .metrics {
+    grid-row: 1/3;
+  }
+  .rack .heading {
+    flex-direction: row;
+    align-items: baseline;
+  }
+  .tool b {
+    line-height: 1.02;
+  }
+  .tool small {
+    margin-top: 0;
+  }
+  .throwPanel h2 {
+    font-size: 12px;
+  }
+  .tool {
+    min-height: 32px;
+  }
+  .rack .heading {
+    margin-bottom: 2px;
+  }
+}
+
 @media (min-width:600px) and (max-width:760px) and (max-height:400px) {
+  .camTitle {
+    gap: 4px;
+  }
+  .aimBtns {
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+  .aimBtns button {
+    white-space: nowrap;
+    padding-inline: 3px;
+  }
+  .clockSlider {
+    width: 110px;
+  }
   .flightHead h1 {
     font-size: 16px;
   }
@@ -2020,8 +2014,8 @@ main {
     aspect-ratio: 3.15;
   }
   .pitchPod {
-    width: 36vw;
-    min-width: 238px;
+    width: 39vw;
+    min-width: 249px;
   }
   .hudStage {
     min-height: 247px;

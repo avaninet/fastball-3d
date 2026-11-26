@@ -1,6 +1,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const {sourceHash} = require('./csp.cjs');
+
 const root = path.resolve(__dirname, '..');
 const read = (file, encoding) => fs.readFileSync(path.join(root, file), encoding);
 let page = read('src/visor.html', 'utf8');
@@ -27,6 +29,10 @@ for (const [name, content] of Object.entries(parts)) {
   if (page.split(token).length !== 2) throw new Error('Expected one template marker ' + token);
   page = page.replace(token, () => content);
 }
+const scripts = [...page.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)];
+const styles = [...page.matchAll(/<style>([\s\S]*?)<\/style>/g)];
+page = page.replace('__SCRIPT_HASHES__', scripts.map(match => sourceHash(match[1])).join(' '))
+           .replace('__STYLE_HASHES__', styles.map(match => sourceHash(match[1])).join(' '));
 if (process.argv.includes('--check')) {
   if (!fs.readFileSync(path.join(root, 'index.html')).equals(Buffer.from(page))) {
     throw new Error('index.html is out of date. Run node scripts/build.cjs and include the rebuilt game.');

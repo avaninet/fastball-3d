@@ -182,7 +182,7 @@ const Flight = (() => {
     const a=n*t,b=Math.sin(a)/n,k=4*Math.sin(a/2)**2/n,d=(4*Math.sin(a)-3*a)/n,det=b*d+k*k;
     return [(d*e[0]-k*e[1])/det,(k*e[0]+b*e[1])/det,e[2]/b];
   }
-  function command(s,dv,tool,mask) {
+  function command(dv,tool,mask) {
     const [az,el]=angles(scale(dv,-1));
     return {tool,az:Math.round(az),el:Math.round(el),power:clamp(Math.round(100*norm(dv)/impulse(tool,mask)),10,100)};
   }
@@ -196,7 +196,7 @@ const Flight = (() => {
       const target=scale(nearest(s.p),0.55), dv=transfer(s,target,t,mode);
       for(const tool of [3,4,5]) {
         if(norm(dv)>impulse(tool,seedRack)*1.01) continue;
-        const c=command(s,dv,tool,seedRack), hit=entries(applyCommand(s,c,seedRack),seedHorizon-12,mode)[0];
+        const c=command(dv,tool,seedRack), hit=entries(applyCommand(s,c,seedRack),seedHorizon-12,mode)[0];
         if(hit && hit.speed<=limit-.004) return true;
       }
     }
@@ -207,13 +207,13 @@ const Flight = (() => {
     if(entries(s,seedHorizon,mode).length)return false;
     for(const t of [350,395,305,420]){
       const target=scale(nearest(s.p),.55);
-      const first=command(s,transfer(s,target,t,mode),5,seedRack);
+      const first=command(transfer(s,target,t,mode),5,seedRack);
       const coast=applyCommand(s,first,seedRack);
       if(entries(coast,4,mode).length)continue;
       const next=motion(coast,4,mode),dv=transfer(next,target,t-4,mode),mask=seedRack^(1<<5);
       for(const tool of [2,3,4]){
         if(norm(dv)>impulse(tool,mask)*1.01)continue;
-        const final=applyCommand(next,command(next,dv,tool,mask),mask);
+        const final=applyCommand(next,command(dv,tool,mask),mask);
         const hit=entries(final,seedHorizon-16,mode)[0];
         if(hit && hit.speed<=limit-.004)return true;
       }

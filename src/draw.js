@@ -308,5 +308,5 @@ const Visor = (() => {
     }
   }
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-  return {render,camera,orientation,courseGlyphs,loadEarth:EarthSky.load,toolArt:Equipment.toolArt,clockText};
+  return {render,camera,courseGlyphs,loadEarth:EarthSky.load,toolArt:Equipment.toolArt,clockText};
 })();

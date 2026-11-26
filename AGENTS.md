@@ -21,7 +21,12 @@ Work in this local repository on the dedicated 3D game. Use `REVIEW.md` and `DIF
 | `src/main.js` | Startup, replay navigation and animation loop initialization |
 | `assets/` | Approved Fastball mission patch and Earth-horizon artwork used by both cameras |
 | `scripts/build.cjs` | Embeds source and both WebP assets in the standalone `index.html` |
+| `scripts/csp.cjs` | CSP source hashes shared by the build and browser fixture |
 | `scripts/browser-qa.cjs` | Browser fixture and automated Chromium viewport runs |
+| `tests/station.cjs` | Geometry and mating-face checks for the 28-part station |
+| `package.json` | Release version, supported Node version and test commands |
+| `.github/workflows/check.yml` | Offline build, balance, font-specific browser and native input checks in CI |
+| `reference/` | Flight examples, station measurements and the Alpha manual |
 | `tests/difficulty.cjs` | Reproducible pilot study on the original drift families |
 | `tests/balance.cjs` | Named routes, seeded pilot errors, fast-entry and recovery exercises against the built game’s physics |
 | `tests/native-browser.cjs` | ChromeDriver checks for native Space activation, clipboard handling and PNG export |
