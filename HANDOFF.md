@@ -1,5 +1,7 @@
 # Fastball 3D · Project handoff
 
+**Historical prototype handoff.** The work order below was completed after `prototype-baseline`. Its six-tool rack, routes, controls and baseline counts describe that snapshot. For current controls and checks see [README.md](README.md). The [flight review](REVIEW.md) and [difficulty study](DIFFICULTY.md) track the remaining playtests.
+
 ## Start the new project
 
 > Continue Fastball 3D from the attached local repository. Read HANDOFF.md and AGENTS.md, open index.html, and run the baseline checks. Implement the next round in this repo. First make tool selection, power and Throw usable alongside the visor, and separate manual flight from optional Story assistance. Preserve Straight-Line, Orbital, optional soft capture, the three named openings and seeded random flights. Then adapt the Alpha v0.4 rescue tutorial and backstory, evaluate directional coast arrows in both models, and build a screenshot-ready 3D flight log. Test both capture rules, compare shortcut strategies with deliberate flying, and report human playtest gaps. Keep the work local for review.

@@ -1,0 +1,21 @@
+name: Check standalone game
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  game:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: node scripts/browser-qa.cjs google-chrome
+      - name: Exercise native keyboard activation and PNG export
+        run: |
+          chromedriver --port=9515 &
+          driver=$!
+          trap 'kill "$driver"' EXIT
+          curl --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:9515/status > /dev/null
+          node tests/native-browser.cjs

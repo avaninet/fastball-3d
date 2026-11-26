@@ -1,4 +1,4 @@
-# Fastball 3D v0.1 · Local flight review
+# Fastball 3D v0.2 · Local flight review
 
 [Play the standalone build](index.html) · [Example Orbital flight log](reference/orbital-flight-log.png)
 
@@ -10,7 +10,7 @@ The cockpit now keeps the pitch controls together and describes the committed co
 
 | Priority | Where a first-time pilot can get stuck | Next improvement and playtest |
 | --- | --- | --- |
-| 1. Teach the first turn before oxygen starts | The visor opens facing the station. A pitch directly at it pushes Tommi farther away. On a phone, turning around can take several drags and the player temporarily loses sight of the target. | Preview one throw and its opposite recoil in the briefing. Point out the aft camera before asking the pilot to turn. Then ask a new pilot to explain where the battery and suit will go before pressing Throw. |
+| 1. Teach the first turn before oxygen starts | The visor opens facing the station. A pitch directly at it pushes Tommi farther away. On a phone, turning around can take several drags and the player temporarily loses sight of the target. | Use the optional violet throw preview in the briefing so the pilot can follow the suit’s predicted recoil. Point out the aft camera before asking the pilot to turn. Then ask a new pilot to explain where the battery and suit will go before pressing Throw. |
 | 2. Explain the difference between getting closer and getting a grab | Negative range rate means the gap is shrinking. Sideways velocity can still carry Tommi past the station, and total speed at entry determines a soft grab. The amber gauge mark is a reference during an any-speed flight. | Show a side-by-side example of a clean entry and a near miss with the same closing rate. Ask the pilot to predict each outcome from Current coast and explain when the 0.080 m/s mark matters. |
 | 3. Connect the miss report to one affordable correction | A report such as “above the orbital plane” now includes a coarse pitch direction relative to the forward visor. The pilot still needs to recognize that direction, choose a tool and set power. The aft view changes the apparent screen direction. | At the first oblique miss, annotate the predicted pass side in both cameras and explain how a light pitch toward that side moves the suit away from it. Record the pilot’s chosen bearing, remaining delta-v and time to the first useful trim. |
 
@@ -70,10 +70,10 @@ At 0° every generated opening had a winning plan under either rule and model. T
 
 ## Cockpit and verification
 
-The aft view is taller and takes a larger share of the desktop camera width. The play-speed slider has four stops at 1×, 10×, 20× and 30×. A release returns the clock to 1×. The relative-speed bar marks 0.080 m/s and identifies whether the mark is a reference or an active soft limit. The instruments show signed radial, along-track and cross-track velocity in m/s, and the mass of the suit and remaining gear.
+The aft camera sits in the upper-left corner of the forward visor. The translucent instruments and equipment rack leave the scene visible beneath their labels. Released slots fade. The dashed mint coast shows committed motion and the optional violet path previews the selected throw. The play-speed slider has four stops at 1×, 10×, 20× and 30×. A release returns the clock to 1×. The relative-speed bar marks 0.080 m/s and identifies whether the mark is a reference or an active soft limit. The instruments show signed radial, along-track and cross-track velocity in m/s, and the mass of the suit and remaining gear.
 
 Browser checks verify that miss hints follow the forward visor in both flight models. Two nine-release flights test the spacing of numbered callouts in both log projections, including throws made at almost the same position.
 
 The browser suite exercises all nine keyboard slots, early debrief, a valid last-tool intercept, a final fast pass, the shared ten-minute reserve, slider timing, gauge states, signed velocity, Story lessons, release history and backdrop dismissal, including the nested flight log. It also checks the core cockpit controls against four actual CSS viewports, including 390 × 844 portrait and 844 × 390 landscape. The browser suite also checks tablet rack labels at 768 and 1024 px and header bounds down to 320 px. Follow the [README](README.md) to run the balance and browser checks.
 
-All 43 browser checks passed in Chromium on the four cockpit viewports. The legacy tap checks exercise mouse and touch releases followed by a plain mouse click. Physical iPhone and iPad taps still need a device test. Two last-tool Orbital tests coast to a soft grab at 1× and 30×. One slows before entry. The other enters fast and slows to capture speed inside at 43.847572 s.
+The pre-audit suite had 49 checks at each of four viewports with Windows fonts. The v0.2 suite has 56 checks per viewport. It also checks Space keyup and repeat cancellation, setup edits after a pasted replay, near-zero misses, two-pass Orbital coasts, lesson recovery and pointer cancellation. Short-screen checks exercise the reticle and Throw at 360 × 640, 375 × 667 and 667 × 375 with system fonts and an Arial/Courier fallback. The legacy tap checks exercise mouse and touch releases followed by a plain mouse click. Physical iPhone and iPad taps still need a device test. Two last-tool Orbital tests coast to a soft grab at 1× and 30×. One slows before entry. The other enters fast and slows to capture speed inside at 43.847572 s.

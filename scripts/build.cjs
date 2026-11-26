@@ -4,7 +4,11 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file, encoding) => fs.readFileSync(path.join(root, file), encoding);
 let page = read('src/visor.html', 'utf8');
+const version = require('../package.json').version.replace(/\.0$/, '');
+page = page.replaceAll('__VERSION__', version);
 const parts = {
+  READOUT: read('src/readout.js', 'utf8'),
+  MAIN: read('src/main.js', 'utf8'),
   COCKPIT_STYLE: read('src/cockpit.css', 'utf8'),
   LOG: read('src/log.js', 'utf8'),
   SHARE: read('src/share.js', 'utf8'),
@@ -20,5 +24,12 @@ for (const [name, content] of Object.entries(parts)) {
   if (page.split(token).length !== 2) throw new Error('Expected one template marker ' + token);
   page = page.replace(token, () => content);
 }
-fs.writeFileSync(path.join(root, 'index.html'), page);
-console.log('Built index.html');
+if (process.argv.includes('--check')) {
+  if (!fs.readFileSync(path.join(root, 'index.html')).equals(Buffer.from(page))) {
+    throw new Error('index.html is out of date. Run node scripts/build.cjs and include the rebuilt game.');
+  }
+  console.log('index.html matches its sources.');
+} else {
+  fs.writeFileSync(path.join(root, 'index.html'), page);
+  console.log('Built index.html');
+}

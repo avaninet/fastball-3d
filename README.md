@@ -1,8 +1,8 @@
-# Fastball 3D v0.1
+# Fastball 3D v0.2
 
 You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan back within reach of the station’s grab bars.
 
-**To play offline**, download `index.html` and open it in your browser. The game, cameras and artwork are all in that file. [Game file](index.html)
+**To play offline**, download `index.html` and open it in your browser. The game, cameras and artwork are all in that file. The cockpit targets Chromium 108+, Safari 16+ and Firefox 121+ for dynamic viewport units, container units and the CSS `:has()` selector. [Game file](index.html)
 
 **The tool goes through the forward crosshair. You recoil the other way.** On **Tether separation**, face away from the station before you throw. The tool will leave the forward visor and you can watch for the station in the aft camera. In the flight instruments, **Current coast** tells you whether you’ll reach the bars. If it says “Aim up and right,” that’s where to throw the *tool*. The recoil nudges your suit down and left relative to the same view.
 
@@ -69,7 +69,7 @@ For the gentlest return, compare **Grab speed**, the suit’s total speed relati
 
 ## Challenge a friend
 
-In **New flight**, choose **Random drift**. Paste a seed or replay link and press **Load seed** to preview the opening. A bare seed uses your current settings. A replay restores the sender’s flight model, capture rule and Story setting. New `D-` seeds include faster sideways crossings. Plain hexadecimal seeds replay the original, gentler family.
+In **New flight**, choose **Random drift**. Paste a seed or replay link and press **Load seed** to preview the opening. A bare seed uses your current settings. A replay restores the sender’s flight model, capture rule and Story setting. You can change any of those settings after loading the link. New `E-` seeds include sideways crossings and require at least one throw to reach the bars within ten minutes in either flight model, in manual and Story flight. Existing `D-` and plain hexadecimal seeds replay their original openings.
 
 **Copy replay** works in setup, in the cockpit and in the debrief. The link uses Alpha’s fragment format, for example `#seed=D-00019919&level=Orbital&goal=soft&story=1`. An offline copy shares the fragment for a friend to paste into **Load seed**. A hosted copy includes the web address.
 
@@ -77,16 +77,18 @@ After a random flight, win or lose, open **Share → View flight card** for the 
 
 ## Build and check
 
-Run these commands from `fastball-3d` with Node.js. The build has no package dependencies.
+Run these commands from `fastball-3d` with Node.js. The game and build have no package dependencies.
 
 ```sh
 node scripts/build.cjs
+node scripts/build.cjs --check
 node tests/balance.cjs
+node tests/difficulty.cjs
 node scripts/browser-qa.cjs
 ```
 
-Open the generated `qa-runner.html` for browser results, or pass a Chromium executable path to the last command to run all four CSS viewport sizes. Additional arguments pass through to Chromium. The approved starting build is tagged `prototype-baseline`.
+Open the generated `qa-runner.html` for browser results, or pass a Chromium executable path to the last command to run all four CSS viewport sizes. The layout checks use both system fonts and an Arial/Courier fallback on short phones. Use a trusted local browser executable and flags. The balance harness also accepts an older HTML build for comparison and executes its embedded physics, so use builds you trust. `npm test` checks the distributable against its sources and runs the balance assertions. For the native Space-key, clipboard and PNG checks, start a matching ChromeDriver on port 9515 and run `node tests/native-browser.cjs` with Node 18 or newer. The approved starting build is tagged `prototype-baseline`.
 
-[Local test results and playtest questions](REVIEW.md) · [Project workflow](AGENTS.md) · [Original handoff](HANDOFF.md) · [Fastball Alpha v0.4 manual](reference/alpha-v0.4-manual.txt)
+[Local test results and playtest questions](REVIEW.md) · [Difficulty study](DIFFICULTY.md) · [Project workflow](AGENTS.md) · [Historical prototype handoff](HANDOFF.md) · [Fastball Alpha v0.4 manual](reference/alpha-v0.4-manual.txt)
 
 an AvaniNet game © 2026 // in honor of the legends of tgirl baseball

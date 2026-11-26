@@ -7,7 +7,13 @@
   const keys=(key,shiftKey=false,target=visor,repeat=false)=>target.dispatchEvent(new KeyboardEvent('keydown',{key,shiftKey,repeat,bubbles:true,cancelable:true}));
   const pointer=(target,type,id,x=20,y=20)=>target.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:id%2?'mouse':'touch',clientX:x,clientY:y,bubbles:true,button:0,detail:type==='click'?1:0,cancelable:true}));
   function test(name,fn){
-    try{fn();passed.push(name);}catch(e){errors.push(name+' / '+e.stack);}
+    try{
+      if(passed.length||errors.length){
+        heldKeys.clear();sliderPress=null;el('showPreview').checked=false;
+        start(0,'Straight-Line',false);
+      }
+      fn();passed.push(name);
+    }catch(e){errors.push(name+' / '+e.stack);}
     for(const d of document.querySelectorAll('dialog[open]'))d.close();
   }
   function enterLesson(id){
@@ -318,6 +324,75 @@
       eq(el('throw').getBoundingClientRect().bottom<=innerHeight,'landscape Story release is reachable');
     }finally{frame.style.cssText=original;}
   });
+  test('Throw and the reticle fit short phones with system and fallback fonts',()=>{
+    const frame=window.frameElement,root=document.documentElement;
+    const savedFrame=frame.style.cssText,savedRoot=root.style.cssText;
+    try{
+      for(const fallback of [false,true]){
+        if(fallback){root.style.setProperty('--sans','Arial, sans-serif');root.style.setProperty('--mono','"Courier New", monospace');}
+        for(const [w,h] of [[360,640],[375,667],[667,375],[1366,768]]){
+          frame.style.width=w+'px';frame.style.height=h+'px';
+          for(const story of [false,true]){
+            if(story)beginLesson(0);else configure(0,'Straight-Line');
+            scrollTo(0,0);
+            const v=visor.getBoundingClientRect(),t=el('throw').getBoundingClientRect();
+            const context=w+'x'+h+' '+(story?'lesson':'manual')+' '+(fallback?'fallback':'system');
+            eq(t.bottom<=h && t.top>=0 && document.elementFromPoint(t.x+t.width/2,t.y+t.height/2)===el('throw'),context+' Throw bottom '+t.bottom);
+            eq(document.elementFromPoint(v.x+v.width/2,v.y+v.height/2)===visor,context+' reticle');
+            if(w===1366)eq(root.scrollHeight<=h,context+' page height '+root.scrollHeight);
+          }
+        }
+      }
+    }finally{frame.style.cssText=savedFrame;root.style.cssText=savedRoot;}
+  });
+  test('Locked cockpit preserves native repeat and Space activation on other controls',()=>{
+    const keyup=(target,key)=>target.dispatchEvent(new KeyboardEvent('keyup',{key,bubbles:true,cancelable:true}));
+    for(const id of ['pause','showPreview','manual']){
+      eq(keys(' ',false,el(id))&&keyup(el(id),' '),'native Space on '+id);
+    }
+    click('new');
+    for(const [id,key] of [['seed','Backspace'],['storyMode',' '],['soft',' ']]){
+      const target=el(id);
+      eq(keys(key,false,target)&&keys(key,false,target,true)&&keyup(target,key),'native repeat and release on '+id);
+    }
+  });
+  test('Pasted challenge imports once and keeps subsequent setup edits',()=>{
+    configure(3,'Straight-Line');click('new');
+    set('seed','Try this: https://example.test/#seed=E-ff&level=Orbital&goal=soft in Story.');
+    eq(el('seed').value==='E-000000FF' && setupRules().mode==='Orbital' && el('soft').checked,'imported pasted rules');
+    click('storyMode');click('soft');document.querySelector('[name=model][value="Straight-Line"]').click();
+    el('setupForm').requestSubmit();
+    eq(flight.seed==='E-000000FF'&&flight.story&&!flight.soft&&flight.mode==='Straight-Line','manual changes take precedence');
+    click('new');set('seed','a');keys('Enter',false,el('seed'));
+    eq(el('seed').value==='0000000A' && el('setup').open,'Enter previews a bare seed');
+  });
+  test('Grazing misses and a second Orbital approach report their clearance',()=>{
+    fixture('Straight-Line',true,[0,-15,7.002],[0,.07,0]);instruments();
+    eq(el('coast').textContent==='Miss by less than 0.1 m','live grazing miss');
+    eq(describePreview({forecast:flight.forecast,anchor:flight.anchor}).includes('less than 0.1 m'),'grazing preview');
+    advance(600);FlightLog.show(flight);
+    eq(el('logSummary').textContent.includes('less than 0.01 m')&&FlightLog.card(flight).includes('less than 0.01 m'),'grazing log and card');
+    fixture('Orbital',true,[2,25,8],[.046,-.049,-.030]);advance(416);instruments();
+    close(flight.forecast.near.t,368.16,.1);
+    close(Flight.coastPass(flight.forecast,flight.age).t,418.64,.1);
+    eq(Number(el('rate').textContent)<0 && el('coast').textContent==='Miss by 4.6 m','closing on the second pass');
+  });
+  test('Pause status and the lesson correction follow the current coast',()=>{
+    beginLesson(3);click('away');click('throw');click('lessonAction');
+    flight.mask=1<<6;flight.pos={p:[200,200,200],v:[.2,.2,.2]};reseat();
+    click('lessonAction');
+    eq(!running&&el('lessonCue').textContent.startsWith('No single remaining tool')&&el('lessonAction').hidden,'failed correction staged');
+    click('pause');advance(2);click('pause');
+    eq(el('message').textContent.includes('paused')&&!el('lessonAction').hidden,'new coast time permits another correction');
+  });
+  test('Cancelled and lost visor pointers discard the pending tap',()=>{
+    configure(0,'Orbital');
+    for(const type of ['pointercancel','lostpointercapture']){
+      const before=[yaw,pitch];pointer(visor,'pointerdown',4);pointer(visor,type,4);
+      pointer(visor,'pointermove',4,110,90);pointer(visor,'pointerup',4);
+      eq(!drag&&!flight.dragging&&yaw===before[0]&&pitch===before[1],type);
+    }
+  });
   const named=[
     [[[5,-62,14,94]],[[3,-44,-5,99]],[[5,-55,13,100],[2,-56,12,96]]],
     [[[5,-62,14,94]],[[3,-44,-5,99]],[[5,-55,13,100],[1,-54,13,85]]],
@@ -543,8 +618,8 @@
   });
   test('Seed generation, playback and log preserve the drift family',()=>{
     configure(3,'Straight-Line');click('new');click('reroll');const seed=el('seed').value;
-    eq(/^D-[0-9A-F]{8}$/.test(seed)&&el('seed').checkValidity(),'generated seed format');
-    el('seed').value='d-19919';el('setupForm').requestSubmit(el('setupForm').querySelector('[value="manual"]'));
+    eq(/^E-[0-9A-F]{8}$/.test(seed)&&el('seed').checkValidity(),'generated seed format');
+    el('seed').value='d-19919';el('setupForm').requestSubmit(el('setupForm').querySelector('[type="submit"]'));
     eq(flight.seed==='D-00019919','canonical D seed');
     eq(flight.pos.p.join(',')===Flight.opening(3,'D-00019919',false).p.join(','),'replayed new geometry');
     const v=flight.pos.v.join(',');advance(flight.limit);click('viewLog');eq(el('logSummary').textContent.includes('D-00019919'),'seed in log');
@@ -556,7 +631,7 @@
     const web=Replays.link(source,'https://example.test/games/3d/index.html');
     eq(web==='https://example.test/games/3d/index.html'+hash,'Alpha-style URL');
     eq(Replays.link(source,'file:///somewhere/index.html')===hash,'portable offline replay');
-    for(const seed of [0,0xffffffff,'D-00000000','D-FFFFFFFF'])
+    for(const seed of [0,0xffffffff,'D-00000000','D-FFFFFFFF','E-00000000','E-FFFFFFFF'])
       for(const mode of ['Straight-Line','Orbital'])for(const soft of [true,false])for(const story of [true,false]){
         const rules={seed,mode,soft,story},decoded=Replays.parse(Replays.fragment(rules));
         eq(JSON.stringify(rules)===JSON.stringify(decoded),'seed and rules round trip');
@@ -582,6 +657,18 @@
       eq(copied.endsWith(hash)&&flight.initial.p.join()===ref.p.join(),'in-flight copy and replay geometry');
     }finally{Replays.copy=savedCopy;}
     for(const value of ['G','D-','D-123456789','#seed=','https://example.test/#seed=3&level=Typo'])eq(!Replays.parse(value),'invalid '+value);
+  });
+  test('Flight card treats labels and replay identifiers as literal SVG text',()=>{
+    configure(3,'Straight-Line');advance(600);
+    const saved=outcomes.oxygen;
+    try{
+      outcomes.oxygen='End <tspan>of</tspan> flight & debrief';
+      const seed='Practice <tspan>opening</tspan>';
+      const card=new DOMParser().parseFromString(FlightLog.card({...flight,seed}),'image/svg+xml');
+      eq(!card.querySelector('parsererror,tspan'),'well-formed SVG without injected markup');
+      eq(card.querySelector('title').textContent.includes(outcomes.oxygen),'literal outcome in title');
+      eq(card.querySelector('desc').textContent.includes(seed),'literal seed in description');
+    }finally{outcomes.oxygen=saved;}
   });
   test('Every random outcome offers a dated single-chart flight card',()=>{
     for(const ending of ['capture','oxygen','stranded','overspeed']){

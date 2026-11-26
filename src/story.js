@@ -59,15 +59,16 @@ function updateLessonCue(){
   }else if(Flight.inside(flight.pos.p)&&flight.misses){
     cue='You are within reach. Throw along the measured drift to slow down for a grab, or coast through and return.';
   }else{
-    const near=flight.forecast.near;
+    const near=Flight.coastPass(flight.forecast,flight.age);
     const miss=near.t>flight.age?sub(near.p,near.bar):sub(flight.pos.p,Flight.nearest(flight.pos.p));
     cue=trimHint(miss,yaw,pitch)+' A light pitch that way pushes your suit back toward the bars. Line up a correction and check its tool and power.';
     label='Line up correction';
   }
   if(!running && flight.prepared===flight.throws && flight.throws){cue='Correction staged. Read the selected tool, bearing and recoil, then press Throw to resume at 1×.';label='';}
-  if(flight.noTrim){cue='No single remaining tool reaches a tested return from here. Aim a heavier pitch to reduce the miss, then check again.';label='';}
+  if(!running && flight.noTrimAt===flight.time){cue='No single remaining tool reaches a tested return from here. Aim a heavier pitch to reduce the miss, then check again.';label='';}
   if(flight.done)label='';
-  el('lessonCue').textContent=cue;action.textContent=label;action.hidden=!label;
+  if(el('lessonCue').textContent!==cue)el('lessonCue').textContent=cue;
+  action.textContent=label;action.hidden=!label;
 }
 function storyCorrection(){
   const s=flight.pos,left=flight.limit-flight.time;
@@ -107,7 +108,7 @@ function lessonAction(){
       freezeClock();
       const c=storyCorrection();
       if(c){choose(c.tool);changePower(c.power);setView(Flight.direction(c.az,c.el));flight.prepared=flight.throws;}
-      else flight.noTrim=true;
+      else flight.noTrimAt=flight.time;
     }
   }
   dirty=true;instruments();
@@ -130,6 +131,3 @@ el('skipLesson').onclick=()=>{
   invalidateInput();if(!running)pause();
   setMsg('Manual flight. Aim and release on the live clock. Retry will start the standard manual opening.');updateRack();instruments();
 };
-if(!Replays.openHash(location.hash))start(0,'Straight-Line',false);
-window.addEventListener('hashchange',()=>Replays.openHash(location.hash));
-requestAnimationFrame(frame);

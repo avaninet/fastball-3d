@@ -1,5 +1,7 @@
 const FlightLog = (() => {
-  const num = value => (+value.toFixed(2)).toString();
+  const num = value => (+Number(value).toFixed(2)).toString();
+  const escape=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;')
+    .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&apos;');
   function reconstruct(flight) {
     const starts=[{time:0,p:flight.initial.p,v:flight.initial.v},...flight.log.releases];
     const segments=[];
@@ -7,7 +9,7 @@ const FlightLog = (() => {
     for(const [i,state] of starts.entries()){
       const end=starts[i+1]?.time??flight.time;
       const coast=Flight.forecast(state,Math.max(0,end-state.time),flight.mode);
-      closest=Math.min(closest,coast.near.d);
+      closest=Math.min(closest,coast.hits.length?0:coast.near.d);
       segments.push(coast.path.map(k=>({p:k.p,time:state.time+k.t})));
     }
     return {segments,closest};
@@ -64,7 +66,7 @@ const FlightLog = (() => {
     const point=p=>project(p,axis), color=flight.done==='capture'?'#acdcb6':'#ffaa95';
     const svg=[];
     const line=(x1,y1,x2,y2,stroke,width=1)=>'<line x1="'+num(x1)+'" y1="'+num(y1)+'" x2="'+num(x2)+'" y2="'+num(y2)+'" stroke="'+stroke+'" stroke-width="'+width+'"/>';
-    const label=(x,y,value,anchor='middle',fill='#afbfc4',size=11)=>'<text x="'+num(x)+'" y="'+num(y)+'" text-anchor="'+anchor+'" font-size="'+size+'" fill="'+fill+'">'+value+'</text>';
+    const label=(x,y,value,anchor='middle',fill='#afbfc4',size=11)=>'<text x="'+num(x)+'" y="'+num(y)+'" text-anchor="'+anchor+'" font-size="'+size+'" fill="'+fill+'">'+escape(value)+'</text>';
     const step=[1,2,5,10,20,50,100,200].find(s=>s*scale>=38)??500;
     for(let i=Math.ceil((30-cx)/(step*scale));cx+i*step*scale<407;i++){
       const x=cx+i*step*scale;svg.push(line(x,14,x,236,i?'#25323a':'#637782'),label(x,251,-i*step));
@@ -129,23 +131,22 @@ const FlightLog = (() => {
     const rules=[flight.mode,flight.story?'Story':'Manual',flight.soft?'Soft capture':'Any-speed capture'].join(' · ');
     const elapsed=precise(flight.time),oxygen=Visor.clockText(Math.ceil(flight.limit-flight.time));
     const {budget,speed}=resultReadout(flight),releases=flight.log.releases;
-    const clearance=flight.done==='capture'?'':'Closest clearance '+closest.toFixed(2)+' m';
+    const clearance=flight.done==='capture'?'':'Closest clearance '+Readout.clearance(closest,2)+' m';
     const passCount=flight.misses?Readout.count(flight.misses,'fast pass','fast passes'):'';
     const passDetails=[clearance,passCount].filter(Boolean).join('   ·   ');
     const recordY=509+(passDetails?20:0);
     const rows=Math.max(1,Math.ceil(releases.length/2)),height=recordY+10+rows*17;
-    const escape=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
     const label=(x,y,text,size,color,attrs='')=>'<text x="'+x+'" y="'+y+'" font-size="'+size+'" fill="'+color+'" '+attrs+'>'+escape(text)+'</text>';
     const description='Fastball 3D · '+date+' · Random drift '+seed+' · '+rules+'\n'+
       [result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',budget,speed,clearance,passCount].filter(Boolean).join(' · ');
-    const parts=['<svg xmlns="http://www.w3.org/2000/svg" width="470" height="'+height+'" viewBox="0 0 470 '+height+'" role="img" aria-labelledby="flightCardTitle flightCardDesc" font-family="Arial, sans-serif">',
-      '<title id="flightCardTitle">Random drift · '+result+'</title><desc id="flightCardDesc">'+escape(description)+'</desc>',
+    const parts=['<svg xmlns="http://www.w3.org/2000/svg" width="470" height="'+height+'" viewBox="0 0 470 '+height+'" role="img" aria-labelledby="flightCardTitle flightCardDesc" font-family="'+escape(cockpitFonts.sans)+'">',
+      '<title id="flightCardTitle">Random drift · '+escape(result)+'</title><desc id="flightCardDesc">'+escape(description)+'</desc>',
       '<rect width="470" height="'+height+'" rx="9" fill="#101a20"/>',
       label(20,27,'FASTBALL 3D',14,'#f7bc62','font-weight="bold" letter-spacing="1.8"'),label(450,27,date,13,'#c5d1d0','text-anchor="end"'),
-      label(20,62,result,28,'#f4f1e8','font-weight="bold"'),label(20,84,'Random drift  /  '+seed,15,'#a8e4d0','font-family="monospace"'),
+      label(20,62,result,28,'#f4f1e8','font-weight="bold"'),label(20,84,'Random drift  /  '+seed,15,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
       label(20,104,rules,13,'#c5d1d0'),'<rect x="12" y="115" width="446" height="309" rx="5" fill="#0b141b" stroke="#354046"/>',
       label(22,136,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),
-      '<g transform="translate(20 143)" font-family="monospace">'+plot(flight,segments,layout(segments),0)+'</g>',
+      '<g transform="translate(20 143)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments),0)+'</g>',
       label(20,446,budget,15,'#a8e4d0','font-weight="bold"'),label(20,466,speed,14,'#a8e4d0'),
       label(20,486,elapsed+' elapsed   ·   '+oxygen+' oxygen   ·   '+releases.length+'/'+Flight.gear.length+' tools used',14,'#f4f1e8')];
     if(passDetails)parts.push(label(20,506,passDetails,14,'#c5d1d0'));
@@ -160,10 +161,10 @@ const FlightLog = (() => {
     const result=outcomes[flight.done];
     const {budget,speed}=resultReadout(flight);
     el('logTitle').textContent=flight.initial.name+' · Flight log';
-    el('logSummary').textContent=[result,flight.mode,flight.soft?'Soft ≤ 0.080 m/s':'Any-speed capture',
+    el('logSummary').textContent=[result,flight.mode,flight.soft?'Soft ≤ '+Flight.limit.toFixed(3)+' m/s':'Any-speed capture',
       flight.index===3?'Seed '+seedLabel(flight.seed):'',precise(flight.time)+' elapsed',
       Visor.clockText(Math.ceil(flight.limit-flight.time))+' oxygen',tools+'/'+Flight.gear.length+' tools aboard',
-      budget,speed,flight.done==='capture'?'':'Closest clearance '+closest.toFixed(2)+' m'].filter(Boolean).join('  ·  ');
+      budget,speed,flight.done==='capture'?'':'Closest clearance '+Readout.clearance(closest,2)+' m'].filter(Boolean).join('  ·  ');
     el('logPanes').innerHTML=[0,2].map(axis=>pane(flight,segments,grid,axis)).join('');
     el('logEvents').textContent=['Start 0:00',...flight.log.fast.map(h=>'Fast entry '+precise(h.time)+' at '+Readout.speed(h.speed)+' m/s'),result+' '+precise(flight.time)].join('  ·  ');
     const list=el('logThrows');list.replaceChildren();

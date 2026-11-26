@@ -1,226 +1,2028 @@
-.is-paused .view canvas{filter:grayscale(1)}
-.is-paused .view::after{content:"";position:absolute;inset:0;z-index:1;background:rgb(232 232 232 / 48%);pointer-events:none}
-.pauseFlag{display:none;position:absolute;inset:0;z-index:2;place-content:center;justify-items:center;gap:2px;pointer-events:none;color:#101921;text-shadow:0 1px 3px #ffffff80;font:800 clamp(36px,min(6.5vw,12dvh),86px)/1 var(--sans);letter-spacing:.09em}
-.is-paused .pauseFlag{display:grid}
-.pauseFlag:has(small:not([hidden])){inset:4% 0 auto;font-size:clamp(28px,min(5vw,7dvh),62px)}
-.pauseFlag small{font:700 clamp(10px,1.3vw,14px)/1.15 var(--mono);letter-spacing:.07em;text-transform:uppercase}
-.is-paused #pause{background:#ffd18b;color:#201809;border-color:#ffdfa9;box-shadow:0 0 0 2px #ffca723d,0 0 14px 3px #f7bc6280}
-.is-paused #pause:hover{background:#ffe2b3}
-.gameOverFlag{display:none}
-.is-lost .view{container-type:inline-size;background:#0b0c0e}
-.is-lost .view canvas{animation:visor-power-down .85s ease-out both}
-.is-lost .gameOverFlag{
-  position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
-  color:#e2e5e6;text-shadow:0 2px 6px #000;font:800 clamp(14px,9cqw,76px)/1 var(--sans);
-  letter-spacing:.065em;animation:game-over-title .8s ease-out both
+:root {
+  color-scheme: dark;
+  --bg: #0e1317;
+  --panel: #171d21;
+  --panel2: #1c2328;
+  --line: #354046;
+  --text: #f3f1e9;
+  --mute: #aeb9bc;
+  --gold: #f7bc62;
+  --green: #8ed7ba;
+  --red: #ff9985;
+  --mono: ui-monospace,Consolas,Menlo,"Courier New",monospace;
+  --sans: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
 }
-.is-lost :is(.rack,.throwPanel,.aimControls,.lesson,.clockSlider,#pause:disabled){filter:grayscale(1) brightness(.45)}
-@keyframes visor-power-down{from{filter:grayscale(0) brightness(1)}to{filter:grayscale(1) brightness(.18)}}
-@keyframes game-over-title{from{opacity:0}to{opacity:1}}
-@media(prefers-reduced-motion:reduce){
-  .is-lost .view canvas{animation:none;filter:grayscale(1) brightness(.18)}
-  .is-lost .gameOverFlag{animation:none}
-}
-#flightLog{width:min(1020px,97vw);max-height:94dvh;background:#101a20}#flightLog .dialogBody{padding:clamp(14px,2vw,27px)}
-.logPanes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.logPanes figure{margin:0;background:#0b141b;border:1px solid var(--line);border-radius:5px;padding:7px}
-.logPanes figcaption{font-size:13px;font-weight:bold}.logPanes svg{display:block;width:100%;height:auto}.logPanes text{font-family:var(--mono)}
-#logSummary{margin:9px 0 12px;font-family:var(--mono);font-size:12px;color:var(--green)}.logLegend{margin:6px 0}.logLegend,#logEvents{font-size:12px}.logThrows{margin:8px 0 0;padding-left:24px}.logThrows li{margin:4px 0}.logThrows small{display:block;font-family:var(--mono);overflow-wrap:anywhere}
-.envelopeKey{display:inline-block;width:8px;height:12px;vertical-align:-2px;border:1px solid #91c4a4;background:#29493d}
 
-.version{color:var(--green);font:11px var(--mono);white-space:nowrap}
-.clockSlider{width:112px;display:block;text-align:left;font:10px var(--mono);color:var(--mute)}
-.clockSlider span{display:flex;justify-content:space-between;align-items:center}.clockSlider output{color:var(--green);font-weight:bold}
-.clockSlider #clockRate{height:24px;margin:0;accent-color:var(--green);width:100%}
-#speedGauge{height:6px;position:relative;background:#344347;max-width:140px;margin:5px 2px 4px 0}
-#speedGauge i{height:100%;width:var(--fill,0);display:block;background:var(--green)}
-#speedGauge::after{position:absolute;content:'';width:2px;height:11px;left:var(--tick,66.67%);top:-2px;background:var(--gold);box-shadow:0 0 0 1px #152026}
-#speedGauge.over i{background:var(--red)}
-#speedRef{font:10px var(--mono);color:var(--mute);display:block}
-.velocity{grid-column:1/-1;border-top:1px solid var(--line);padding:7px 8px 0}
-.velocity h2{font-size:12px}.velocity h2 small{font:10px var(--mono);color:var(--mute)}
-.velocity dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:5px 0 1px}
-.velocity dt{font-size:10px;color:var(--mute)}.velocity dd{margin:1px 0 0;font:12px var(--mono);color:var(--green)}
-.velocity dl>div{display:flex;flex-direction:column;justify-content:space-between}
-.dialogHead{border-bottom:1px solid #54645f;padding-bottom:10px}.dialogHead h2{color:var(--gold);border-left:3px solid var(--gold);padding-left:9px}
-.clockSlider .rateStops{display:flex;justify-content:space-between;margin:-5px 2px 0;pointer-events:none;color:var(--mute);font:9px/1 var(--mono)}
-.rateStops i{font-style:normal}
-.credits{border-top:1px solid var(--line);margin-top:16px;padding-top:2px}
-.credits p{font-size:12px;color:var(--mute)}
-.seedActions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0}
-.seedActions button{min-height:34px;font-size:13px}
-#seedPreview,#endShareStatus,#cardStatus{font-size:12px;color:var(--green)}
-#seed[aria-invalid=true]{border-color:var(--red)}
-#seed[aria-invalid=true]~#seedPreview{color:var(--red)}
-#seedTag{min-height:26px;color:var(--green)}
-#debriefShare{border-top:1px solid var(--line);margin-top:16px}
-#endSeed{color:var(--green);margin-right:auto;font:600 14px var(--mono)}
-#shareCard{width:min(95vw,480px);max-height:95dvh}
-#shareCard .dialogBody{padding:12px}
-#shareCard .dialogHead{margin-bottom:8px}
-#cardArt svg{display:block;width:100%;height:auto}
-#cardStatus:empty,#endShareStatus:empty{display:none}
-#copyText{display:block;width:100%;margin-top:7px;padding:8px;background:var(--bg);color:var(--text);font:13px var(--mono)}
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 var(--sans);
+}
+
+button,select,input {
+  font: inherit;
+}
+
+button,select {
+  color: var(--text);
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+button {
+  cursor: pointer;
+  min-height: 35px;
+  padding: 6px 11px;
+  font-weight: 600;
+}
+
+button:hover:enabled {
+  background: #30383c;
+  border-color: #7a8588;
+}
+
+button:active:enabled {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+button:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+button.primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #191a15;
+}
+
+button.primary:hover:enabled {
+  background: #ffd18f;
+  border-color: #ffd18f;
+}
+
+header {
+  background: #141a1e;
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar,main {
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand,.headerActions,.tags,.panelTitle,.camLabel,.dialogHead,.heading,.clockControls,.aimControls,.coastTitle {
+  display: flex;
+  align-items: center;
+}
+
+.brand {
+  gap: 11px;
+}
+
+.brand img {
+  width: 43px;
+  height: 43px;
+  object-fit: contain;
+}
+
+.wordmark {
+  font-family: Arial,sans-serif;
+  font-weight: 900;
+  font-size: 25px;
+  letter-spacing: -1.5px;
+  font-style: italic;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.wordmark i {
+  color: var(--gold);
+  font-size: 20px;
+}
+
+.descriptor {
+  border-left: 1px solid var(--line);
+  margin-left: 5px;
+  padding-left: 15px;
+  color: var(--mute);
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+
+.headerActions {
+  gap: 9px;
+}
+
+.quiet {
+  background: transparent;
+}
+
+.flightHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+h1,h2,h3,p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(27px,2.5vw,39px);
+  letter-spacing: -.045em;
+  line-height: 1.12;
+}
+
+.flightHead p {
+  color: var(--mute);
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.tags {
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: flex-end;
+}
+
+.tag {
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  border-radius: 3px;
+  font: 11px/1.4 var(--mono);
+  color: #d1dad8;
+}
+
+.tag.mode {
+  color: var(--green);
+}
+
+.mode:before {
+  content: '◆';
+  font-size: 8px;
+  margin-right: 7px;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.panelTitle {
+  min-height: 40px;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  gap: 8px;
+}
+
+.camLabel,h2 {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: .005em;
+}
+
+.camLabel {
+  gap: 9px;
+}
+
+.indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--green);
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px #192620;
+  background: var(--green);
+}
+
+.cameraMeta,.micro {
+  font: 10px/1.35 var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+.view {
+  position: relative;
+  isolation: isolate;
+  background: #060e15;
+}
+
+.view canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#forward {
+  touch-action: none;
+  cursor: grab;
+}
+
+.dragging #forward {
+  cursor: grabbing;
+}
+
+.aimControls {
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.aimBtns {
+  display: flex;
+  gap: 5px;
+}
+
+.aimBtns button,.clockControls button {
+  min-height: 29px;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.coastPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.coastTitle .trace {
+  width: 19px;
+  border-top: 2px dashed var(--green);
+}
+
+.readout {
+  font-weight: 650;
+  letter-spacing: -.04em;
+}
+
+.good {
+  color: var(--green)!important;
+}
+
+.warn {
+  color: var(--gold)!important;
+}
+
+.danger {
+  color: var(--red)!important;
+}
+
+.metric {
+  min-width: 0;
+}
+
+.metric strong {
+  white-space: nowrap;
+}
+
+.metric small {
+  margin-left: 4px;
+}
+
+.heading {
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 11px;
+}
+
+.heading span {
+  font: 11px var(--mono);
+  color: var(--mute);
+}
+
+.tools {
+  display: grid;
+}
+
+.tool {
+  position: relative;
+  text-align: left;
+  min-width: 0;
+}
+
+.tool[aria-pressed=true] {
+  box-shadow: inset 0 -2px var(--gold);
+}
+
+.tool canvas {
+  display: block;
+}
+
+.tool b,.tool small {
+  display: block;
+}
+
+.tool .hotkey {
+  position: absolute;
+}
+
+.powerDisplay {
+  color: var(--gold)!important;
+  font: 600 17px var(--mono)!important;
+}
+
+input[type=range] {
+  accent-color: var(--gold);
+  width: 100%;
+  display: block;
+  height: 20px;
+  margin: 3px 0 8px;
+  cursor: pointer;
+}
+
+#throw {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 14px;
+}
+
+.statusLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.statusLine span:first-child {
+  color: var(--green);
+}
+
+dialog {
+  width: min(96vw,530px);
+  padding: 0;
+  max-height: 90dvh;
+  overflow: auto;
+  background: #1a2125;
+  color: var(--text);
+  border: 1px solid #5b6668;
+  border-radius: 10px;
+  box-shadow: 0 28px 100px #000a;
+}
+
+dialog::backdrop {
+  background: #071013cf;
+}
+
+.dialogBody {
+  padding: 23px;
+}
+
+.dialogHead {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dialogHead h2 {
+  font-size: 24px;
+  letter-spacing: -.035em;
+}
+
+.x {
+  width: 32px;
+  min-height: 32px;
+  padding: 1px;
+  font-size: 19px;
+  color: var(--mute);
+  background: transparent;
+}
+
+.dialogBody p,.dialogBody li {
+  font-size: 14px;
+  color: #c3cbcd;
+}
+
+.dialogBody h3 {
+  font-size: 14px;
+  color: var(--gold);
+  margin: 15px 0 4px;
+}
+
+.dialogBody li {
+  margin-bottom: 5px;
+}
+
+.rowLabel {
+  margin: 15px 0 5px;
+  color: #dce3df;
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.dialogBody select,.seedInput {
+  width: 100%;
+  height: 40px;
+  padding: 6px 9px;
+}
+
+.seedInput {
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  font-family: var(--mono);
+  min-width: 0;
+}
+
+.modePick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.modePick label {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.modePick label:has(:checked) {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+input[type=radio],input[type=checkbox] {
+  accent-color: var(--gold);
+}
+
+.challenge {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 6px;
+  align-items: flex-start;
+  font-size: 14px;
+}
+
+.challenge small {
+  display: block;
+  font-size: 12px;
+  color: var(--mute);
+}
+
+.dialogFoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding: 13px 22px;
+  background: #151b1f;
+}
+
+.result {
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 5px;
+  margin-top: 14px;
+  color: var(--green);
+}
+
+[hidden] {
+  display: none!important;
+}
+
+.is-paused .view canvas {
+  filter: grayscale(1);
+}
+
+.is-paused .view::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgb(232 232 232 / 48%);
+  pointer-events: none;
+}
+
+.pauseFlag {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  place-content: center;
+  justify-items: center;
+  gap: 2px;
+  pointer-events: none;
+  color: #101921;
+  text-shadow: 0 1px 3px #ffffff80;
+  font: 800 clamp(36px,min(6.5vw,12dvh),86px)/1 var(--sans);
+  letter-spacing: .09em;
+}
+
+.is-paused .pauseFlag {
+  display: grid;
+}
+
+.pauseFlag:has(small:not([hidden])) {
+  inset: 27% 0 auto;
+  font-size: clamp(28px,min(5vw,7dvh),62px);
+}
+
+.pauseFlag small {
+  font: 700 clamp(10px,1.3vw,14px)/1.15 var(--mono);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.is-paused #pause {
+  background: #ffd18b;
+  color: #201809;
+  border-color: #ffdfa9;
+  box-shadow: 0 0 0 2px #ffca723d,0 0 14px 3px #f7bc6280;
+}
+
+.is-paused #pause:hover {
+  background: #ffe2b3;
+}
+
+.gameOverFlag {
+  display: none;
+}
+
+.is-lost .view {
+  container-type: inline-size;
+  background: #0b0c0e;
+}
+
+.is-lost .view canvas {
+  animation: visor-power-down .85s ease-out both;
+}
+
+.is-lost .gameOverFlag {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: #e2e5e6;
+  text-shadow: 0 2px 6px #000;
+  font: 800 clamp(14px,9cqw,76px)/1 var(--sans);
+  letter-spacing: .065em;
+  animation: game-over-title .8s ease-out both;
+}
+
+.is-lost :is(.rack,.throwPanel,.aimControls,.lesson,.clockSlider,#pause:disabled) {
+  filter: grayscale(1) brightness(.45);
+}
+
+@keyframes visor-power-down {
+  from {
+    filter: grayscale(0) brightness(1);
+  }
+  to {
+    filter: grayscale(1) brightness(.18);
+  }
+}
+
+@keyframes game-over-title {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .is-lost .view canvas {
+    animation: none;
+    filter: grayscale(1) brightness(.18);
+  }
+  .is-lost .gameOverFlag {
+    animation: none;
+  }
+}
+
+#flightLog {
+  width: min(1020px,97vw);
+  max-height: 94dvh;
+  background: #101a20;
+}
+
+#flightLog .dialogBody {
+  padding: clamp(14px,2vw,27px);
+}
+
+.logPanes {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 10px;
+}
+
+.logPanes figure {
+  margin: 0;
+  background: #0b141b;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 7px;
+}
+
+.logPanes figcaption {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.logPanes svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.logPanes text {
+  font-family: var(--mono);
+}
+
+#logSummary {
+  margin: 9px 0 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--green);
+}
+
+.logLegend {
+  margin: 6px 0;
+}
+
+.logLegend,#logEvents {
+  font-size: 12px;
+}
+
+.logThrows {
+  margin: 8px 0 0;
+  padding-left: 24px;
+}
+
+.logThrows li {
+  margin: 4px 0;
+}
+
+.logThrows small {
+  display: block;
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.envelopeKey {
+  display: inline-block;
+  width: 8px;
+  height: 12px;
+  vertical-align: -2px;
+  border: 1px solid #91c4a4;
+  background: #29493d;
+}
+
+.version {
+  color: var(--green);
+  font: 11px var(--mono);
+  white-space: nowrap;
+}
+
+.clockSlider {
+  display: block;
+  text-align: left;
+  width: 130px;
+  color: #e0e9eb;
+  font: 12px/1 var(--sans);
+}
+
+.clockSlider span {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clockSlider output {
+  color: var(--green);
+  font-weight: bold;
+}
+
+.clockSlider #clockRate {
+  height: 24px;
+  margin: 0;
+  accent-color: var(--green);
+  width: 100%;
+}
+
+#speedGauge {
+  height: 6px;
+  position: relative;
+  background: #344347;
+  max-width: 140px;
+  margin: 3px 0;
+}
+
+#speedGauge i {
+  height: 100%;
+  width: var(--fill,0);
+  display: block;
+  background: var(--green);
+}
+
+#speedGauge::after {
+  position: absolute;
+  content: '';
+  width: 2px;
+  height: 11px;
+  left: var(--tick,66.67%);
+  top: -2px;
+  background: var(--gold);
+  box-shadow: 0 0 0 1px #152026;
+}
+
+#speedGauge.over i {
+  background: var(--red);
+}
+
+#speedRef {
+  font: 10px var(--mono);
+  color: var(--mute);
+  display: block;
+}
+
+.dialogHead {
+  border-bottom: 1px solid #54645f;
+  padding-bottom: 10px;
+}
+
+.dialogHead h2 {
+  color: var(--gold);
+  border-left: 3px solid var(--gold);
+  padding-left: 9px;
+}
+
+.clockSlider .rateStops {
+  display: flex;
+  justify-content: space-between;
+  margin: -5px 2px 0;
+  pointer-events: none;
+  color: var(--mute);
+  font: 9px/1 var(--mono);
+}
+
+.rateStops i {
+  font-style: normal;
+}
+
+.credits {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 2px;
+}
+
+.credits p {
+  font-size: 12px;
+  color: var(--mute);
+}
+
+.seedActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.seedActions button {
+  min-height: 34px;
+  font-size: 13px;
+}
+
+#seedPreview,#endShareStatus,#cardStatus {
+  font-size: 12px;
+  color: var(--green);
+}
+
+#seed[aria-invalid=true] {
+  border-color: var(--red);
+}
+
+#seed[aria-invalid=true]~#seedPreview {
+  color: var(--red);
+}
+
+#seedTag {
+  min-height: 26px;
+  color: var(--green);
+}
+
+#debriefShare {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+}
+
+#endSeed {
+  color: var(--green);
+  margin-right: auto;
+  font: 600 14px var(--mono);
+}
+
+#shareCard {
+  width: min(95vw,480px);
+  max-height: 95dvh;
+}
+
+#shareCard .dialogBody {
+  padding: 12px;
+}
+
+#shareCard .dialogHead {
+  margin-bottom: 8px;
+}
+
+#cardArt svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+#cardStatus:empty,#endShareStatus:empty {
+  display: none;
+}
+
+#copyText {
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+  padding: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px var(--mono);
+}
 
 /* The visor fills the stage. Only the instrument panels take pointer input
    away from it, so open space between the panels remains available for aiming. */
-body{min-height:100dvh;display:flex;flex-direction:column}
-.topbar,main{max-width:none;width:100%;padding-inline:clamp(8px,1.55vw,34px)}
-.topbar{height:52px}
-main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
-.flightHead{margin:12px 0}
-.deck{
-  --inset:clamp(10px,1.3vw,24px);
-  --hud-surface:rgb(9 19 26 / 91%);
-  --hud-line:#51636b;
-  --instrument-line:rgb(182 221 220 / 31%);
-  display:flex;flex:1;flex-direction:column;gap:0;min-width:0;
-  background:#0b141a;border:1px solid #405058;border-radius:8px;overflow:hidden
-}
-.camTitle{gap:16px;min-height:44px;padding:4px 14px;justify-content:flex-start;background:#172024}
-.bearingReadout,.clockGroup,.flightTime{display:flex;align-items:center;gap:12px}
-.bearingReadout,.flightTime{font:12px var(--mono);font-variant-numeric:tabular-nums;color:#d9e8ec}
-.bearingReadout{padding-inline-start:15px;border-inline-start:1px solid #57656c}
-.clockGroup{margin-inline-start:auto;gap:14px}.flightTime{gap:6px}.flightTime b{color:#b3f3db}
-.clockControls{padding:0;gap:12px}.clockSlider{width:130px;color:#e0e9eb;font:12px/1 var(--sans)}
-.clockSlider .rateStops{font-size:10px;color:#d8e6e9}.clockControls button{min-height:32px}
-#pause{border-color:#9b8154;color:#ffce85}
-.aimControls{min-height:0;padding:0;border:0}.aimBtns{flex-wrap:wrap}
-.aimBtns button{min-height:30px}.aimControls .hint{display:none}
-.hudStage{
-  position:relative;isolation:isolate;flex:1;min-height:450px;background:#070e14;
-  display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto 1fr auto
-}
-.forward{position:absolute;inset:0;height:auto;z-index:0}
-.visorBackdrop{display:none}
-.aftPod,.metrics,.pitchPod,.lesson{
-  position:relative;background:var(--hud-surface);border:1px solid var(--hud-line);
-  border-radius:5px;color:#f3f7f6;box-shadow:0 3px 14px #0005
-}
-.aftPod{grid-area:1/1;justify-self:start;align-self:start;width:clamp(230px,28vw,525px);overflow:hidden;border-width:0 1px 1px 0;border-radius:0 0 5px 0}
-.aftPod .panelTitle{min-height:28px;padding:3px 9px;background:#172529;gap:4px}
-.aftPod .camLabel{font:600 13px var(--sans);gap:6px}.aftPod .cameraMeta{font:12px var(--sans);color:#d7e3e4;letter-spacing:0;text-transform:none}
-.aft{height:auto;aspect-ratio:2.05}
-.metrics,.pitchPod{background:rgb(4 13 19 / 62%);border-color:var(--instrument-line);box-shadow:none;text-shadow:0 1px 2px #02070b,0 0 3px #02070b}
-.metrics{--green:#bbefd6;--gold:#ffdb9a;--red:#ffc7b9}
-.metrics{grid-area:1/3/4/4;justify-self:end;align-self:start;z-index:1;display:block;width:clamp(188px,15vw,228px);margin:0;padding:0;min-height:0;border-width:0 0 1px 1px;border-radius:0 0 0 5px}
-.metricStrip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px}
-.metric{padding:0;border:0}.metric.clock{order:-1}
-.metric .caption{display:block;font:600 13px/1.2 var(--sans);color:#d8e6e8}
-.metric strong{font:600 clamp(17px,1.45vw,24px)/1.3 var(--mono);color:#c6f8e5;letter-spacing:-.045em}
-.metric.clock strong{color:#ffdb94;font-size:1.65em}.metric strong.danger{color:var(--red)}.metric strong.warn{color:var(--gold)}
-.metric small,#speedRef{font:12px/1.15 var(--sans);color:#deeaeb}
-#speedGauge{margin:3px 0}
-.pitchPod{grid-area:3/1;align-self:end;justify-self:start;width:clamp(273px,25.5vw,395px);margin:8px 0 0;overflow:hidden;border-width:1px 1px 0 0;border-radius:0 5px 0 0}
-.rack,.throwPanel,.coastPanel{border:0;border-radius:0;background:transparent}
-.rack{padding:9px}.rack .heading,.throwPanel .heading{margin:0 0 6px;gap:4px}
-.rack .heading span,.impulseInfo{font:12px/1.25 var(--sans);color:#d6e3e6}
-.tools{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
-.tool{display:grid;align-content:center;min-height:45px;padding:4px 4px 4px clamp(22px,1.8vw,32px);background:rgb(14 31 39 / 22%);border-color:var(--instrument-line);text-shadow:inherit}
-.tool:hover:enabled{background:rgb(37 62 69 / 50%);border-color:rgb(182 221 220 / 68%)}
-.tool b,.tool small{white-space:normal;text-overflow:clip;overflow:visible}
-.tool b{font:600 13px/1.12 var(--sans);color:#f1f4f3}
-.tool small{margin-top:2px;font:12px/1.1 var(--sans);color:#d3dfe0}
-.tool canvas{position:absolute;left:1px;bottom:6px;width:clamp(22px,1.8vw,32px);height:20px}
-.tool .hotkey{font:10px/1 var(--mono);color:#c5d2d5;top:4px;left:5px}
-.tool:disabled{opacity:1;cursor:default}
-.tool.spent{opacity:.58;background:transparent;border-style:dashed}
-.tool[aria-pressed="true"],.tool[aria-pressed="true"]:hover:enabled{background:rgb(89 63 29 / 45%);border-color:rgb(248 197 116 / 85%)}
-.throwPanel{border-top:1px solid var(--instrument-line);padding:7px 9px 9px;display:grid;grid-template-columns:minmax(0,1fr) 76px;column-gap:9px;align-items:center}
-.throwPanel .heading{grid-area:1/1;margin:0}.throwPanel h2{font-size:13px}
-.throwPanel #power{grid-area:2/1;margin:0;height:24px}
-.impulseInfo{grid-area:3/1/4/-1}
-#throw{grid-area:1/2/3/3;height:40px;min-height:0;padding:5px 7px;font-size:14px;text-shadow:none}
-.coastPanel{border-top:1px solid var(--instrument-line);padding:10px;gap:5px;min-height:0}.coastTitle{gap:8px}
-.coastPanel p,.lesson p{font:14px/1.35 var(--sans);color:#eef3f3}
-.readout{font-size:clamp(19px,1.55vw,26px);line-height:1.13}
-.driftData{padding-top:5px;border-top:1px solid var(--instrument-line);display:flex;justify-content:space-between;gap:4px;flex-wrap:wrap}
-.driftData .micro,.driftData span:last-child{font:12px/1.25 var(--sans);color:#d8e5e7;text-transform:none;letter-spacing:0}
-.velocity{padding:8px 10px;border-top:1px solid var(--instrument-line)}
-.previewControl{border-top:1px solid var(--instrument-line);padding:2px 10px}
-.previewControl label{display:flex;align-items:center;gap:6px;min-height:30px;cursor:pointer;font:600 13px/1.25 var(--sans);color:#e6c5ff}
-.previewControl input{margin:0;width:15px;height:15px;accent-color:#dba6ff}
-.previewControl output:not([hidden]){display:block;padding-bottom:5px;font:12px/1.25 var(--sans);color:#f0dbff}
-.velocity dl{display:flex;flex-direction:column;gap:3px}
-.velocity h2{font-size:12px}.velocity h2 small,.velocity dt{font:12px/1.2 var(--sans);color:#d8e6e8}
-.velocity dd{font:12px/1.25 var(--mono);color:#c5f4e2}
-.velocity dl>div{display:flex;flex-direction:row;justify-content:space-between;align-items:baseline;gap:4px}
-.velocity dd{white-space:nowrap;letter-spacing:-.04em;margin:0}
-.lesson{position:absolute;inset:var(--inset) auto auto 50%;transform:translateX(-50%);width:min(33%,460px);padding:9px 12px;border-color:#ae8e57}
-.lesson .heading{margin-bottom:4px}.lesson button{font-size:12px;min-height:28px;padding:3px 7px}.lesson #lessonAction{margin-top:5px}
-.statusLine{background:#142025;border-top:1px solid #405058;padding:6px 13px;min-height:30px;color:#e4eeed;font-size:13px}
-.pauseFlag:has(small:not([hidden])){inset:27% 0 auto}
-:where(#forward,.tool,#throw,#power,#pause,#clockRate,.aimBtns button):focus-visible{outline:2px solid #8bf5ff;outline-offset:-2px}
-
-@media (max-width:1120px) and (min-height:501px){
-  .tool{padding-left:5px}.tool canvas,.tool .hotkey{display:none}
-}
-@media (max-width:960px) and (min-height:501px){
-  .bearingReadout{gap:6px;padding-left:6px;font-size:11px}.descriptor{display:none}.lesson{width:34%}.aimBtns button{font-size:12px}
-  .flightTime{font-size:11px}.camTitle{gap:8px}
-  .deck{--inset:8px}
-}
-@media (max-width:740px) and (min-height:501px),(max-width:599px){
-  main{padding:0 5px 5px}.topbar{padding:2px 6px;height:auto;min-height:40px;gap:3px}
-  .brand{gap:3px}.brand img{width:25px;height:25px}.wordmark,.wordmark i{font-size:17px}.version{font-size:10px}
-  .descriptor,.headerActions #new span{display:none}.headerActions{gap:3px}.headerActions button{padding:3px 5px;min-height:30px;font-size:12px}
-  .flightHead{display:block;margin:4px 0}.flightHead h1{font-size:23px}.flightHead p{font-size:13px;line-height:1.25;margin:2px 0}
-  .tags{justify-content:flex-start;margin-top:2px;gap:4px}.tag{font-size:10px;padding:1px 5px}
-  .deck{--inset:6px;flex:none}.camTitle{flex-wrap:wrap;gap:2px 6px;padding:3px 6px;min-height:37px}
-  .camLabel{font-size:13px;gap:4px}.clockControls{gap:6px}
-  .camTitle{position:relative;z-index:2}
-  .bearingReadout{order:2;flex-basis:100%;gap:8px;padding:2px 0 0;border:0;color:#f2f8f9;font:11px var(--mono)}
-  .flightTime{font:11px var(--sans)}
-  .clockSlider{width:90px}.clockSlider #clockRate{height:24px}.clockControls button{min-height:28px}
-  .aimControls{order:1;width:100%}.aimBtns{gap:4px}.aimBtns button{min-height:26px;padding:2px 7px}
-  .hudStage{container-type:inline-size;--aft-width:min(41cqw,230px);--aft-aspect:2.05;--aft-title:21px;--sidebar-width:37.5%;grid-template-columns:minmax(0,1fr) var(--sidebar-width);grid-template-rows:auto auto auto;min-height:0;flex:none}
-  .forward{grid-area:1/1/2/-1;position:relative;inset:auto;height:clamp(185px,28dvh,310px)}
-  .visorBackdrop{position:absolute;inset:0;display:block;z-index:-1;pointer-events:none}
-  .aftPod{grid-area:1/1/2/-1;z-index:1;width:var(--aft-width)}.aft{aspect-ratio:var(--aft-aspect)}.aftPod .panelTitle{height:var(--aft-title);min-height:18px;padding:2px 5px}
-  .aftPod .camLabel{font-size:12px}.aftPod .cameraMeta{display:none}
-  .metrics,.pitchPod,.lesson{position:static;inset:auto;min-width:0;width:100%;margin:0;transform:none;border:0;border-top:1px solid #43545b;border-radius:0;box-shadow:none}
-  .metrics{grid-area:1/2/4/3;align-self:stretch;border-width:0 0 0 1px;border-left:1px solid var(--instrument-line)}
-  .metricStrip{gap:6px 4px;padding:5px}.metric .caption{font-size:12px}.metric strong,.metric.clock strong{font-size:16px}.metric small,#speedRef{font-size:11px}
-  .metric small{display:block;margin:0}
-  .pitchPod{grid-area:3/1;align-self:end;border-color:var(--instrument-line)}.rack{padding:6px 4px}.rack .heading{align-items:start;flex-direction:column;margin-bottom:5px;gap:1px}
-  .tools{gap:3px}.tool{min-height:44px;padding:3px}.tool canvas,.tool .hotkey{display:none}
-  .tool b{font-size:12px;overflow-wrap:anywhere}.tool small{font-size:11px}
-  .throwPanel{padding:5px;grid-template-columns:minmax(0,1fr) 62px;gap:0 6px}#throw{height:38px}
-  .coastPanel{padding:6px;gap:4px}.coastTitle{gap:4px}.coastPanel p{font-size:13px}
-  .velocity{padding:6px}.velocity h2{font-size:12px}.velocity dt,.velocity dd{font-size:11px}.statusLine{padding:5px 8px}
-  .lesson{grid-area:2/1;align-self:start;padding:5px}.lesson .heading{flex-wrap:wrap;gap:3px}.lesson p{font-size:13px}.lesson button{min-height:25px}
-  .hudStage:has(.lesson:not([hidden])) .forward{height:clamp(150px,calc(20vw + 77px),205px)}
-  main:has(.lesson:not([hidden])) #brief{display:none}
-  .pauseFlag,.pauseFlag:has(small:not([hidden])){inset:auto var(--sidebar-width) 4px 0}
-  .is-lost .forward .gameOverFlag{inset:calc(var(--aft-width) / var(--aft-aspect) + var(--aft-title)) var(--sidebar-width) 0 0;font-size:clamp(18px,7vw,34px)}
-  .logPanes{grid-template-columns:1fr}.dialogFoot{flex-wrap:wrap;padding:9px}.dialogBody{padding:15px}
-}
-@media(max-width:365px){
-  .topbar{flex-wrap:wrap}.headerActions{margin-left:auto}.tool{padding-left:4px}.tool canvas,.tool .hotkey{display:none}
-}
-@media(min-width:600px) and (max-height:500px){
-  main{padding:0 4px 3px}.topbar{height:30px;padding:0 6px}.brand img{height:23px;width:23px}.wordmark,.wordmark i{font-size:16px}
-  .descriptor,.flightHead p{display:none}.flightTime{font-size:11px}.headerActions button{min-height:25px;padding:2px 6px;font-size:12px}
-  .flightHead{margin:2px 0}.flightHead h1{font-size:19px}.tag{padding:1px 4px}
-  .deck{--inset:4px}.camTitle{position:relative;z-index:2;min-height:30px;padding:2px 6px;gap:8px}
-  .bearingReadout{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);max-width:33%;flex-wrap:wrap;justify-content:center;gap:3px 6px;padding:3px 5px;border:0;background:#09131be8;pointer-events:none;font-size:11px}
-  .clockSlider{width:88px}.clockSlider .rateStops{display:none}.clockSlider #clockRate{height:24px;display:block}.clockSlider{display:flex;align-items:center;gap:3px;width:135px}.clockSlider span{gap:2px;white-space:nowrap}
-  .clockControls button,.aimBtns button{min-height:25px;font-size:12px;padding:2px 5px}
-  .hudStage{min-height:275px}.aftPod{width:26vw;max-width:235px}.aftPod .panelTitle{min-height:18px;padding:1px 5px}.aftPod .cameraMeta{display:none}.aftPod .camLabel{font-size:12px}.aft{aspect-ratio:2.85}
-  .metrics{width:clamp(194px,25vw,240px);max-height:calc(100dvh - 123px);overflow-y:auto;scrollbar-width:thin}
-  .metricStrip{padding:4px 6px;gap:3px 5px}
-  .metric .caption,.metric small,#speedRef{font-size:11px}.metric strong{font-size:15px}#speedGauge{margin:1px 0;height:4px}
-  .pitchPod{width:31vw;min-width:226px;max-width:320px;margin-top:2px}.rack{padding:3px}.rack .heading{margin-bottom:2px}.rack h2{font-size:12px;line-height:1.2}.rack .heading span{font-size:11px}
-  .tools{gap:2px}.tool{min-height:28px;padding:1px 2px}.tool b,.tool small{font-size:11px;line-height:1.05}.tool small{margin-top:0}.tool canvas,.tool .hotkey{display:none}
-  .throwPanel{padding:3px 4px;column-gap:4px;grid-template-columns:max-content minmax(0,1fr) 60px}
-  .throwPanel .heading{grid-area:1/1}.impulseInfo{grid-area:1/2/2/4;justify-self:end;font-size:11px}
-  .throwPanel #power{grid-area:2/1/3/3}.throwPanel h2,#throw{font-size:12px}#throw{grid-area:2/3;height:28px}
-  .coastPanel{padding:4px 6px;gap:2px}.coastPanel p{font-size:12px;line-height:1.25}.readout{font-size:16px}.driftData{padding-top:2px}
-  .velocity{padding:3px 6px}.velocity dl{gap:2px;margin:2px 0}.velocity dt,.velocity dd,.velocity h2 small{font-size:11px}
-  .lesson{grid-area:1/2/4/3;inset:auto 4px var(--inset);width:auto;max-width:370px;max-height:calc(50% - 24px);overflow:auto;scrollbar-width:thin;transform:none;padding:4px 6px}.lesson .heading{margin:0}.lesson p{font-size:12px;line-height:1.2}.lesson button{min-height:24px;padding:2px 5px}
-  .deck:has(.aimControls:not([hidden])) .bearingReadout{font-size:11px}
-  .statusLine{font-size:12px;padding:3px 6px;min-height:22px}
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
-@media(min-width:741px) and (min-height:501px) and (max-height:680px){
-  .hudStage{min-height:495px}
+.topbar,main {
+  width: 100%;
+  padding-inline: clamp(8px,1.55vw,34px);
+}
+
+.topbar {
+  height: 52px;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 10px;
+}
+
+.flightHead {
+  margin: 12px 0;
+}
+
+.deck {
+  --inset: clamp(10px,1.3vw,24px);
+  --hud-surface: rgb(9 19 26 / 91%);
+  --hud-line: #51636b;
+  --instrument-line: rgb(182 221 220 / 31%);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  background: #0b141a;
+  border: 1px solid #405058;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.camTitle {
+  gap: 16px;
+  min-height: 44px;
+  padding: 4px 14px;
+  justify-content: flex-start;
+  background: #172024;
+}
+
+.bearingReadout,.clockGroup,.flightTime {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bearingReadout,.flightTime {
+  font: 12px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: #d9e8ec;
+}
+
+.bearingReadout {
+  padding-inline-start: 15px;
+  border-inline-start: 1px solid #57656c;
+}
+
+.clockGroup {
+  margin-inline-start: auto;
+  gap: 14px;
+}
+
+.flightTime {
+  gap: 6px;
+}
+
+.flightTime b {
+  color: #b3f3db;
+}
+
+.clockControls {
+  padding: 0;
+  gap: 12px;
+}
+
+.clockSlider .rateStops {
+  font-size: 10px;
+  color: #d8e6e9;
+}
+
+.clockControls button {
+  min-height: 32px;
+}
+
+#pause {
+  border-color: #9b8154;
+  color: #ffce85;
+}
+
+.aimControls {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+}
+
+.aimBtns {
+  flex-wrap: wrap;
+}
+
+.aimBtns button {
+  min-height: 30px;
+}
+
+.hudStage {
+  position: relative;
+  isolation: isolate;
+  flex: 1;
+  min-height: 450px;
+  background: #070e14;
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  grid-template-rows: auto 1fr auto;
+}
+
+.forward {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  z-index: 0;
+}
+
+.visorBackdrop {
+  display: none;
+}
+
+.aftPod,.metrics,.pitchPod,.lesson {
+  position: relative;
+  background: var(--hud-surface);
+  border: 1px solid var(--hud-line);
+  border-radius: 5px;
+  color: #f3f7f6;
+  box-shadow: 0 3px 14px #0005;
+}
+
+.aftPod {
+  grid-area: 1/1;
+  justify-self: start;
+  align-self: start;
+  width: clamp(230px,28vw,525px);
+  overflow: hidden;
+  border-width: 0 1px 1px 0;
+  border-radius: 0 0 5px 0;
+}
+
+.aftPod .panelTitle {
+  min-height: 28px;
+  padding: 3px 9px;
+  background: #172529;
+  gap: 4px;
+}
+
+.aftPod .camLabel {
+  font: 600 13px var(--sans);
+  gap: 6px;
+}
+
+.aftPod .cameraMeta {
+  font: 12px var(--sans);
+  color: #d7e3e4;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.aft {
+  height: auto;
+  aspect-ratio: 2.05;
+}
+
+.metrics,.pitchPod {
+  background: rgb(4 13 19 / 62%);
+  border-color: var(--instrument-line);
+  box-shadow: none;
+  text-shadow: 0 1px 2px #02070b,0 0 3px #02070b;
+}
+
+.metrics {
+  --green: #bbefd6;
+  --gold: #ffdb9a;
+  --red: #ffc7b9;
+}
+
+.metrics {
+  grid-area: 1/3/4/4;
+  justify-self: end;
+  align-self: start;
+  z-index: 1;
+  display: block;
+  width: clamp(188px,15vw,228px);
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  border-width: 0 0 1px 1px;
+  border-radius: 0 0 0 5px;
+}
+
+.metricStrip {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 8px;
+  padding: 10px;
+}
+
+.metric {
+  padding: 0;
+  border: 0;
+}
+
+.metric.clock {
+  order: -1;
+}
+
+.metric .caption {
+  display: block;
+  font: 600 13px/1.2 var(--sans);
+  color: #d8e6e8;
+}
+
+.metric strong {
+  font: 600 clamp(17px,1.45vw,24px)/1.3 var(--mono);
+  color: #c6f8e5;
+  letter-spacing: -.045em;
+}
+
+.metric.clock strong {
+  color: #ffdb94;
+  font-size: 1.65em;
+}
+
+.metric strong.danger {
+  color: var(--red);
+}
+
+.metric strong.warn {
+  color: var(--gold);
+}
+
+.metric small,#speedRef {
+  font: 12px/1.15 var(--sans);
+  color: #deeaeb;
+}
+
+.pitchPod {
+  grid-area: 3/1;
+  align-self: end;
+  justify-self: start;
+  width: clamp(273px,25.5vw,395px);
+  margin: 8px 0 0;
+  overflow: hidden;
+  border-width: 1px 1px 0 0;
+  border-radius: 0 5px 0 0;
+}
+
+.rack,.throwPanel,.coastPanel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.rack {
+  padding: 9px;
+}
+
+.rack .heading,.throwPanel .heading {
+  margin: 0 0 6px;
+  gap: 4px;
+}
+
+.rack .heading span,.impulseInfo {
+  font: 12px/1.25 var(--sans);
+  color: #d6e3e6;
+}
+
+.tools {
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 4px;
+}
+
+.tool {
+  display: grid;
+  align-content: center;
+  min-height: 45px;
+  padding: 4px 4px 4px clamp(22px,1.8vw,32px);
+  background: rgb(14 31 39 / 22%);
+  border-color: var(--instrument-line);
+  text-shadow: inherit;
+}
+
+.tool:hover:enabled {
+  background: rgb(37 62 69 / 50%);
+  border-color: rgb(182 221 220 / 68%);
+}
+
+.tool b,.tool small {
+  white-space: normal;
+  text-overflow: clip;
+  overflow: visible;
+}
+
+.tool b {
+  font: 600 13px/1.12 var(--sans);
+  color: #f1f4f3;
+}
+
+.tool small {
+  margin-top: 2px;
+  font: 12px/1.1 var(--sans);
+  color: #d3dfe0;
+}
+
+.tool canvas {
+  position: absolute;
+  left: 1px;
+  bottom: 6px;
+  width: clamp(22px,1.8vw,32px);
+  height: 20px;
+}
+
+.tool .hotkey {
+  font: 10px/1 var(--mono);
+  color: #c5d2d5;
+  top: 4px;
+  left: 5px;
+}
+
+.tool:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.tool.spent {
+  opacity: .58;
+  background: transparent;
+  border-style: dashed;
+}
+
+.tool[aria-pressed="true"],.tool[aria-pressed="true"]:hover:enabled {
+  background: rgb(89 63 29 / 45%);
+  border-color: rgb(248 197 116 / 85%);
+}
+
+.throwPanel {
+  border-top: 1px solid var(--instrument-line);
+  padding: 7px 9px 9px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 76px;
+  column-gap: 9px;
+  align-items: center;
+}
+
+.throwPanel .heading {
+  grid-area: 1/1;
+  margin: 0;
+}
+
+.throwPanel h2 {
+  font-size: 13px;
+}
+
+.throwPanel #power {
+  grid-area: 2/1;
+  margin: 0;
+  height: 24px;
+}
+
+.impulseInfo {
+  grid-area: 3/1/4/-1;
+}
+
+#throw {
+  grid-area: 1/2/3/3;
+  height: 40px;
+  min-height: 0;
+  padding: 5px 7px;
+  font-size: 14px;
+  text-shadow: none;
+}
+
+.coastPanel {
+  border-top: 1px solid var(--instrument-line);
+  padding: 10px;
+  gap: 5px;
+  min-height: 0;
+}
+
+.coastTitle {
+  gap: 8px;
+}
+
+.coastPanel p,.lesson p {
+  font: 14px/1.35 var(--sans);
+  color: #eef3f3;
+}
+
+.readout {
+  font-size: clamp(19px,1.55vw,26px);
+  line-height: 1.13;
+}
+
+.driftData {
+  padding-top: 5px;
+  border-top: 1px solid var(--instrument-line);
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.driftData .micro,.driftData span:last-child {
+  font: 12px/1.25 var(--sans);
+  color: #d8e5e7;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.velocity {
+  padding: 8px 10px;
+  border-top: 1px solid var(--instrument-line);
+}
+
+.previewControl {
+  border-top: 1px solid var(--instrument-line);
+  padding: 2px 10px;
+}
+
+.previewControl label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  cursor: pointer;
+  font: 600 13px/1.25 var(--sans);
+  color: #e6c5ff;
+}
+
+.previewControl input {
+  margin: 0;
+  width: 15px;
+  height: 15px;
+  accent-color: #dba6ff;
+}
+
+.previewControl output:not([hidden]) {
+  display: block;
+  padding-bottom: 5px;
+  font: 12px/1.25 var(--sans);
+  color: #f0dbff;
+}
+
+.velocity dl {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 5px 0 1px;
+}
+
+.velocity h2 {
+  font-size: 12px;
+}
+
+.velocity h2 small,.velocity dt {
+  font: 12px/1.2 var(--sans);
+  color: #d8e6e8;
+}
+
+.velocity dd {
+  font: 12px/1.25 var(--mono);
+  color: #c5f4e2;
+  white-space: nowrap;
+  letter-spacing: -.04em;
+  margin: 0;
+}
+
+.velocity dl>div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.lesson {
+  position: absolute;
+  inset: var(--inset) auto auto 50%;
+  transform: translateX(-50%);
+  width: min(33%,460px);
+  padding: 9px 12px;
+  border-color: #ae8e57;
+}
+
+.lesson .heading {
+  margin-bottom: 4px;
+}
+
+.lesson button {
+  font-size: 12px;
+  min-height: 28px;
+  padding: 3px 7px;
+}
+
+.lesson #lessonAction {
+  margin-top: 5px;
+}
+
+.statusLine {
+  background: #142025;
+  border-top: 1px solid #405058;
+  padding: 6px 13px;
+  min-height: 30px;
+  color: #e4eeed;
+  font-size: 13px;
+}
+
+:where(#forward,.tool,#throw,#power,#pause,#clockRate,.aimBtns button):focus-visible {
+  outline: 2px solid #8bf5ff;
+  outline-offset: -2px;
+}
+
+@media (max-width:1120px) and (min-height:501px) {
+  .tool {
+    padding-left: 5px;
+  }
+  .tool canvas,.tool .hotkey {
+    display: none;
+  }
+}
+
+@media (max-width:960px) and (min-height:501px) {
+  .bearingReadout {
+    gap: 6px;
+    padding-left: 6px;
+    font-size: 11px;
+  }
+  .descriptor {
+    display: none;
+  }
+  .lesson {
+    width: 34%;
+  }
+  .aimBtns button {
+    font-size: 12px;
+  }
+  .flightTime {
+    font-size: 11px;
+  }
+  .camTitle {
+    gap: 8px;
+  }
+  .deck {
+    --inset: 8px;
+  }
+}
+
+@media (max-width:740px) and (min-height:501px),(max-width:599px) {
+  main {
+    padding: 0 5px 5px;
+  }
+  .topbar {
+    padding: 2px 6px;
+    height: auto;
+    min-height: 40px;
+    gap: 3px;
+  }
+  .brand {
+    gap: 3px;
+  }
+  .brand img {
+    width: 25px;
+    height: 25px;
+  }
+  .wordmark,.wordmark i {
+    font-size: 17px;
+  }
+  .version {
+    font-size: 10px;
+  }
+  .descriptor,.headerActions #new span {
+    display: none;
+  }
+  .headerActions {
+    gap: 3px;
+  }
+  .headerActions button {
+    padding: 3px 5px;
+    min-height: 30px;
+    font-size: 12px;
+  }
+  .flightHead {
+    display: block;
+    margin: 4px 0;
+  }
+  .flightHead h1 {
+    font-size: 23px;
+  }
+  .flightHead p {
+    font-size: 13px;
+    line-height: 1.25;
+    margin: 2px 0;
+  }
+  .tags {
+    justify-content: flex-start;
+    margin-top: 2px;
+    gap: 4px;
+  }
+  .tag {
+    font-size: 10px;
+    padding: 1px 5px;
+  }
+  .deck {
+    --inset: 6px;
+    flex: none;
+  }
+  .camTitle {
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    padding: 3px 6px;
+    min-height: 37px;
+  }
+  .camLabel {
+    font-size: 13px;
+    gap: 4px;
+  }
+  .clockControls {
+    gap: 6px;
+  }
+  .camTitle {
+    position: relative;
+    z-index: 2;
+  }
+  .bearingReadout {
+    order: 2;
+    flex-basis: 100%;
+    gap: 8px;
+    padding: 2px 0 0;
+    border: 0;
+    color: #f2f8f9;
+    font: 11px var(--mono);
+  }
+  .flightTime {
+    font: 11px var(--sans);
+  }
+  .clockSlider {
+    width: 90px;
+  }
+  .clockSlider #clockRate {
+    height: 24px;
+  }
+  .clockControls button {
+    min-height: 28px;
+  }
+  .aimControls {
+    order: 1;
+    width: 100%;
+  }
+  .aimBtns {
+    gap: 4px;
+  }
+  .aimBtns button {
+    min-height: 26px;
+    padding: 2px 7px;
+  }
+  .hudStage {
+    container-type: inline-size;
+    --aft-width: min(41cqw,230px);
+    --aft-aspect: 2.05;
+    --aft-title: 21px;
+    --sidebar-width: 37.5%;
+    grid-template-columns: minmax(0,1fr) var(--sidebar-width);
+    grid-template-rows: auto auto auto;
+    min-height: 0;
+    flex: none;
+  }
+  .forward {
+    grid-area: 1/1/2/-1;
+    position: relative;
+    inset: auto;
+    height: clamp(185px,28dvh,310px);
+  }
+  .visorBackdrop {
+    position: absolute;
+    inset: 0;
+    display: block;
+    z-index: -1;
+    pointer-events: none;
+  }
+  .aftPod {
+    grid-area: 1/1/2/-1;
+    z-index: 1;
+    width: var(--aft-width);
+  }
+  .aft {
+    aspect-ratio: var(--aft-aspect);
+  }
+  .aftPod .panelTitle {
+    height: var(--aft-title);
+    min-height: 18px;
+    padding: 2px 5px;
+  }
+  .aftPod .camLabel {
+    font-size: 12px;
+  }
+  .aftPod .cameraMeta {
+    display: none;
+  }
+  .metrics,.pitchPod,.lesson {
+    position: static;
+    inset: auto;
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    transform: none;
+    border: 0;
+    border-top: 1px solid #43545b;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .metrics {
+    grid-area: 1/2/4/3;
+    align-self: stretch;
+    border-width: 0 0 0 1px;
+    border-left: 1px solid var(--instrument-line);
+  }
+  .metricStrip {
+    gap: 6px 4px;
+    padding: 5px;
+  }
+  .metric .caption {
+    font-size: 12px;
+  }
+  .metric strong,.metric.clock strong {
+    font-size: 16px;
+  }
+  .metric small,#speedRef {
+    font-size: 11px;
+  }
+  .metric small {
+    display: block;
+    margin: 0;
+  }
+  .pitchPod {
+    grid-area: 3/1;
+    align-self: end;
+    border-color: var(--instrument-line);
+  }
+  .rack {
+    padding: 6px 4px;
+  }
+  .rack .heading {
+    align-items: start;
+    flex-direction: column;
+    margin-bottom: 5px;
+    gap: 1px;
+  }
+  .tools {
+    gap: 3px;
+  }
+  .tool {
+    min-height: 44px;
+    padding: 3px;
+  }
+  .tool canvas,.tool .hotkey {
+    display: none;
+  }
+  .tool b {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .tool small {
+    font-size: 11px;
+  }
+  .throwPanel {
+    padding: 5px;
+    grid-template-columns: minmax(0,1fr) 62px;
+    gap: 0 6px;
+  }
+  #throw {
+    height: 38px;
+  }
+  .coastPanel {
+    padding: 6px;
+    gap: 4px;
+  }
+  .coastTitle {
+    gap: 4px;
+  }
+  .coastPanel p {
+    font-size: 13px;
+  }
+  .velocity {
+    padding: 6px;
+  }
+  .velocity h2 {
+    font-size: 12px;
+  }
+  .velocity dt,.velocity dd {
+    font-size: 11px;
+  }
+  .statusLine {
+    padding: 5px 8px;
+  }
+  .lesson {
+    grid-area: 2/1;
+    align-self: start;
+    padding: 5px;
+  }
+  .lesson .heading {
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .lesson p {
+    font-size: 13px;
+  }
+  .lesson button {
+    min-height: 25px;
+  }
+  .hudStage:has(.lesson:not([hidden])) .forward {
+    height: clamp(150px,calc(20vw + 77px),205px);
+  }
+  main:has(.lesson:not([hidden])) #brief {
+    display: none;
+  }
+  .pauseFlag,.pauseFlag:has(small:not([hidden])) {
+    inset: auto var(--sidebar-width) 4px 0;
+  }
+  .is-lost .forward .gameOverFlag {
+    inset: calc(var(--aft-width) / var(--aft-aspect) + var(--aft-title)) var(--sidebar-width) 0 0;
+    font-size: clamp(18px,7vw,34px);
+  }
+  .logPanes {
+    grid-template-columns: 1fr;
+  }
+  .dialogFoot {
+    flex-wrap: wrap;
+    padding: 9px;
+  }
+  .dialogBody {
+    padding: 15px;
+  }
+}
+
+@media (max-width:365px) {
+  .topbar {
+    flex-wrap: wrap;
+  }
+  .headerActions {
+    margin-left: auto;
+  }
+  .tool {
+    padding-left: 4px;
+  }
+  .tool canvas,.tool .hotkey {
+    display: none;
+  }
+}
+
+@media (min-width:600px) and (max-height:500px) {
+  main {
+    padding: 0 4px 3px;
+  }
+  .topbar {
+    height: 30px;
+    padding: 0 6px;
+  }
+  .brand img {
+    height: 23px;
+    width: 23px;
+  }
+  .wordmark,.wordmark i {
+    font-size: 16px;
+  }
+  .descriptor,.flightHead p {
+    display: none;
+  }
+  .flightTime {
+    font-size: 11px;
+  }
+  .headerActions button {
+    min-height: 25px;
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+  .flightHead {
+    margin: 2px 0;
+  }
+  .flightHead h1 {
+    font-size: 19px;
+  }
+  .tag {
+    padding: 1px 4px;
+  }
+  .deck {
+    --inset: 4px;
+  }
+  .camTitle {
+    position: relative;
+    z-index: 2;
+    min-height: 30px;
+    padding: 2px 6px;
+    gap: 8px;
+  }
+  .bearingReadout {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 33%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 3px 6px;
+    padding: 3px 5px;
+    border: 0;
+    background: #09131be8;
+    pointer-events: none;
+    font-size: 11px;
+  }
+  .clockSlider .rateStops {
+    display: none;
+  }
+  .clockSlider #clockRate {
+    height: 24px;
+    display: block;
+  }
+  .clockSlider {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    width: 135px;
+  }
+  .clockSlider span {
+    gap: 2px;
+    white-space: nowrap;
+  }
+  .clockControls button,.aimBtns button {
+    min-height: 25px;
+    font-size: 12px;
+    padding: 2px 5px;
+  }
+  .hudStage {
+    min-height: 275px;
+  }
+  .aftPod {
+    width: 26vw;
+    max-width: 235px;
+  }
+  .aftPod .panelTitle {
+    min-height: 18px;
+    padding: 1px 5px;
+  }
+  .aftPod .cameraMeta {
+    display: none;
+  }
+  .aftPod .camLabel {
+    font-size: 12px;
+  }
+  .aft {
+    aspect-ratio: 2.85;
+  }
+  .metrics {
+    width: clamp(194px,25vw,240px);
+    max-height: calc(100dvh - 123px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .metricStrip {
+    padding: 4px 6px;
+    gap: 3px 5px;
+  }
+  .metric .caption,.metric small,#speedRef {
+    font-size: 11px;
+  }
+  .metric strong {
+    font-size: 15px;
+  }
+  #speedGauge {
+    margin: 1px 0;
+    height: 4px;
+  }
+  .pitchPod {
+    width: 31vw;
+    min-width: 226px;
+    max-width: 320px;
+    margin-top: 2px;
+  }
+  .rack {
+    padding: 3px;
+  }
+  .rack .heading {
+    margin-bottom: 2px;
+  }
+  .rack h2 {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  .rack .heading span {
+    font-size: 11px;
+  }
+  .tools {
+    gap: 2px;
+  }
+  .tool {
+    min-height: 28px;
+    padding: 1px 2px;
+  }
+  .tool b,.tool small {
+    font-size: 11px;
+    line-height: 1.05;
+  }
+  .tool small {
+    margin-top: 0;
+  }
+  .tool canvas,.tool .hotkey {
+    display: none;
+  }
+  .throwPanel {
+    padding: 3px 4px;
+    column-gap: 4px;
+    grid-template-columns: max-content minmax(0,1fr) 60px;
+  }
+  .throwPanel .heading {
+    grid-area: 1/1;
+  }
+  .impulseInfo {
+    grid-area: 1/2/2/4;
+    justify-self: end;
+    font-size: 11px;
+  }
+  .throwPanel #power {
+    grid-area: 2/1/3/3;
+  }
+  .throwPanel h2,#throw {
+    font-size: 12px;
+  }
+  #throw {
+    grid-area: 2/3;
+    height: 28px;
+  }
+  .coastPanel {
+    padding: 4px 6px;
+    gap: 2px;
+  }
+  .coastPanel p {
+    font-size: 12px;
+    line-height: 1.25;
+  }
+  .readout {
+    font-size: 16px;
+  }
+  .driftData {
+    padding-top: 2px;
+  }
+  .velocity {
+    padding: 3px 6px;
+  }
+  .velocity dl {
+    gap: 2px;
+    margin: 2px 0;
+  }
+  .velocity dt,.velocity dd,.velocity h2 small {
+    font-size: 11px;
+  }
+  .lesson {
+    grid-area: 1/2/4/3;
+    inset: auto 4px var(--inset);
+    width: auto;
+    max-width: 370px;
+    max-height: calc(50% - 24px);
+    overflow: auto;
+    scrollbar-width: thin;
+    transform: none;
+    padding: 4px 6px;
+  }
+  .lesson .heading {
+    margin: 0;
+  }
+  .lesson p {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  .lesson button {
+    min-height: 24px;
+    padding: 2px 5px;
+  }
+  .deck:has(.aimControls:not([hidden])) .bearingReadout {
+    font-size: 11px;
+  }
+  .statusLine {
+    font-size: 12px;
+    padding: 3px 6px;
+    min-height: 22px;
+  }
+}
+
+@media (min-width:741px) and (min-height:501px) and (max-height:680px) {
+  .hudStage {
+    min-height: 495px;
+  }
+}
+
+/* On short phones the visor and the release must fit together. Keep the
+   instruments readable by letting their own column scroll independently. */
+@media (max-width:740px) and (min-height:501px) and (max-height:700px) {
+  .flightHead p {
+    display: none;
+  }
+  .metricStrip {
+    gap: 4px;
+  }
+  .metrics {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    contain: size;
+  }
+  .lesson {
+    grid-area: 4/1/5/-1;
+  }
+  .forward {
+    height: clamp(160px,26dvh,183px);
+  }
+}
+
+@media (min-width:600px) and (max-width:760px) and (max-height:400px) {
+  .flightHead h1 {
+    font-size: 16px;
+  }
+  .aftPod {
+    width: 24vw;
+  }
+  .aft {
+    aspect-ratio: 3.15;
+  }
+  .pitchPod {
+    width: 36vw;
+    min-width: 238px;
+  }
+  .hudStage {
+    min-height: 247px;
+  }
 }

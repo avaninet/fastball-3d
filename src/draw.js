@@ -1,25 +1,8 @@
-const Readout={
-  signed(value,digits,plus=true){
-    const rounded=Number(value.toFixed(digits));
-    return (plus && rounded>=0?'+':'')+rounded.toFixed(digits);
-  },
-  heading(value,digits){
-    const wrapped=((value%360)+360)%360;
-    return (Number(wrapped.toFixed(digits))%360).toFixed(digits);
-  },
-  speed(value){
-    const ordinary=value.toFixed(3);
-    if(Number(ordinary)===Flight.limit && !Flight.softEnough(value)){
-      const precise=value.toFixed(4);
-      return Number(precise)>Flight.limit?precise:'>'+ordinary;
-    }
-    return ordinary;
-  },
-  count(value,singular,plural=singular+'s'){return value+' '+(value===1?singular:plural);}
-};
+const fontStyle=getComputedStyle(document.documentElement);
+const cockpitFonts={sans:fontStyle.getPropertyValue('--sans').trim(),mono:fontStyle.getPropertyValue('--mono').trim()};
 const Visor = (() => {
   const {add,sub,scale,dot,norm,unit,direction,clamp,rad}=Flight;
-  const xyz=(x,y,z)=>[x,y,z], faces=[];
+  const faces=[];
   function face(points,color,lines=[],edge='#384950') {faces.push({points,color,lines,edge,center:scale(points.reduce(add),1/points.length)});}
   function box(x,y,z,w,d,h,colors) {
     const p=(i,j,k)=>[x+i*w/2,y+j*d/2,z+k*h/2];
@@ -116,11 +99,6 @@ const Visor = (() => {
     bc.putImageData(im,0,0);skyCache.set(canvas,{key,c});ctx.drawImage(c,0,0,w,h);
   }
   const near=.09;
-  function orientation(az,el){
-    const forward=direction(az,el),right=direction(az-90,0),up=direction(az,el+90);
-    const local=q=>[dot(q,right),dot(q,up),dot(q,forward)];
-    return {forward,right,up,local};
-  }
   function camera(p,az,el,w,h,small) {
     const {forward,right,up,local}=orientation(az,el);
     const f=Math.min(w*(small?.64:.75),h*(small?.87:1.05));
@@ -164,7 +142,7 @@ const Visor = (() => {
     const stage=canvas.closest('.hudStage'),view=canvas.getBoundingClientRect();
     const covers=small||!stage?[]:Array.from(stage.querySelectorAll('.metrics,.pitchPod,.aftPod'),p=>p.getBoundingClientRect());
     return (x,y,text,color,align='left')=>{
-      ctx.font='600 12px "Segoe UI", Arial, sans-serif';
+      ctx.font='600 12px '+cockpitFonts.sans;
       let left=0,right=w;
       for(const box of covers){
         if(view.top+y+3<=box.top||view.top+y-12>=box.bottom)continue;
@@ -272,7 +250,7 @@ const Visor = (() => {
         const metres=range<.1?'<0.1':range.toFixed(range<10?1:0);
         lines.push(metres+' m '+(hit?'to contact':'at O₂ expiry'));
       }
-      ctx.font='600 12px "Segoe UI", Arial, sans-serif';
+      ctx.font='600 12px '+cockpitFonts.sans;
       const halfLabel=Math.min(w/2,Math.max(...lines.map(s=>ctx.measureText(s).width))/2+3);
       const x=clamp(visible[0],halfLabel,w-halfLabel),height=14*(lines.length-1);
       const below=visible[1]+22;
@@ -282,9 +260,9 @@ const Visor = (() => {
       const direction=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
       label(w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');
     }
-    const pass=hit||m.near;
+    const pass=hit||Flight.coastPass(m,state.age);
     if(pass.t<state.age-.01)return;
-    if(!hit)line3(ctx,cam,pass.p,m.near.bar,'#f3b76a',1);
+    if(!hit)line3(ctx,cam,pass.p,pass.bar,'#f3b76a',1);
     const q=cam.world(pass.p);if(q[2]<near)return;
     const [x,y]=cam.screen(q);
     ctx.strokeStyle=hit && (!state.soft || Flight.softEnough(hit.speed))?'#97ecc6':'#ffc370';
@@ -403,17 +381,3 @@ const Visor = (() => {
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
   return {render,camera,orientation,courseGlyphs,loadEarth,toolArt,clockText};
 })();
-
-// The displacement runs from the nearest grab bar to the predicted miss.
-// Point the tool to that side so recoil pushes the suit back toward the bars.
-function trimHint(displacement,az,elevation){
-  if(Flight.norm(displacement)<1e-7)return '';
-  const [right,up,forward]=Visor.orientation(az,elevation).local(Flight.unit(displacement));
-  if(forward>.94)return 'Pitch straight ahead along the forward crosshair.';
-  if(forward<-.94)return 'Aim almost straight behind your current view.';
-  const threshold=.42*Math.max(Math.abs(right),Math.abs(up)),parts=[];
-  if(Math.abs(up)>=threshold)parts.push(up>0?'up':'down');
-  if(Math.abs(right)>=threshold)parts.push(right>0?'right':'left');
-  const side=parts.join(' and ');
-  return forward<-.25?'Turn '+side+' toward the space behind you.':'Aim '+side+' in the forward visor.';
-}

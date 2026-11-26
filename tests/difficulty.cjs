@@ -1,7 +1,8 @@
 // Run with Node from any directory. All candidate changes exist only in this survey.
+const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
-const scripts=['physics','draw'].map(name=>fs.readFileSync(path.join(root,'src',name+'.js'),'utf8'));
+const scripts=['physics','readout'].map(name=>fs.readFileSync(path.join(root,'src',name+'.js'),'utf8'));
 const {F,trimHint}=vm.compileFunction(scripts.join('\n')+'\nreturn {F:Flight,trimHint};')();
 const {norm,unit,add,sub,scale,clamp}=F;
 const tools=F.gear.map((g,i)=>i).sort((a,b)=>F.impulse(a,F.fullRack)-F.impulse(b,F.fullRack));
@@ -158,7 +159,12 @@ for(const story of [false,true]){
   print(story?'Story geometry':'Manual geometry',geometry(generated));
   for(const mode of ['Straight-Line','Orbital'])for(const soft of [false,true]){
     const label=[story?'Story':'Manual',mode,soft?'soft':'any'].join(' ');
-    print(label+' D-seeds',stats(generated,mode,soft,600,story));
+    const result=stats(generated,mode,soft,600,story);
+    if(!story && mode==='Orbital' && soft){
+      assert.equal(result.planned,128,'D-family planned soft returns');
+      assert.equal(result.hints,115,'D-family manual Orbital hint pilot');
+    }
+    print(label+' D-seeds',result);
     print(label+' legacy',stats(legacy,mode,soft,600,story));
     print(label+' named',named.map(s=>({name:s.name,...stats([s],mode,soft,600,story)})));
   }

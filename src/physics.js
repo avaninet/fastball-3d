@@ -142,20 +142,33 @@ const Flight = (() => {
       const t=end*i/steps,p=motion(s,t,mode).p;
       path.push({t,p}); ds.push(clearance(p));
     }
-    let best=ds[0]<=ds[steps] ? 0 : end;
     const dist=t=>clearance(motion(s,t,mode).p);
-    if(!hits.length) for(let i=0;i<=steps;i++) {
-      if(ds[i]>ds[i-1] || ds[i]>ds[i+1] || (ds[i]===ds[i-1] && ds[i]===ds[i+1])) continue;
+    const pass=t=>{
+      const p=motion(s,t,mode).p;
+      return {t,p,d:clearance(p),bar:nearest(p)};
+    };
+    const passes=[];
+    for(let i=0;i<=steps;i++) {
+      if(ds[i]>ds[i-1] || ds[i]>ds[i+1] || (i>0 && ds[i]===ds[i-1] && (i===steps || ds[i]===ds[i+1])))continue;
       let lo=path[Math.max(0,i-1)].t,hi=path[Math.min(steps,i+1)].t;
       for(let k=0;k<27;k++) {
         const a=(2*lo+hi)/3,b=(lo+2*hi)/3;
-        if(dist(a)<dist(b)) hi=b; else lo=a;
+        if(dist(a)<dist(b))hi=b;else lo=a;
       }
-      if(dist((lo+hi)/2)<dist(best)) best=(lo+hi)/2;
+      const refined=(lo+hi)/2;
+      passes.push(pass(dist(refined)<ds[i]?refined:path[i].t));
     }
-    if(hits.length) best=hits[0].t;
-    const point=motion(s,best,mode).p;
-    return {hits,path,near:{t:best,p:point,d:clearance(point),bar:nearest(point)}};
+    const near=hits.length?pass(hits[0].t):passes.reduce((best,p)=>p.d<best.d?p:best);
+    return {hits,path,near,passes};
+  }
+
+  // The log uses the minimum over the entire segment. The live instruments and
+  // cameras switch to the next approach after that minimum is behind the suit.
+  function coastPass(forecast,age){
+    if(forecast.near.t>=age)return forecast.near;
+    const next=forecast.passes.find(p=>p.t>=age);
+    const last=forecast.passes.at(-1);
+    return next??(last && last.t>forecast.near.t?last:forecast.near);
   }
   function seedStream(seed) {
     let a=seed>>>0;
@@ -207,8 +220,9 @@ const Flight = (() => {
     return false;
   }
   function randomStart(seed) {
-    const varied=typeof seed==='string' && /^D-/i.test(seed);
-    const numeric=typeof seed==='string'?parseInt(seed.replace(/^D-/i,''),16):seed;
+    const current=typeof seed==='string' && /^E-/i.test(seed);
+    const varied=current || (typeof seed==='string' && /^D-/i.test(seed));
+    const numeric=typeof seed==='string'?parseInt(seed.replace(/^[DE]-/i,''),16):seed;
     const rng=seedStream(numeric);
     const crossing=varied && rng()<.76;
     for(let i=0;i<350;i++) {
@@ -224,18 +238,22 @@ const Flight = (() => {
         const lateral=crossing?.070+.057*rng():.020+.040*rng();
         s.v=add(scale(unit(s.p),radial),scale(tangent,lateral));
       }
+      if(current && [s,manualOpening(s)].some(initial=>
+        ['Straight-Line','Orbital'].some(mode=>entries(initial,oxygenReserve,mode).length)))continue;
       const reachable=mode=>witness(s,mode)||(crossing&&twoThrowWitness(s,mode));
       if(reachable('Straight-Line') && reachable('Orbital'))return s;
     }
     return {...named[0],seed,name:'Random drift',brief:'A seeded tether-separation reserve case.'};
   }
-  function opening(index,seed,story){
-    const base=index===3?randomStart(seed):named[index];
-    if(story)return base;
+  function manualOpening(base){
     // Manual separations start one third farther from the nearest grab bar.
     const bar=nearest(base.p);
     return {...base,p:add(bar,scale(sub(base.p,bar),4/3))};
   }
+  function opening(index,seed,story){
+    const base=index===3?randomStart(seed):named[index];
+    return story?base:manualOpening(base);
+  }
   return {gear,fullRack,named,opening,half,limit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,impulse,budgets,
-    release,motion,nearest,clearance,inside,softEnough,entries,forecast,seedStream,transfer,command,applyCommand,witness,randomStart};
+    release,motion,nearest,clearance,inside,softEnough,entries,forecast,coastPass,seedStream,transfer,command,applyCommand,randomStart};
 })();

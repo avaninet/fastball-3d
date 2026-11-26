@@ -4,6 +4,19 @@ const html=fs.readFileSync(process.argv[2] || path.join(__dirname,'../index.html
 const src=html.match(/<script id="physics">([\s\S]+?)<\/script>/)[1];
 const F=vm.runInNewContext(src+';Flight',{Math}), modes=['Straight-Line','Orbital'];
 const {norm,scale,unit,add,dot,clamp}=F;
+// Historical builds can still be supplied for comparison. The E family is
+// part of v0.2 and later, and both old families retain their original starts.
+if(!process.argv[2] || F.coastPass){
+  const legacy=F.opening(3,'D-0C338116',true);
+  const late=F.entries(legacy,F.oxygenReserve,'Orbital')[0];
+  assert.ok(late.t>581 && late.t<584 && F.softEnough(late.speed));
+  for(const code of ['0C338116',...Array.from({length:128},(_,i)=>(104729+i).toString(16))]){
+    for(const story of [false,true]){
+      const start=F.opening(3,'E-'+code,story);
+      for(const mode of modes)assert.equal(F.entries(start,F.oxygenReserve,mode).length,0,'unassisted entry E-'+code);
+    }
+  }
+}
 function valid(hit,soft){return hit && (!soft || hit.speed<=F.limit+1e-9);}
 function plan(s,mode,mask,left,soft,skipInitial=false) {
   const rack=F.gear.map((_,i)=>i).filter(i=>mask&(1<<i));

@@ -2,7 +2,9 @@ const Replays=(()=>{
   const defaults={mode:'Straight-Line',soft:false,story:false};
   function parse(value,rules=defaults){
     let code=value.trim(),mode=rules.mode,soft=rules.soft,story=rules.story;
-    if(code.startsWith('Fastball 3D · ')&&code.includes('#seed='))code=code.slice(code.lastIndexOf('#seed='));
+    // A shared challenge may be embedded in a sentence or followed by prose.
+    const fragmentStart=code.lastIndexOf('#seed=');
+    if(fragmentStart>=0)code=code.slice(fragmentStart).split(/[\s<>"\x27]/,1)[0].replace(/[.,;:!?)\]]+$/,'');
     if(code.startsWith('#')||/^(https?|file):\/\//i.test(code)){
       let hash=code;
       if(!code.startsWith('#')){
@@ -15,10 +17,10 @@ const Replays=(()=>{
       if(!['Straight-Line','Orbital'].includes(mode)||!['none','soft'].includes(goal)||!['0','1'].includes(assisted))return null;
       soft=goal==='soft';story=assisted==='1';
     }
-    const match=/^(D-)?([\da-f]{1,8})$/i.exec(code);
+    const match=/^([DE]-)?([\da-f]{1,8})$/i.exec(code);
     if(!match)return null;
     const number=parseInt(match[2],16);
-    return {seed:match[1]?'D-'+hex(number):number,mode,soft,story};
+    return {seed:match[1]?match[1].toUpperCase()+hex(number):number,mode,soft,story};
   }
   function fragment(replay){
     const params=new URLSearchParams({seed:seedLabel(replay.seed),level:replay.mode});

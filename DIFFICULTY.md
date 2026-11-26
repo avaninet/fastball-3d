@@ -48,7 +48,7 @@ The harder candidate produced a useful spread. On the second set, 65 openings ha
 
 ## Reproduce the assessment
 
-Run `node tests/difficulty.cjs` from the repository. The study applies candidate geometry in memory. The live generator and replay format retain the current openings.
+Run `node tests/difficulty.cjs` from the repository. The study applies candidate geometry in memory. The measurements below use the preserved `D-` family. From v0.2, newly generated `E-` seeds also reject candidates that coast into the bars without a throw anywhere in the full ten minutes.
 
 - The first set uses 128 consecutive seeds beginning at decimal 104729. The second uses 128 starting at hexadecimal 726800 with a stride of 1543. Both sets use the actual nine-tool recoil, Orbital propagator, station envelope and in-volume soft-grab rule.
 - The hint pilot opens with the 95% battery facing away. Manual lineup costs 12 seconds and Story permits a staged pitch. The pilot checks misses after 18 seconds, interprets the game’s up/down/left/right/behind words in its current view, and estimates correction strength from clearance and time to closest pass. For a fast approach it attempts a brake along measured drift. Aim and power are precise. Choosing the power and timing are capabilities of this pilot, beyond the words in the hint. The comparison changes only the bearing used for a trim.

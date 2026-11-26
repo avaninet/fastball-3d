@@ -9,7 +9,7 @@ let lossDebriefAt=null;
 const hex=n=>(n>>>0).toString(16).toUpperCase().padStart(8,'0');
 const seedLabel=seed=>typeof seed==='number'?hex(seed):seed;
 const weightClass=g=>g.mass<1?'Light':g.mass<3?'Medium':'Heavy';
-const randomSeed=()=>'D-'+hex(crypto.getRandomValues(new Uint32Array(1))[0]);
+const randomSeed=()=>'E-'+hex(crypto.getRandomValues(new Uint32Array(1))[0]);
 function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector);dirty=true;}}
 function setMsg(msg){el('message').textContent=msg;}
 function stationDirection(){return scale(flight.pos.p,-1);}
@@ -35,7 +35,7 @@ function describePreview(preview){
   }
   const near=preview.forecast.near;
   if(Flight.inside(preview.anchor.p))return 'Inside bars · '+Readout.speed(norm(preview.anchor.v))+' m/s';
-  return 'Closest clearance '+near.d.toFixed(1)+' m · '+(near.t<.01?'now':clock(Math.ceil(near.t))+' from now');
+  return 'Closest clearance '+Readout.clearance(near.d)+' m · '+(near.t<.01?'now':clock(Math.ceil(near.t))+' from now');
 }
 function start(index,mode,soft,seed=0,story=false,lesson=null) {
   const initial=Flight.opening(index,seed,story);
@@ -45,7 +45,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   selected=5;power=95;el('power').value=power;setClockStop(0);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
   el('name').textContent=initial.name;el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays she pitches with friends. Today her tether snaps and her suit thrusters jam.':initial.brief;el('modeTag').textContent=mode;
-  el('captureTag').textContent=soft?'Soft capture ≤ 0.080 m/s':'Any-speed capture';
+  el('captureTag').textContent=soft?'Soft capture ≤ '+Flight.limit.toFixed(3)+' m/s':'Any-speed capture';
   el('seedTag').hidden=index!==3;el('seedTag').textContent='Copy replay · '+seedLabel(seed);
   Replays.updateAddress(flight);
   el('assists').hidden=!story;el('storyTag').hidden=!story;
@@ -62,7 +62,7 @@ function finish(result) {
   el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”')+' — Commander Julian Bern':'The reserve ran out before a successful grab. Retry to test a different pitch.';
   if(result==='stranded'){
     const distance=flight.forecast.near.d;
-    const clearance=distance<.05?'less than 0.1':distance.toFixed(1);
+    const clearance=Readout.clearance(distance);
     el('endCopy').textContent='The rack is empty. The remaining coast misses the bars by '+clearance+' m before oxygen expiry.';
   }else if(result==='overspeed'){
     const approach=Flight.inside(flight.pos.p)?'You are inside the bars at '+Readout.speed(norm(flight.pos.v)):
@@ -156,7 +156,7 @@ function throwTool() {
     finish(reachesBars?'overspeed':'stranded');return;
   }
   if(!running)invalidateInput();
-  flight.noTrim=false;started=true;running=true;
+  flight.noTrimAt=null;started=true;running=true;
   if(flight.mask)scheduleLessonCheck();else flight.checkAt=null;
   lastTime=performance.now();dirty=true;updateRack();instruments();
 }
@@ -185,7 +185,7 @@ function nav() {
     return;
   }
   if(s.misses && Flight.inside(s.pos.p)){c.textContent='Inside after fast pass';c.classList.add('warn');a.textContent='Throw along your drift to brake while the bars are still within reach, or coast through and return.';return;}
-  const n=s.forecast.near;
+  const n=Flight.coastPass(s.forecast,s.age);
   if(s.misses && n.d<1e-6 && n.t<=s.age){
     const last=s.log.fast.at(-1);
     c.textContent='Cleared after fast pass';
@@ -197,9 +197,9 @@ function nav() {
     a.textContent='Turn the visor away from the station. Throw along the crosshair to push yourself back. Watch the aft camera.';
     c.classList.add('warn');return;
   }
-  if(n.t<=s.age+.03){c.textContent='Opening the gap';a.textContent='Closest pass '+n.d.toFixed(1)+' m '+describeSide(n.p,n.bar)+', '+clock(s.age-n.t)+' ago. '+trimHint(sub(s.pos.p,Flight.nearest(s.pos.p)),yaw,pitch);}
-  else if(n.t>=s.forecast.path.at(-1).t-.03){c.textContent=n.d.toFixed(1)+' m short at expiry';a.textContent='Closest at oxygen expiry in '+clock(Math.ceil(n.t-s.age))+', '+describeSide(n.p,n.bar)+'. '+trimHint(sub(n.p,n.bar),yaw,pitch);}
-  else{c.textContent='Miss by '+n.d.toFixed(1)+' m';a.textContent='Nearest pass '+describeSide(n.p,n.bar)+' in '+clock(Math.ceil(n.t-s.age))+'. '+trimHint(sub(n.p,n.bar),yaw,pitch);}
+  if(n.t<=s.age+.03){c.textContent='Opening the gap';a.textContent='Closest pass '+Readout.clearance(n.d)+' m '+describeSide(n.p,n.bar)+', '+clock(s.age-n.t)+' ago. '+trimHint(sub(s.pos.p,Flight.nearest(s.pos.p)),yaw,pitch);}
+  else if(n.t>=s.forecast.path.at(-1).t-.03){c.textContent=Readout.clearance(n.d)+' m short at expiry';a.textContent='Closest at oxygen expiry in '+clock(Math.ceil(n.t-s.age))+', '+describeSide(n.p,n.bar)+'. '+trimHint(sub(n.p,n.bar),yaw,pitch);}
+  else{c.textContent='Miss by '+Readout.clearance(n.d)+' m';a.textContent='Nearest pass '+describeSide(n.p,n.bar)+' in '+clock(Math.ceil(n.t-s.age))+'. '+trimHint(sub(n.p,n.bar),yaw,pitch);}
   c.classList.add('warn');
 }
 function instruments() {
@@ -233,6 +233,7 @@ function instruments() {
 }
 function canPitch(){return !!flight && !flight.done && !document.hidden && !document.querySelector('dialog[open]') && (running||flight.story);}
 function freezeClock(){
+  if(running)setMsg('Flight paused. Resume when ready.');
   running=false;invalidateInput();dirty=true;updateRack();instruments();
 }
 function pause(){
@@ -273,7 +274,7 @@ for(const [slot,i] of rackOrder.entries()) {
   const img=document.createElement('canvas');img.setAttribute('aria-hidden','true');const name=document.createElement('b');name.textContent=g.name;
   const size=document.createElement('small');b.append(key,img,name,size);el('tools').append(b);Visor.toolArt(img,i);b.onclick=()=>choose(i);
 }
-const heldKeys=new Map(),aimKeys=new Set(), presses=new Map(), handledClicks=new WeakSet();
+const heldKeys=new Map(),aimKeys=new Set(), presses=new Map();
 let inputEpoch=0, inputSince=0, sliderPress=null;
 function invalidateInput(){
   inputEpoch++;inputSince=performance.now();presses.clear();
@@ -321,7 +322,7 @@ document.addEventListener('pointercancel',e=>{
 document.addEventListener('click',e=>{
   const button=e.target.closest(pitchTargets);
   if(!button)return;
-  let valid=canPitch()&&e.timeStamp>=inputSince&&!handledClicks.has(e);
+  let valid=canPitch()&&e.timeStamp>=inputSince;
   if(e.detail>0 || (e.pointerType && e.pointerId>=0)){
     // A compatibility mouse click can omit or relabel the original touch ID.
     let id=e.pointerId;
@@ -334,7 +335,6 @@ document.addEventListener('click',e=>{
     valid=valid && press?.button===button && press.up && press.epoch===inputEpoch;
     presses.delete(id);
   }
-  handledClicks.add(e);
   if(!valid){e.preventDefault();e.stopImmediatePropagation();}
 },true);
 visor.addEventListener('pointerdown',e=>{
@@ -358,17 +358,22 @@ function endDrag(e,accept){
   drag=null;flight.dragging=false;document.body.classList.remove('dragging');dirty=true;
 }
 visor.onpointerup=e=>endDrag(e,true);visor.onpointercancel=e=>endDrag(e,false);visor.onlostpointercapture=e=>endDrag(e,false);
+function cockpitKey(e){
+  const target=e.target;
+  return target instanceof Element && !target.closest('dialog') &&
+    (target===visor || target===el('power') || target.matches(pitchTargets));
+}
 document.addEventListener('keyup',e=>{
   const key=e.code||e.key;
   if(aimKeys.delete(key)){flight.keyAiming=aimKeys.size>0;dirty=true;}
-  if(heldKeys.has(key)&&heldKeys.get(key)!==inputEpoch){e.preventDefault();e.stopImmediatePropagation();}
+  if(heldKeys.has(key)&&heldKeys.get(key)!==inputEpoch&&cockpitKey(e)){e.preventDefault();e.stopImmediatePropagation();}
   heldKeys.delete(key);
 },true);
 document.addEventListener('keydown',e=>{
   if(typeof e.key!=='string'||!e.key)return;
   const code=e.code||e.key,key=e.key.toLowerCase();
   if(!e.repeat)heldKeys.set(code,canPitch()||key==='p'?inputEpoch:-1);
-  if(e.repeat && heldKeys.get(code)!==inputEpoch){e.preventDefault();return;}
+  if(e.repeat && heldKeys.get(code)!==inputEpoch){if(cockpitKey(e))e.preventDefault();return;}
   if(document.querySelector('dialog[open]')||e.altKey||e.ctrlKey||e.metaKey)return;
   const target=e.target instanceof Element?e.target:document.body;
   if(key==='p'){e.preventDefault();if(!e.repeat)pause();return;}
@@ -408,7 +413,7 @@ function previewSeed(replay){
 function loadSetupSeed(){
   const input=el('seed'),replay=Replays.parse(input.value,setupRules());
   if(!replay){
-    el('seedPreview').textContent='Enter a Fastball 3D seed (for example D-00019919) or a replay link.';
+    el('seedPreview').textContent='Enter a Fastball 3D seed (for example E-00019919) or a replay link.';
     input.setAttribute('aria-invalid','true');input.focus();return null;
   }
   input.removeAttribute('aria-invalid');input.value=seedLabel(replay.seed);
@@ -430,7 +435,19 @@ function openSetup(){
 el('new').onclick=openSetup;el('again').onclick=openSetup;el('manual').onclick=()=>pauseForModal(el('guide'));
 el('scenario').onchange=updateSetup;el('reroll').onclick=()=>{el('seed').value=randomSeed();loadSetupSeed();};
 el('loadSeed').onclick=loadSetupSeed;
-el('seed').oninput=()=>{el('seed').removeAttribute('aria-invalid');el('seedPreview').textContent='Choose Load seed to preview this opening.';};
+el('seed').oninput=e=>{
+  const input=e.target;
+  input.removeAttribute('aria-invalid');
+  const wholeInput=e.inputType!=='insertText' || (e.data?.length??0)>1;
+  if(wholeInput && input.value.includes('#') && Replays.parse(input.value,setupRules())){
+    loadSetupSeed();
+  }else{
+    el('seedPreview').textContent='Choose Load seed to preview this opening.';
+  }
+};
+el('seed').onchange=e=>{
+  if(e.target.value.includes('#') && Replays.parse(e.target.value,setupRules()))loadSetupSeed();
+};
 el('seed').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadSetupSeed();}};
 el('storyMode').onchange=()=>{if(!el('seedGroup').hidden)loadSetupSeed();};
 function launchFlight(index,mode,soft,seed,story,lesson=null){

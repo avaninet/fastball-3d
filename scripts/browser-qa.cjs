@@ -23,21 +23,20 @@ frame.srcdoc=${fixture};
 </script>`);
 console.log('Open qa-runner.html for the in-page results.');
 if(process.argv[2]){
-  const profile=fs.mkdtempSync(path.join(os.tmpdir(),'fastball-qa-'));
-  try{
-    for(const [width,height] of [[1440,950],[1366,768],[390,844],[844,390]]){
+  for(const [width,height] of [[1440,950],[1366,768],[390,844],[844,390]]){
+    const profile=fs.mkdtempSync(path.join(os.tmpdir(),'fastball-qa-'));
+    try{
       const url=pathToFileURL(runner);url.searchParams.set('viewport',width+'x'+height);
-      const dom=execFileSync(process.argv[2],['--headless','--disable-gpu','--disable-crash-reporter',
-        '--disable-extensions','--no-first-run','--user-data-dir='+profile,'--window-size='+(width+32)+','+(height+160),
-        '--virtual-time-budget=1600','--dump-dom',...process.argv.slice(3),url.href],{encoding:'utf8',timeout:45000,maxBuffer:8*1024*1024,stdio:['ignore','pipe','pipe']});
+      const dom=execFileSync(process.argv[2],['--headless','--disable-gpu',...process.argv.slice(3),
+        '--user-data-dir='+profile,'--dump-dom',url.href],{encoding:'utf8',timeout:45000,maxBuffer:8*1024*1024,stdio:'pipe',windowsHide:true});
       const output=dom.match(/<pre id="report">([^<]*)<\/pre>/)?.[1];
       if(!output)throw Error(width+' missing test result');
       const {passed,errors,viewport,rects}=JSON.parse(output.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&'));
       if(viewport[0]!==width||viewport[1]!==height)throw Error('Unexpected CSS viewport '+viewport);
       if(errors.length||!passed.length)throw Error(width+' '+errors.join('\n'));
       console.log(width+' × '+height+' · '+passed.length+' checks · CSS rectangles '+JSON.stringify(rects));
+    }finally{
+      try{fs.rmSync(profile,{recursive:true,force:true,maxRetries:3,retryDelay:100});}catch{/* Chromium may still be releasing its temporary profile. */}
     }
-  }finally{
-    try{fs.rmSync(profile,{recursive:true,force:true,maxRetries:3,retryDelay:100});}catch{/* Chromium may still be releasing its temporary profile. */}
   }
 }
