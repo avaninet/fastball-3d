@@ -48,7 +48,6 @@ const Visor = (() => {
   }
   moduleZ(-4.65,-1.62,.74);moduleZ(-1.5,1.54,1.15);moduleZ(1.65,4.5,.82);
   moduleZ(4.55,5.75,.53);box(0,-1.24,.28,1.13,.5,.86,['#f0d69f','#d5b171','#8a7350']);
-  const limbAngle=66,limbX=-Math.cos(limbAngle*rad);
   const starRandom=Flight.seedStream(8180);
   const stars=Array.from({length:1500},()=>{
     const z=2*starRandom()-1,azimuth=2*Math.PI*starRandom(),radius=Math.sqrt(1-z*z);
@@ -60,43 +59,6 @@ const Visor = (() => {
   for(let axis=0;axis<3;axis++)for(const j of [-1,1])for(const k of [-1,1]){
     const a=[0,0,0],b=[0,0,0];a[axis]=-half[axis];b[axis]=half[axis];
     a[(axis+1)%3]=b[(axis+1)%3]=j*half[(axis+1)%3];a[(axis+2)%3]=b[(axis+2)%3]=k*half[(axis+2)%3];edges.push([a,b]);
-  }
-  let atlas; const skyCache=new WeakMap(), acos=Array.from({length:2049},(_,i)=>Math.acos(i/1024-1)/rad);
-  function loadEarth(img) {
-    const c=document.createElement('canvas');c.width=980;c.height=327;
-    const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,c.width,c.height);
-    atlas={w:c.width,h:c.height,data:ctx.getImageData(0,0,c.width,c.height).data};
-  }
-  function background(canvas,ctx,w,h,cam,drag,centerY) {
-    const {forward,right,up,f}=cam, key=[w,h,centerY,cam.az,cam.el,!!atlas,drag].join('/');
-    let cache=skyCache.get(canvas);
-    if(cache?.key===key){ctx.drawImage(cache.c,0,0,w,h);return;}
-    const c=cache?.c||document.createElement('canvas');
-    c.width=Math.min(Math.ceil(w),drag?260:550);c.height=Math.max(1,Math.round(c.width*h/w));
-    const bc=c.getContext('2d'),im=bc.createImageData(c.width,c.height),data=im.data;
-    for(let j=0;j<c.height;j++) {
-      const y=(centerY-(j+.5)*h/c.height)/f;
-      const row=add(forward,scale(up,y));
-      for(let i=0;i<c.width;i++) {
-        const x=((i+.5)*w/c.width-w/2)/f,dx=row[0]+x*right[0],dy=row[1]+x*right[1],dz=row[2]+x*right[2];
-        const cosine=-dx/Math.sqrt(1+x*x+y*y),index=(j*c.width+i)*4;
-        let R=5,G=12,B=18;
-        if(atlas && cosine>.07){
-          const polar=acos[clamp(Math.round((cosine+1)*1024),0,2048)];
-          const u=((Math.atan2(dz,dy)/(2*Math.PI)+1)%1);
-          // A periodic reflection joins the two ends of the original horizon photograph.
-          const tx=Math.min(atlas.w-1,Math.floor(Math.abs(2*u-1)*atlas.w));
-          const limb=104+65*((tx/atlas.w-.5)*2)**2;
-          const ty=limb+(limbAngle-polar)*6.3;
-          if(ty>=0){
-            const idx=4*(tx+atlas.w*clamp(Math.floor(ty),0,atlas.h-1)),blend=clamp(ty/36,0,1),fade=clamp((atlas.h-ty)/52,0,1);
-            R+=(atlas.data[idx]*fade+3-R)*blend;G+=(atlas.data[idx+1]*fade+9-G)*blend;B+=(atlas.data[idx+2]*fade+14-B)*blend;
-          }
-        }
-        data[index]=R;data[index+1]=G;data[index+2]=B;data[index+3]=255;
-      }
-    }
-    bc.putImageData(im,0,0);skyCache.set(canvas,{key,c});ctx.drawImage(c,0,0,w,h);
   }
   const near=.09;
   function camera(p,az,el,w,h,small) {
@@ -292,7 +254,7 @@ const Visor = (() => {
     for(const star of stars){
       if(star.brightness<cutoff)continue;
       const x=c*star.x-s*star.y,y=s*star.x+c*star.y;
-      if(x<=limbX)continue;
+      if(x<=EarthSky.limbX)continue;
       const q=cam.local([x,y,star.z]);
       if(q[2]<=0)continue;
       const [px,py]=cam.screen(q);
@@ -314,7 +276,7 @@ const Visor = (() => {
     }
     const ctx=surface.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
     const cam=camera(state.pos.p,az,el,w,h,small);
-    background(surface,ctx,w,sceneHeight,cam,!!(state.dragging||state.keyAiming),h/2);
+    EarthSky.draw(ctx,w,sceneHeight,h/2,cam);
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const label=captions(ctx,canvas,w,small);
     station(ctx,cam);
@@ -379,5 +341,5 @@ const Visor = (() => {
     }
   }
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-  return {render,camera,orientation,courseGlyphs,loadEarth,toolArt,clockText};
+  return {render,camera,orientation,courseGlyphs,loadEarth:EarthSky.load,toolArt,clockText};
 })();

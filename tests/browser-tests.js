@@ -178,13 +178,13 @@
         if(w===h&&w>=1.24&&w<1.84)points.set(w,[x+w/2,y+h/2]);
         paint(x,y,w,h);
       };
-      function look(az,el,time=0,small=false,dragging=false){
+      function look(az,el,time=0,small=false){
         points=new Map();
-        Visor.render(canvas,az,el,{...flight,mode:'Orbital',time,dragging,objects:[]},small);
+        Visor.render(canvas,az,el,{...flight,mode:'Orbital',time,objects:[]},small);
         return points;
       }
       for(const small of [false,true]){
-        const initial=look(0,0,0,small),dragged=look(8,5,0,small,true);
+        const initial=look(0,0,0,small),dragged=look(8,5,0,small);
         eq(initial.size>8&&initial.size<160,'sparse sky');
         const [size,xy]=[...initial].find(([key])=>dragged.has(key));
         const camera=Visor.camera([0,0,0],0,0,640,320,small);
@@ -197,6 +197,55 @@
         eq(look(180,0,0,small).size===0,'Earth occludes the starfield');
       }
     }finally{canvas.remove();}
+  });
+  test('Both lenses sample the native city lights and aurora at the correct bearings',()=>{
+    const image=el('earthArt'),source=document.createElement('canvas');
+    source.width=image.naturalWidth;source.height=image.naturalHeight;
+    eq(source.width===2172&&source.height===724,'original Earth photograph loaded');
+    const reference=source.getContext('2d',{willReadFrequently:true});reference.drawImage(image,0,0);
+    const target=document.createElement('canvas');target.width=451;target.height=261;
+    const ctx=target.getContext('2d',{willReadFrequently:true});
+    for(const [sx,sy,hemisphere] of [[376.25,477.5,1],[246.5,274.5,-1],[2039.25,332.5,1],[728.5,400.25,-1]]){
+      const u=(sx+.5)/source.width,row=(sy+.5)*327/source.height;
+      const polar=(66-(row-104-65*(2*u-1)**2)/6.3)*Flight.rad,longitude=hemisphere*(1-u)*Math.PI;
+      const ray=[-Math.cos(polar),Math.sin(polar)*Math.cos(longitude),Math.sin(polar)*Math.sin(longitude)];
+      const [az,elevation]=Flight.angles(ray),ix=Math.floor(sx),iy=Math.floor(sy);
+      const texels=reference.getImageData(ix,iy,2,2).data,fx=sx-ix,fy=sy-iy;
+      for(const small of [false,true]){
+        // The forward lens on a phone can end part-way down the background.
+        const lensHeight=small?261:181,centerY=lensHeight/2;
+        const camera=Visor.camera([0,0,0],az,elevation,451,lensHeight,small);
+        EarthSky.draw(ctx,451,261,centerY,camera);
+        const actual=ctx.getImageData(225,Math.floor(centerY),1,1).data;
+        for(let k=0;k<3;k++){
+          const top=(1-fx)*texels[k]+fx*texels[4+k],bottom=(1-fx)*texels[8+k]+fx*texels[12+k];
+          const expected=Math.min(255,[3,9,14][k]+(1-fy)*top+fy*bottom);
+          close(actual[k],expected,6);
+        }
+      }
+    }
+  });
+  test('Pressing, dragging and releasing keep Earth detail at a matching bearing',()=>{
+    configure(0,'Straight-Line',false,true);
+    function snapshot(){
+      paintVisors();
+      return [visor,aft].map(canvas=>{
+        const w=Math.floor(canvas.width/2),h=Math.floor(canvas.height/2);
+        return canvas.getContext('2d').getImageData(Math.floor(w/2),Math.floor(h/2),w,h).data;
+      });
+    }
+    const equal=(a,b)=>a.every((pixels,i)=>pixels.every((v,k)=>v===b[i][k]));
+    for(const heading of [134.66,314.66]){
+      setView(Flight.direction(heading,heading<180?35.4:-35.4));
+      const initial=snapshot();
+      pointer(visor,'pointerdown',7,40,40);eq(equal(initial,snapshot()),'press holds the same detail');
+      pointer(visor,'pointermove',7,56,44);const turned=snapshot();
+      eq(!equal(initial,turned),'drag changes the view');
+      pointer(visor,'pointerup',7,56,44);eq(equal(turned,snapshot()),'release preserves the moving image');
+      keys('ArrowLeft');const aimed=snapshot();
+      visor.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft',bubbles:true}));
+      eq(equal(aimed,snapshot()),'keyup preserves the moving image');
+    }
   });
   test('Cockpit rectangles, hit targets and keyboard focus',()=>{
     configure(0,'Straight-Line');scrollTo(0,0);
@@ -390,7 +439,7 @@
     for(const type of ['pointercancel','lostpointercapture']){
       const before=[yaw,pitch];pointer(visor,'pointerdown',4);pointer(visor,type,4);
       pointer(visor,'pointermove',4,110,90);pointer(visor,'pointerup',4);
-      eq(!drag&&!flight.dragging&&yaw===before[0]&&pitch===before[1],type);
+      eq(!drag&&!document.body.classList.contains('dragging')&&yaw===before[0]&&pitch===before[1],type);
     }
   });
   const named=[
@@ -547,14 +596,14 @@
     configure(3,'Orbital');eq(el('seedTag').textContent.startsWith('Copy replay'),'correct action label');
     click('throw');advance(600);eq(el('advice').textContent.includes('1 tool released'),'singular coast');
   });
-  test('Keyboard aim restores full detail and a real-time stall pauses at 30×',()=>{
+  test('Keyboard aim repeats and a real-time stall pauses at 30×',()=>{
     configure(0,'Straight-Line');
     let keyError=false;const onError=()=>{keyError=true;};
     window.addEventListener('error',onError);document.dispatchEvent(new Event('keydown'));window.removeEventListener('error',onError);
     eq(!keyError,'key-less event is ignored');
-    keys('ArrowLeft');keys('ArrowLeft',false,visor,true);eq(flight.keyAiming,'fast sky while held');
+    const bearing=yaw;keys('ArrowLeft');keys('ArrowLeft',false,visor,true);close(yaw,bearing+4);
     visor.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowLeft',bubbles:true}));
-    eq(!flight.keyAiming&&dirty,'full-resolution repaint on release');
+    close(yaw,bearing+4);
     set('clockRate',3);const before=flight.time;sync(lastTime+20000);
     eq(!running&&started&&!flight.done&&flight.time===before,'no lost oxygen in a stall');
     click('pause');sync(lastTime+100);close(flight.time,before+3,.02);

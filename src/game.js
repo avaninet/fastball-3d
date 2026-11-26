@@ -41,7 +41,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   const initial=Flight.opening(index,seed,story);
   lossDebriefAt=null;
   invalidateInput();
-  flight={index,mode,soft,seed,story,limit:Flight.oxygenReserve,lesson,skippedGuidance:false,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:'',dragging:false,keyAiming:false};
+  flight={index,mode,soft,seed,story,limit:Flight.oxygenReserve,lesson,skippedGuidance:false,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:''};
   selected=5;power=95;el('power').value=power;setClockStop(0);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
   el('name').textContent=initial.name;el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays she pitches with friends. Today her tether snaps and her suit thrusters jam.':initial.brief;el('modeTag').textContent=mode;
@@ -253,6 +253,7 @@ function paintVisors(){
   Visor.render(aft,yaw+180,-pitch,flight,true,null,preview);
 }
 function frame(now) {
+  EarthSky.frame(now);
   sync(now);
   updateLossDebrief(now);
   if(dirty || running&&now-lastPaint>=32) {
@@ -274,14 +275,13 @@ for(const [slot,i] of rackOrder.entries()) {
   const img=document.createElement('canvas');img.setAttribute('aria-hidden','true');const name=document.createElement('b');name.textContent=g.name;
   const size=document.createElement('small');b.append(key,img,name,size);el('tools').append(b);Visor.toolArt(img,i);b.onclick=()=>choose(i);
 }
-const heldKeys=new Map(),aimKeys=new Set(), presses=new Map();
+const heldKeys=new Map(),presses=new Map();
 let inputEpoch=0, inputSince=0, sliderPress=null;
 function invalidateInput(){
   inputEpoch++;inputSince=performance.now();presses.clear();
-  aimKeys.clear();if(flight)flight.keyAiming=false;
   if(sliderPress?.ended)sliderPress=null;
   if(drag && visor.hasPointerCapture(drag.id))visor.releasePointerCapture(drag.id);
-  drag=null;if(flight)flight.dragging=false;document.body.classList.remove('dragging');
+  drag=null;document.body.classList.remove('dragging');
 }
 function changePower(value){if(canPitch())power=clamp(value,10,100);el('power').value=power;updateRack();}
 function snap(vector){if(flight.story&&canPitch())setView(vector);}
@@ -340,7 +340,7 @@ document.addEventListener('click',e=>{
 visor.addEventListener('pointerdown',e=>{
   if(!canPitch() || drag || e.button!==0)return;
   visor.focus({preventScroll:true});if(e.isTrusted)visor.setPointerCapture(e.pointerId);
-  drag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw,pitch,moved:false};flight.dragging=true;document.body.classList.add('dragging');
+  drag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw,pitch,moved:false};document.body.classList.add('dragging');
 });
 visor.addEventListener('pointermove',e=>{
   if(!canPitch()||!drag||e.pointerId!==drag.id)return;
@@ -355,7 +355,7 @@ function endDrag(e,accept){
     const dx=(e.clientX-r.left-r.width/2)/cam.f,dy=(r.height/2-e.clientY+r.top)/cam.f;
     setView(Flight.add(cam.forward,Flight.add(scale(cam.right,dx),scale(cam.up,dy))));
   }
-  drag=null;flight.dragging=false;document.body.classList.remove('dragging');dirty=true;
+  drag=null;document.body.classList.remove('dragging');dirty=true;
 }
 visor.onpointerup=e=>endDrag(e,true);visor.onpointercancel=e=>endDrag(e,false);visor.onlostpointercapture=e=>endDrag(e,false);
 function cockpitKey(e){
@@ -365,7 +365,6 @@ function cockpitKey(e){
 }
 document.addEventListener('keyup',e=>{
   const key=e.code||e.key;
-  if(aimKeys.delete(key)){flight.keyAiming=aimKeys.size>0;dirty=true;}
   if(heldKeys.has(key)&&heldKeys.get(key)!==inputEpoch&&cockpitKey(e)){e.preventDefault();e.stopImmediatePropagation();}
   heldKeys.delete(key);
 },true);
@@ -391,12 +390,8 @@ document.addEventListener('keydown',e=>{
   if(key==='['||key===']'){e.preventDefault();changePower(power+(key==='['?-1:1));return;}
   if(key==='enter'&&target===visor){e.preventDefault();if(!e.repeat)throwTool();return;}
   if(!key.startsWith('arrow'))return;
-  aimKeys.add(code);flight.keyAiming=true;
   e.preventDefault();if(key==='arrowleft')yaw+=step;if(key==='arrowright')yaw-=step;
   if(key==='arrowup')pitch=clamp(pitch+step,-90,90);if(key==='arrowdown')pitch=clamp(pitch-step,-90,90);dirty=true;
-});
-window.addEventListener('blur',()=>{
-  if(aimKeys.size){aimKeys.clear();flight.keyAiming=false;dirty=true;}
 });
 function pauseForModal(d){
   sync();freezeClock();

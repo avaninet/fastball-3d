@@ -2386,6 +2386,269 @@ function trimHint(displacement,az,elevation){
   const side=parts.join(' and ');
   return forward<-.25?'Turn '+side+' toward the space behind you.':'Aim '+side+' in the forward visor.';
 }
+</script><script>// Project the night-side photograph onto camera rays. The curve and fades
+// were calibrated in a 327-row reference image; the texture stays native size.
+const EarthSky = (() => {
+  const limbAngle = 66, referenceHeight = 327;
+  const sky = [5, 12, 18], night = [3, 9, 14];
+  const packedColor = rgb => new Uint32Array(new Uint8Array([...rgb, 255]).buffer)[0];
+  const skyPixel = packedColor(sky), nightPixel = packedColor(night);
+  const stage = document.createElement('canvas');
+  let photo, atlas, gpu;
+  let views = new WeakMap();
+  let scale = 1, previousFrame, projected = false, slowFrames = 0, fastFrames = 0;
+
+  function load(image) {
+    photo = image;
+    atlas = null;
+    views = new WeakMap();
+  }
+
+  // Count the actual display interval following a projection. Idle camera
+  // frames, input event frequency and simulated flight time provide no signal.
+  function frame(now) {
+    const elapsed = now - previousFrame;
+    previousFrame = now;
+    if (projected && elapsed > 0 && elapsed < 1000) {
+      slowFrames = elapsed > 42 ? slowFrames + 1 : 0;
+      fastFrames = elapsed < 25 ? fastFrames + 1 : 0;
+      if (slowFrames >= 10 || fastFrames >= 90) {
+        scale = Flight.clamp(scale + (slowFrames >= 10 ? -0.125 : 0.125), 0.625, 1);
+        slowFrames = fastFrames = 0;
+      }
+    }
+    projected = false;
+  }
+
+  // Use one GL context for both lenses and the extended portrait backdrop.
+  // Each lens retains a 2D copy, so steady views never rerun the projection.
+  function createGPU() {
+    const gl = stage.getContext('webgl', {alpha:false, antialias:false, depth:false, stencil:false});
+    if (!gl || gl.isContextLost()) return null;
+    const program = gl.createProgram();
+    const vertex = `
+      attribute vec2 position;
+      varying vec2 screen;
+      void main() {
+        screen = position;
+        gl_Position = vec4(position, 0., 1.);
+      }`;
+    const fragment = `
+      precision highp float;
+      varying vec2 screen;
+      uniform sampler2D photograph;
+      uniform vec3 forward, right, up;
+      uniform vec3 lens; // half-width/f, half-height/f, vertical offset/f
+      void main() {
+        vec3 ray = normalize(forward + right * (screen.x * lens.x)
+                              + up * (screen.y * lens.y + lens.z));
+        vec3 space = vec3(5., 12., 18.) / 255.;
+        vec3 dark = vec3(3., 9., 14.) / 255.;
+        gl_FragColor = vec4(space, 1.);
+        if (-ray.x <= .07) return;
+        float polar = degrees(acos(clamp(-ray.x, -1., 1.)));
+        if (polar < 30.) { gl_FragColor = vec4(dark, 1.); return; }
+        float u = 1. - abs(atan(ray.z, ray.y)) / radians(180.);
+        float arc = 2. * u - 1.;
+        float row = 104. + 65. * arc * arc + (${limbAngle.toFixed(1)} - polar) * 6.3;
+        float v = row / ${referenceHeight.toFixed(1)};
+        vec3 art = texture2D(photograph, vec2(u, v)).rgb;
+        float fade = clamp((${referenceHeight.toFixed(1)} - row) / 52., 0., 1.);
+        gl_FragColor = vec4(mix(space, dark + art * fade, clamp(row / 36., 0., 1.)), 1.);
+      }`;
+    for (const [type, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]]) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      gl.attachShader(program, shader);
+      gl.deleteShader(shader);
+    }
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      gl.deleteProgram(program);
+      return null;
+    }
+    gl.useProgram(program);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+    const position = gl.getAttribLocation(program, 'position');
+    gl.enableVertexAttribArray(position);
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    for (const side of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) {
+      gl.texParameteri(gl.TEXTURE_2D, side, gl.CLAMP_TO_EDGE);
+    }
+    for (const filter of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) {
+      gl.texParameteri(gl.TEXTURE_2D, filter, gl.LINEAR);
+    }
+    const maximum = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    const viewport = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+    const uniform = name => gl.getUniformLocation(program, name);
+    const forward = uniform('forward'), right = uniform('right'), up = uniform('up'), lens = uniform('lens');
+    let uploaded;
+    return (view, w, h, centerY, camera) => {
+      const {width, height} = view.canvas;
+      if (uploaded !== photo) {
+        if (Math.max(photo.naturalWidth, photo.naturalHeight) > maximum) return false;
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, photo);
+        if (gl.getError() !== gl.NO_ERROR) return false;
+        uploaded = photo;
+      }
+      if (width > viewport[0] || height > viewport[1]) return false;
+      if (stage.width < width) stage.width = width;
+      if (stage.height < height) stage.height = height;
+      if (gl.drawingBufferWidth < width || gl.drawingBufferHeight < height || gl.isContextLost()) return false;
+      gl.viewport(0, stage.height - height, width, height);
+      gl.uniform3fv(forward, camera.forward);
+      gl.uniform3fv(right, camera.right);
+      gl.uniform3fv(up, camera.up);
+      gl.uniform3f(lens, w/(2*camera.f), h/(2*camera.f), (centerY-h/2)/camera.f);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      view.drawImage(stage, 0, 0, width, height, 0, 0, width, height);
+      return true;
+    };
+  }
+
+  stage.addEventListener('webglcontextlost', event => {
+    event.preventDefault();
+    gpu = null;
+    views = new WeakMap();
+  });
+  stage.addEventListener('webglcontextrestored', () => {
+    gpu = undefined;
+    views = new WeakMap();
+  });
+
+  // Both fades depend only on the source row. Bake them once and extend the
+  // last column and row so bilinear sampling needs no edge cases per pixel.
+  function prepareAtlas() {
+    const source = document.createElement('canvas');
+    const width = photo.naturalWidth, height = photo.naturalHeight;
+    source.width = width + 1;
+    source.height = height + 1;
+    const ctx = source.getContext('2d', {willReadFrequently:true});
+    ctx.drawImage(photo, 0, 0);
+    const pixels = ctx.getImageData(0, 0, source.width, source.height).data;
+    const stride = source.width * 4;
+    for (let y = 0; y < height; y++) {
+      const row = (y + 0.5) * referenceHeight / height;
+      const blend = Math.min(1, row/36), fade = Flight.clamp((referenceHeight-row)/52, 0, 1);
+      const start = y*stride, end = start+width*4;
+      for (let i = start; i < end; i += 4) {
+        for (let k = 0; k < 3; k++) {
+          pixels[i+k] = sky[k] + blend*(night[k] + fade*pixels[i+k] - sky[k]);
+        }
+      }
+      pixels.copyWithin(end, end-4, end);
+    }
+    pixels.copyWithin(height*stride, (height-1)*stride, height*stride);
+    return {pixels, width, height, stride};
+  }
+
+  function drawSoftware(view, w, h, centerY, camera) {
+    if (!atlas) atlas = prepareAtlas();
+    const {width, height} = view.ctx.canvas;
+    if (view.pixels?.width !== width || view.pixels.height !== height) {
+      view.pixels = view.ctx.createImageData(width, height);
+    }
+    const out = view.pixels.data, packed = new Uint32Array(out.buffer);
+    const {pixels, stride} = atlas, {f, forward, right, up} = camera;
+    const pixelStep = w / (width * f);
+    // Interpolate texture coordinates over at most one degree of a scanline.
+    // Reproject individual rays at the mirrored seam and solid-color edges.
+    const span = Math.max(1, Math.min(16, Math.floor(Flight.rad / pixelStep)));
+    let y, rx, ry, rz;
+    function locate(i, point) {
+      const x = (i+0.5-width/2)*pixelStep;
+      const cosine = -(rx + x*right[0]) / Math.sqrt(1 + x*x + y*y);
+      if (cosine <= 0.07) { point.fill = skyPixel; return; }
+      if (cosine >= Math.cos(30*Flight.rad)) { point.fill = nightPixel; return; }
+      const z = rz + x*right[2];
+      const u = 1 - Math.abs(Math.atan2(z, ry+x*right[1]))/Math.PI;
+      const arc = 2*u-1, polar = Math.acos(cosine)/Flight.rad;
+      const row = 104 + 65*arc*arc + (limbAngle-polar)*6.3;
+      point.fill = row <= 0 ? skyPixel : row >= referenceHeight ? nightPixel : null;
+      point.side = z < 0;
+      point.u = Flight.clamp(u*atlas.width-0.5, 0, atlas.width-1);
+      point.v = Flight.clamp(row/referenceHeight*atlas.height-0.5, 0, atlas.height-1);
+    }
+    function sample(index, u, v) {
+      const ix = Math.floor(u), iy = Math.floor(v), fx = u-ix, fy = v-iy;
+      const a = iy*stride+ix*4, b = a+stride;
+      for (let k = 0; k < 3; k++) {
+        const top = pixels[a+k]+fx*(pixels[a+4+k]-pixels[a+k]);
+        const bottom = pixels[b+k]+fx*(pixels[b+4+k]-pixels[b+k]);
+        out[index*4+k] = top+fy*(bottom-top);
+      }
+    }
+    // The photograph is opaque, including spans copied on subsequent frames.
+    packed.fill(skyPixel);
+    let left = {}, rightEdge = {};
+    const point = {};
+    for (let j = 0; j < height; j++) {
+      y = (centerY - (j+0.5)*h/height)/f;
+      rx = forward[0]+y*up[0]; ry = forward[1]+y*up[1]; rz = forward[2]+y*up[2];
+      locate(0, left);
+      for (let i = 0; i < width; i += span) {
+        const count = Math.min(span, width-i), index = j*width+i;
+        locate(i+count, rightEdge);
+        if (left.fill !== null && left.fill === rightEdge.fill) {
+          if (left.fill !== skyPixel) packed.fill(left.fill, index, index+count);
+        } else if (left.fill === null && rightEdge.fill === null && left.side === rightEdge.side) {
+          const du = (rightEdge.u-left.u)/count, dv = (rightEdge.v-left.v)/count;
+          for (let k = 0; k < count; k++) sample(index+k, left.u+k*du, left.v+k*dv);
+        } else {
+          for (let k = 0; k < count; k++) {
+            locate(i+k, point);
+            if (point.fill !== null) packed[index+k] = point.fill;
+            else sample(index+k, point.u, point.v);
+          }
+        }
+        const previous = left; left = rightEdge; rightEdge = previous;
+      }
+    }
+    view.ctx.putImageData(view.pixels, 0, 0);
+  }
+
+  function resize(view, w, h, budget, density = 1) {
+    const ratio = Math.min(density, Math.sqrt(budget / (w*h))) * scale;
+    const canvas = view.ctx.canvas;
+    const width = Math.max(1, Math.round(w*ratio)), height = Math.max(1, Math.round(h*ratio));
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+  }
+
+  function draw(ctx, w, h, centerY, camera) {
+    if (!photo) {
+      ctx.fillStyle = '#050c12';
+      ctx.fillRect(0, 0, w, h);
+      return;
+    }
+    let view = views.get(ctx.canvas);
+    if (!view) {
+      view = {ctx:document.createElement('canvas').getContext('2d', {alpha:false})};
+      views.set(ctx.canvas, view);
+    }
+    const density = ctx.canvas.width / w;
+    const key = [w, h, density, centerY, camera.f, camera.az, camera.el].join('/');
+    if (view.key !== key) {
+      if (gpu === undefined) gpu = createGPU();
+      if (gpu) {
+        resize(view, w, h, 2560*1440, density);
+        if (!gpu(view.ctx, w, h, centerY, camera)) gpu = null;
+      }
+      if (!gpu) {
+        resize(view, w, h, 480000);
+        drawSoftware(view, w, h, centerY, camera);
+      }
+      view.key = key;
+      projected = true;
+    }
+    ctx.drawImage(view.ctx.canvas, 0, 0, w, h);
+  }
+
+  return {load, draw, frame, limbX:-Math.cos(limbAngle*Flight.rad)};
+})();
 </script><script>const fontStyle=getComputedStyle(document.documentElement);
 const cockpitFonts={sans:fontStyle.getPropertyValue('--sans').trim(),mono:fontStyle.getPropertyValue('--mono').trim()};
 const Visor = (() => {
@@ -2436,7 +2699,6 @@ const Visor = (() => {
   }
   moduleZ(-4.65,-1.62,.74);moduleZ(-1.5,1.54,1.15);moduleZ(1.65,4.5,.82);
   moduleZ(4.55,5.75,.53);box(0,-1.24,.28,1.13,.5,.86,['#f0d69f','#d5b171','#8a7350']);
-  const limbAngle=66,limbX=-Math.cos(limbAngle*rad);
   const starRandom=Flight.seedStream(8180);
   const stars=Array.from({length:1500},()=>{
     const z=2*starRandom()-1,azimuth=2*Math.PI*starRandom(),radius=Math.sqrt(1-z*z);
@@ -2448,43 +2710,6 @@ const Visor = (() => {
   for(let axis=0;axis<3;axis++)for(const j of [-1,1])for(const k of [-1,1]){
     const a=[0,0,0],b=[0,0,0];a[axis]=-half[axis];b[axis]=half[axis];
     a[(axis+1)%3]=b[(axis+1)%3]=j*half[(axis+1)%3];a[(axis+2)%3]=b[(axis+2)%3]=k*half[(axis+2)%3];edges.push([a,b]);
-  }
-  let atlas; const skyCache=new WeakMap(), acos=Array.from({length:2049},(_,i)=>Math.acos(i/1024-1)/rad);
-  function loadEarth(img) {
-    const c=document.createElement('canvas');c.width=980;c.height=327;
-    const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,c.width,c.height);
-    atlas={w:c.width,h:c.height,data:ctx.getImageData(0,0,c.width,c.height).data};
-  }
-  function background(canvas,ctx,w,h,cam,drag,centerY) {
-    const {forward,right,up,f}=cam, key=[w,h,centerY,cam.az,cam.el,!!atlas,drag].join('/');
-    let cache=skyCache.get(canvas);
-    if(cache?.key===key){ctx.drawImage(cache.c,0,0,w,h);return;}
-    const c=cache?.c||document.createElement('canvas');
-    c.width=Math.min(Math.ceil(w),drag?260:550);c.height=Math.max(1,Math.round(c.width*h/w));
-    const bc=c.getContext('2d'),im=bc.createImageData(c.width,c.height),data=im.data;
-    for(let j=0;j<c.height;j++) {
-      const y=(centerY-(j+.5)*h/c.height)/f;
-      const row=add(forward,scale(up,y));
-      for(let i=0;i<c.width;i++) {
-        const x=((i+.5)*w/c.width-w/2)/f,dx=row[0]+x*right[0],dy=row[1]+x*right[1],dz=row[2]+x*right[2];
-        const cosine=-dx/Math.sqrt(1+x*x+y*y),index=(j*c.width+i)*4;
-        let R=5,G=12,B=18;
-        if(atlas && cosine>.07){
-          const polar=acos[clamp(Math.round((cosine+1)*1024),0,2048)];
-          const u=((Math.atan2(dz,dy)/(2*Math.PI)+1)%1);
-          // A periodic reflection joins the two ends of the original horizon photograph.
-          const tx=Math.min(atlas.w-1,Math.floor(Math.abs(2*u-1)*atlas.w));
-          const limb=104+65*((tx/atlas.w-.5)*2)**2;
-          const ty=limb+(limbAngle-polar)*6.3;
-          if(ty>=0){
-            const idx=4*(tx+atlas.w*clamp(Math.floor(ty),0,atlas.h-1)),blend=clamp(ty/36,0,1),fade=clamp((atlas.h-ty)/52,0,1);
-            R+=(atlas.data[idx]*fade+3-R)*blend;G+=(atlas.data[idx+1]*fade+9-G)*blend;B+=(atlas.data[idx+2]*fade+14-B)*blend;
-          }
-        }
-        data[index]=R;data[index+1]=G;data[index+2]=B;data[index+3]=255;
-      }
-    }
-    bc.putImageData(im,0,0);skyCache.set(canvas,{key,c});ctx.drawImage(c,0,0,w,h);
   }
   const near=.09;
   function camera(p,az,el,w,h,small) {
@@ -2680,7 +2905,7 @@ const Visor = (() => {
     for(const star of stars){
       if(star.brightness<cutoff)continue;
       const x=c*star.x-s*star.y,y=s*star.x+c*star.y;
-      if(x<=limbX)continue;
+      if(x<=EarthSky.limbX)continue;
       const q=cam.local([x,y,star.z]);
       if(q[2]<=0)continue;
       const [px,py]=cam.screen(q);
@@ -2702,7 +2927,7 @@ const Visor = (() => {
     }
     const ctx=surface.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
     const cam=camera(state.pos.p,az,el,w,h,small);
-    background(surface,ctx,w,sceneHeight,cam,!!(state.dragging||state.keyAiming),h/2);
+    EarthSky.draw(ctx,w,sceneHeight,h/2,cam);
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const label=captions(ctx,canvas,w,small);
     station(ctx,cam);
@@ -2767,7 +2992,7 @@ const Visor = (() => {
     }
   }
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-  return {render,camera,orientation,courseGlyphs,loadEarth,toolArt,clockText};
+  return {render,camera,orientation,courseGlyphs,loadEarth:EarthSky.load,toolArt,clockText};
 })();
 </script><script>const el=id=>document.getElementById(id), {scale,unit,norm,dot,sub,clamp}=Flight;
 // Gear indices identify physical items in flight records and inventory masks.
@@ -2812,7 +3037,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   const initial=Flight.opening(index,seed,story);
   lossDebriefAt=null;
   invalidateInput();
-  flight={index,mode,soft,seed,story,limit:Flight.oxygenReserve,lesson,skippedGuidance:false,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:'',dragging:false,keyAiming:false};
+  flight={index,mode,soft,seed,story,limit:Flight.oxygenReserve,lesson,skippedGuidance:false,checkAt:null,checked:false,initial,log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},time:0,throws:0,mask:Flight.fullRack,objects:[],misses:0,done:''};
   selected=5;power=95;el('power').value=power;setClockStop(0);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
   el('name').textContent=initial.name;el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays she pitches with friends. Today her tether snaps and her suit thrusters jam.':initial.brief;el('modeTag').textContent=mode;
@@ -3024,6 +3249,7 @@ function paintVisors(){
   Visor.render(aft,yaw+180,-pitch,flight,true,null,preview);
 }
 function frame(now) {
+  EarthSky.frame(now);
   sync(now);
   updateLossDebrief(now);
   if(dirty || running&&now-lastPaint>=32) {
@@ -3045,14 +3271,13 @@ for(const [slot,i] of rackOrder.entries()) {
   const img=document.createElement('canvas');img.setAttribute('aria-hidden','true');const name=document.createElement('b');name.textContent=g.name;
   const size=document.createElement('small');b.append(key,img,name,size);el('tools').append(b);Visor.toolArt(img,i);b.onclick=()=>choose(i);
 }
-const heldKeys=new Map(),aimKeys=new Set(), presses=new Map();
+const heldKeys=new Map(),presses=new Map();
 let inputEpoch=0, inputSince=0, sliderPress=null;
 function invalidateInput(){
   inputEpoch++;inputSince=performance.now();presses.clear();
-  aimKeys.clear();if(flight)flight.keyAiming=false;
   if(sliderPress?.ended)sliderPress=null;
   if(drag && visor.hasPointerCapture(drag.id))visor.releasePointerCapture(drag.id);
-  drag=null;if(flight)flight.dragging=false;document.body.classList.remove('dragging');
+  drag=null;document.body.classList.remove('dragging');
 }
 function changePower(value){if(canPitch())power=clamp(value,10,100);el('power').value=power;updateRack();}
 function snap(vector){if(flight.story&&canPitch())setView(vector);}
@@ -3111,7 +3336,7 @@ document.addEventListener('click',e=>{
 visor.addEventListener('pointerdown',e=>{
   if(!canPitch() || drag || e.button!==0)return;
   visor.focus({preventScroll:true});if(e.isTrusted)visor.setPointerCapture(e.pointerId);
-  drag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw,pitch,moved:false};flight.dragging=true;document.body.classList.add('dragging');
+  drag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw,pitch,moved:false};document.body.classList.add('dragging');
 });
 visor.addEventListener('pointermove',e=>{
   if(!canPitch()||!drag||e.pointerId!==drag.id)return;
@@ -3126,7 +3351,7 @@ function endDrag(e,accept){
     const dx=(e.clientX-r.left-r.width/2)/cam.f,dy=(r.height/2-e.clientY+r.top)/cam.f;
     setView(Flight.add(cam.forward,Flight.add(scale(cam.right,dx),scale(cam.up,dy))));
   }
-  drag=null;flight.dragging=false;document.body.classList.remove('dragging');dirty=true;
+  drag=null;document.body.classList.remove('dragging');dirty=true;
 }
 visor.onpointerup=e=>endDrag(e,true);visor.onpointercancel=e=>endDrag(e,false);visor.onlostpointercapture=e=>endDrag(e,false);
 function cockpitKey(e){
@@ -3136,7 +3361,6 @@ function cockpitKey(e){
 }
 document.addEventListener('keyup',e=>{
   const key=e.code||e.key;
-  if(aimKeys.delete(key)){flight.keyAiming=aimKeys.size>0;dirty=true;}
   if(heldKeys.has(key)&&heldKeys.get(key)!==inputEpoch&&cockpitKey(e)){e.preventDefault();e.stopImmediatePropagation();}
   heldKeys.delete(key);
 },true);
@@ -3162,12 +3386,8 @@ document.addEventListener('keydown',e=>{
   if(key==='['||key===']'){e.preventDefault();changePower(power+(key==='['?-1:1));return;}
   if(key==='enter'&&target===visor){e.preventDefault();if(!e.repeat)throwTool();return;}
   if(!key.startsWith('arrow'))return;
-  aimKeys.add(code);flight.keyAiming=true;
   e.preventDefault();if(key==='arrowleft')yaw+=step;if(key==='arrowright')yaw-=step;
   if(key==='arrowup')pitch=clamp(pitch+step,-90,90);if(key==='arrowdown')pitch=clamp(pitch-step,-90,90);dirty=true;
-});
-window.addEventListener('blur',()=>{
-  if(aimKeys.size){aimKeys.clear();flight.keyAiming=false;dirty=true;}
 });
 function pauseForModal(d){
   sync();freezeClock();

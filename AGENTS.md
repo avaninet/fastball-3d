@@ -10,7 +10,8 @@ Work in this local repository on the dedicated 3D game. Use `REVIEW.md` and `DIF
 | `src/cockpit.css` | Cockpit and dialog styling, including responsive layouts |
 | `src/game.js` | Flight state, clock, camera and keyboard inputs, throw controls, instruments and UI |
 | `src/physics.js` | Gear, momentum, coast propagation, volume entries, closest pass, random starts and feasibility checks |
-| `src/draw.js` | Canvas 2D perspective renderer, flat station faces, clipping, stars, horizon artwork, reticles, two cameras and coast overlay |
+| `src/earth.js` | Photographic Earth projection, GPU texture and software fallback shared by both cameras |
+| `src/draw.js` | Canvas 2D perspective renderer, flat station faces, clipping, stars, reticles, two cameras and coast overlay |
 | `src/readout.js` | Numeric formatting, visor orientation and trim directions |
 | `src/log.js` | Flight reconstruction, projected charts, release records and share-card artwork |
 | `src/share.js` | Replay parsing, links, clipboard and image export |
