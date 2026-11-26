@@ -1987,6 +1987,9 @@ main {
 }
 
 @media (min-width:600px) and (max-width:760px) and (max-height:400px) {
+  .flightHead {
+    order: 1;
+  }
   .camTitle {
     gap: 4px;
   }
