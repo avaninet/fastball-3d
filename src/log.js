@@ -149,12 +149,12 @@ const FlightLog = (() => {
     if(releases.length>9)records.push('10. ...and then some');
     const rows=Math.max(1,Math.min(5,records.length)),height=recordY+10+rows*17;
     const label=(x,y,text,size,color,attrs='')=>'<text x="'+x+'" y="'+y+'" font-size="'+size+'" fill="'+color+'" '+attrs+'>'+escape(text)+'</text>';
-    const description='Fastball 3D · '+date+' · Random drift '+seed+' · '+rules+'\n'+
+    const description='Fastball 3D · AvaniNet · '+date+' · Random drift '+seed+' · '+rules+'\n'+
       [result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',budget,speed,clearance,passCount].filter(Boolean).join(' · ');
     const parts=['<svg xmlns="http://www.w3.org/2000/svg" width="470" height="'+height+'" viewBox="0 0 470 '+height+'" role="img" aria-labelledby="flightCardTitle flightCardDesc" font-family="'+escape(cockpitFonts.sans)+'">',
       '<title id="flightCardTitle">Random drift · '+escape(result)+'</title><desc id="flightCardDesc">'+escape(description)+'</desc>',
       '<rect width="470" height="'+height+'" rx="9" fill="#101a20"/>',
-      label(20,27,'FASTBALL 3D',14,'#f7bc62','font-weight="bold" letter-spacing="1.8"'),label(450,27,date,13,'#c5d1d0','text-anchor="end"'),
+      label(20,27,'FASTBALL 3D · AvaniNet',14,'#f7bc62','font-weight="bold" letter-spacing="1.8"'),label(450,27,date,13,'#c5d1d0','text-anchor="end"'),
       label(20,62,result,28,'#f4f1e8','font-weight="bold"'),label(20,84,'Random drift  /  '+seed,15,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
       label(20,104,rules,13,'#c5d1d0'),'<rect x="12" y="115" width="446" height="309" rx="5" fill="#0b141b" stroke="#354046"/>',
       label(22,136,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),

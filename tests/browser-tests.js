@@ -932,6 +932,7 @@
       eq(!card.querySelector('parsererror,tspan'),'well-formed SVG without injected markup');
       eq(card.querySelector('title').textContent.includes(outcomes.oxygen),'literal outcome in title');
       eq(card.querySelector('desc').textContent.includes(seed),'literal seed in description');
+      eq([...card.querySelectorAll('text')].some(node=>node.textContent==='FASTBALL 3D · AvaniNet'),'credit on exported card');
     }finally{outcomes.oxygen=saved;}
   });
   test('Every random outcome offers a dated single-chart flight card',()=>{
@@ -1192,6 +1193,7 @@
     click('manual');const guide=el('guide').textContent;
     eq(['presumed lost','Newton’s third law','wrench','SR-73','next town'].every(s=>guide.includes(s)),'guide premise and backstory');
     eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere','credit line');
+    eq(el('guide').querySelector('.credits a').getAttribute('href')==='mailto:avani@avaninet.com','credit contact');
     enterLesson('replayLesson');
     eq(['presumed lost','Newton’s third law','wrench','pushes you back','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
     eq(el('brief').textContent.includes('Saturdays'),'character in opening');

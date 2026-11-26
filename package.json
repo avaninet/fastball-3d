@@ -1,5 +1,6 @@
 {
   "name": "fastball-3d",
+  "author": "AvaniNet <avani@avaninet.com>",
   "version": "0.2.0",
   "private": true,
   "scripts": {

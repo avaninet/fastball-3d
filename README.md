@@ -93,3 +93,5 @@ Open the generated `qa-runner.html` for browser results, or pass a Chromium exec
 [Local test results and playtest questions](REVIEW.md) · [Difficulty study](DIFFICULTY.md) · [Project workflow](AGENTS.md) · [Historical prototype handoff](HANDOFF.md) · [Fastball Alpha v0.4 manual](reference/alpha-v0.4-manual.txt)
 
 an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere
+
+[avani@avaninet.com](mailto:avani@avaninet.com)
