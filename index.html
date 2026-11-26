@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg">
     <meta name="twitter:image:alt" content="Fastball 3D mission patch and title beside a visor view of a yellow power drill floating toward the space station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gvsvgXESCCJVacV4e/Adv2aUiZ2qyr275yiBK+nORzg=' 'sha256-grtM02oHyVFY7JDTz3fvTYYKlNScI+lDCEcRxn9ific=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-aj4BrVoQ3YteBMSGrqTxv0t9HxYKRdbNdemD62CTyjk=' 'sha256-BqeXq6qOPxn6+5P+HjCsEM6h7EHu4IDYC0GFcXPg9Hs=' 'sha256-rIMw5G5rL/1OvvCBbVvkNzTHDyBjaZqSrO091s1Own8=' 'sha256-EKz3menBcDBC3pGCUiAt7s08ad6DVX2qkHXgLyn/MX0=' 'sha256-SUmhYg779YmcNZYXBkXWF/3nU92p2WDucnW6nGB0ikY=' 'sha256-uUSUTAeuwUOaQxfGUoTAPwh/Wm/YD8DlFheuTPTdZX0='; style-src 'sha256-jX5mDGUxcC7RIYdoiN8T0ncqrHeSQV5PmpsFZAhx8Tk='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gvsvgXESCCJVacV4e/Adv2aUiZ2qyr275yiBK+nORzg=' 'sha256-grtM02oHyVFY7JDTz3fvTYYKlNScI+lDCEcRxn9ific=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-aj4BrVoQ3YteBMSGrqTxv0t9HxYKRdbNdemD62CTyjk=' 'sha256-BqeXq6qOPxn6+5P+HjCsEM6h7EHu4IDYC0GFcXPg9Hs=' 'sha256-rIMw5G5rL/1OvvCBbVvkNzTHDyBjaZqSrO091s1Own8=' 'sha256-EKz3menBcDBC3pGCUiAt7s08ad6DVX2qkHXgLyn/MX0=' 'sha256-SUmhYg779YmcNZYXBkXWF/3nU92p2WDucnW6nGB0ikY=' 'sha256-uUSUTAeuwUOaQxfGUoTAPwh/Wm/YD8DlFheuTPTdZX0='; style-src 'sha256-XIMIHg9OaA2we3nJln+mhS6xMAAS46MXxaFMqc0GpWQ='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.3 · EVA return simulator</title>
@@ -167,12 +167,16 @@ h1 {
   justify-content: flex-end;
 }
 
+.tag,.bearingReadout {
+  font: 500 clamp(14px,1.1vw,16px)/1.35 var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
 .tag {
   white-space: nowrap;
   border: 1px solid var(--line);
   padding: 4px 8px;
   border-radius: 3px;
-  font: 11px/1.4 var(--mono);
   color: #d1dad8;
 }
 
@@ -869,6 +873,7 @@ main {
 
 .camTitle {
   gap: 16px;
+  flex-wrap: wrap;
   min-height: 44px;
   padding: 4px 14px;
   justify-content: flex-start;
@@ -881,13 +886,9 @@ main {
   gap: 12px;
 }
 
-.bearingReadout,.flightTime {
-  font: 12px var(--mono);
-  font-variant-numeric: tabular-nums;
-  color: #d9e8ec;
-}
-
 .bearingReadout {
+  color: #d9e8ec;
+  white-space: nowrap;
   padding-inline-start: 15px;
   border-inline-start: 1px solid #57656c;
 }
@@ -1380,16 +1381,12 @@ main {
   .bearingReadout {
     gap: 6px;
     padding-left: 6px;
-    font-size: 11px;
   }
   .descriptor {
     display: none;
   }
   .lesson {
     width: 34%;
-  }
-  .flightTime {
-    font-size: 11px;
   }
   .camTitle {
     gap: 8px;
@@ -1451,7 +1448,6 @@ main {
     gap: 4px;
   }
   .tag {
-    font-size: 10px;
     padding: 1px 5px;
   }
   .deck {
@@ -1480,10 +1476,6 @@ main {
     padding: 2px 0 0;
     border: 0;
     color: #f2f8f9;
-    font: 11px var(--mono);
-  }
-  .flightTime {
-    font: 11px var(--sans);
   }
   .clockSlider {
     width: 90px;
@@ -1700,9 +1692,6 @@ main {
   .descriptor,.flightHead p {
     display: none;
   }
-  .flightTime {
-    font-size: 11px;
-  }
   .headerActions button {
     min-height: 25px;
     padding: 2px 6px;
@@ -1740,7 +1729,6 @@ main {
     border: 0;
     background: #09131be8;
     pointer-events: none;
-    font-size: 11px;
   }
   .clockSlider .rateStops {
     display: none;

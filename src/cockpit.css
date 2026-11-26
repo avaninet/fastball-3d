@@ -139,12 +139,16 @@ h1 {
   justify-content: flex-end;
 }
 
+.tag,.bearingReadout {
+  font: 500 clamp(14px,1.1vw,16px)/1.35 var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
 .tag {
   white-space: nowrap;
   border: 1px solid var(--line);
   padding: 4px 8px;
   border-radius: 3px;
-  font: 11px/1.4 var(--mono);
   color: #d1dad8;
 }
 
@@ -841,6 +845,7 @@ main {
 
 .camTitle {
   gap: 16px;
+  flex-wrap: wrap;
   min-height: 44px;
   padding: 4px 14px;
   justify-content: flex-start;
@@ -853,13 +858,9 @@ main {
   gap: 12px;
 }
 
-.bearingReadout,.flightTime {
-  font: 12px var(--mono);
-  font-variant-numeric: tabular-nums;
-  color: #d9e8ec;
-}
-
 .bearingReadout {
+  color: #d9e8ec;
+  white-space: nowrap;
   padding-inline-start: 15px;
   border-inline-start: 1px solid #57656c;
 }
@@ -1352,16 +1353,12 @@ main {
   .bearingReadout {
     gap: 6px;
     padding-left: 6px;
-    font-size: 11px;
   }
   .descriptor {
     display: none;
   }
   .lesson {
     width: 34%;
-  }
-  .flightTime {
-    font-size: 11px;
   }
   .camTitle {
     gap: 8px;
@@ -1423,7 +1420,6 @@ main {
     gap: 4px;
   }
   .tag {
-    font-size: 10px;
     padding: 1px 5px;
   }
   .deck {
@@ -1452,10 +1448,6 @@ main {
     padding: 2px 0 0;
     border: 0;
     color: #f2f8f9;
-    font: 11px var(--mono);
-  }
-  .flightTime {
-    font: 11px var(--sans);
   }
   .clockSlider {
     width: 90px;
@@ -1672,9 +1664,6 @@ main {
   .descriptor,.flightHead p {
     display: none;
   }
-  .flightTime {
-    font-size: 11px;
-  }
   .headerActions button {
     min-height: 25px;
     padding: 2px 6px;
@@ -1712,7 +1701,6 @@ main {
     border: 0;
     background: #09131be8;
     pointer-events: none;
-    font-size: 11px;
   }
   .clockSlider .rateStops {
     display: none;
