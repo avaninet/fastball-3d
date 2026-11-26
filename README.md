@@ -48,6 +48,7 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 | Look / aim | Drag the forward visor or tap a point to center it. Arrow keys turn 2°. Hold **Shift** for 0.25° steps. Use the **STN** cue to find the station when it’s off-screen. |
 | Select equipment | Click or tap the rack, or press **1–9** in ascending weight order. After a release the lightest remaining tool is selected. |
 | Set power and release | Drag **Throw power**, or use **[** and **]** for one percentage point at a time. Press **Throw**, or **Enter** with the forward visor focused. Each tool gets one release. |
+| Preview the next throw | Tick **Preview throw** under **Current coast** in either flight model. The solid violet path shows where the suit would coast with this aim, tool and power. The dashed mint path shows where it’s already going. Turn the preview off at any time. |
 | Pause / resume | Use the clock button or **P**. In manual flight you can read instruments while paused and resume to aim. Opening **Guide** or **New flight** pauses a running flight. Close the dialog and press **Resume** when ready. |
 | Speed up a coast | Drag **Play speed** to **1×**, **10×**, **20×** or **30×**. Every throw resets it to 1×. A clock interruption longer than one real second pauses the simulation. |
 

@@ -13,9 +13,29 @@ const randomSeed=()=>'D-'+hex(crypto.getRandomValues(new Uint32Array(1))[0]);
 function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector);dirty=true;}}
 function setMsg(msg){el('message').textContent=msg;}
 function stationDirection(){return scale(flight.pos.p,-1);}
+function forecastFrom(anchor,skipInitial){
+  return Flight.forecast(anchor,Math.max(0,flight.limit-flight.time),flight.mode,skipInitial,flight.soft);
+}
 function reseat(skipInitial=false) {
   flight.anchor={p:flight.pos.p.slice(),v:flight.pos.v.slice()};flight.age=0;flight.hitIndex=0;
-  flight.forecast=Flight.forecast(flight.anchor,Math.max(0,flight.limit-flight.time),flight.mode,skipInitial,flight.soft);
+  flight.forecast=forecastFrom(flight.anchor,skipInitial);
+}
+function predictThrow(){
+  if(!el('showPreview').checked||flight.done||selected<0||!(flight.mask&(1<<selected)))return null;
+  const anchor=Flight.release(flight.pos,selected,power,Flight.direction(yaw,pitch),flight.mask);
+  const forecast=forecastFrom(anchor,Flight.inside(anchor.p)&&flight.misses>0);
+  return {anchor,pos:anchor,mode:flight.mode,soft:flight.soft,age:0,forecast,hitIndex:0};
+}
+function describePreview(preview){
+  const hit=preview.forecast.hits[0];
+  if(hit){
+    const fast=preview.soft&&!Flight.softEnough(hit.speed);
+    const event=fast?'Fast entry':'Grab';
+    return event+(hit.t===0?' now':' in '+clock(Math.ceil(hit.t)))+' · '+Readout.speed(hit.speed)+' m/s';
+  }
+  const near=preview.forecast.near;
+  if(Flight.inside(preview.anchor.p))return 'Inside bars · '+Readout.speed(norm(preview.anchor.v))+' m/s';
+  return 'Closest clearance '+near.d.toFixed(1)+' m · '+(near.t<.01?'now':clock(Math.ceil(near.t))+' from now');
 }
 function start(index,mode,soft,seed=0,story=false,lesson=null) {
   const initial=Flight.opening(index,seed,story);
@@ -99,6 +119,8 @@ function sync(now=performance.now()) {
   return true;
 }
 function updateRack() {
+  dirty=true;
+  el('showPreview').disabled=!!flight.done||selected<0;
   for(const [i,g] of Flight.gear.entries()) {
     const b=el('tool'+i),present=!!(flight.mask&(1<<i));b.disabled=!present||!canPitch();
     b.classList.toggle('spent',!present);
@@ -221,6 +243,14 @@ function pause(){
   invalidateInput();started=true;running=true;lastTime=performance.now();dirty=true;updateRack();instruments();
   setMsg(flight.story?'Clock running. Aim, throw, or pause to line up.':'Clock running. Drag or tap the visor, choose power, then throw.');
 }
+function paintVisors(){
+  const preview=predictThrow(),result=el('previewResult');
+  result.hidden=!preview;
+  const description=preview?describePreview(preview):'';
+  if(result.textContent!==description)result.textContent=description;
+  Visor.render(visor,yaw,pitch,flight,false,visorBackdrop,preview);
+  Visor.render(aft,yaw+180,-pitch,flight,true,null,preview);
+}
 function frame(now) {
   sync(now);
   updateLossDebrief(now);
@@ -229,11 +259,12 @@ function frame(now) {
     el('visorHeading').textContent='HDG '+Readout.heading(yaw,2)+'°';
     el('visorElevation').textContent='EL '+Readout.signed(pitch,2)+'°';
     el('flightTime').textContent=clock(flight.time);
-    Visor.render(visor,yaw,pitch,flight,false,visorBackdrop);Visor.render(aft,yaw+180,-pitch,flight,true);lastPaint=now;dirty=false;
+    paintVisors();lastPaint=now;dirty=false;
   }
   if(running && now-lastText>=135){instruments();lastText=now;}
   requestAnimationFrame(frame);
 }
+el('showPreview').onchange=()=>{dirty=true;};
 for(const [slot,i] of rackOrder.entries()) {
   const g=Flight.gear[i],keyNumber=slot+1;
   const b=document.createElement('button');b.id='tool'+i;b.className='tool';b.title=g.name+' · '+weightClass(g)+' · '+g.mass.toFixed(1)+' kg · key '+keyNumber;

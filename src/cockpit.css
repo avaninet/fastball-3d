@@ -135,6 +135,10 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
 .driftData{padding-top:5px;border-top:1px solid var(--instrument-line);display:flex;justify-content:space-between;gap:4px;flex-wrap:wrap}
 .driftData .micro,.driftData span:last-child{font:12px/1.25 var(--sans);color:#d8e5e7;text-transform:none;letter-spacing:0}
 .velocity{padding:8px 10px;border-top:1px solid var(--instrument-line)}
+.previewControl{border-top:1px solid var(--instrument-line);padding:2px 10px}
+.previewControl label{display:flex;align-items:center;gap:6px;min-height:30px;cursor:pointer;font:600 13px/1.25 var(--sans);color:#e6c5ff}
+.previewControl input{margin:0;width:15px;height:15px;accent-color:#dba6ff}
+.previewControl output:not([hidden]){display:block;padding-bottom:5px;font:12px/1.25 var(--sans);color:#f0dbff}
 .velocity dl{display:flex;flex-direction:column;gap:3px}
 .velocity h2{font-size:12px}.velocity h2 small,.velocity dt{font:12px/1.2 var(--sans);color:#d8e6e8}
 .velocity dd{font:12px/1.25 var(--mono);color:#c5f4e2}

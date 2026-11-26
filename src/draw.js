@@ -71,7 +71,7 @@ const Visor = (() => {
     const z=2*starRandom()-1,azimuth=2*Math.PI*starRandom(),radius=Math.sqrt(1-z*z);
     const brightness=starRandom();
     return {x:radius*Math.cos(azimuth),y:radius*Math.sin(azimuth),z,brightness,
-      size:.95+.48*brightness,color:brightness>.94?'#a2b8c3':brightness>.72?'#768c99':'#586c79'};
+      size:1.24+.59*brightness,color:brightness>.94?'#e4eff8':brightness>.72?'#c3d6e5':'#98afbf'};
   });
   const half=Flight.half,edges=[];
   for(let axis=0;axis<3;axis++)for(const j of [-1,1])for(const k of [-1,1]){
@@ -181,10 +181,11 @@ const Visor = (() => {
   // Measure from the suit in metres. A coast that curves back toward the
   // viewer should brighten again even though those samples are later in time.
   function depthWeight(range){return 14/(14+range);}
-  function coastInk(weight){
+  function coastInk(weight,preview){
+    if(preview)return 'rgb('+Math.round(163+77*weight)+','+Math.round(117+81*weight)+','+Math.round(214+41*weight)+')';
     return 'rgb('+Math.round(100+91*weight)+','+Math.round(172+82*weight)+','+Math.round(171+59*weight)+')';
   }
-  function coastPath(ctx,cam,state,hit,small){
+  function coastPath(ctx,cam,state,hit,small,preview){
     let previous=cam.world(state.pos.p),dashOffset=0;
     function segment(point){
       const current=cam.world(point);
@@ -195,10 +196,11 @@ const Visor = (() => {
       const start=cam.screen(a),end=cam.screen(b);
       const weight=(depthWeight(norm(a))+depthWeight(norm(b)))/2;
       ctx.lineDashOffset=dashOffset;
-      stroke(ctx,start,end,coastInk(weight),(small?1.1:1.4)+weight);
+      stroke(ctx,start,end,coastInk(weight,preview),(small?1.1:1.4)+weight);
       dashOffset=(dashOffset+Math.hypot(end[0]-start[0],end[1]-start[1]))%10;
     }
-    ctx.save();ctx.setLineDash([5,5]);
+    ctx.save();ctx.setLineDash(preview?[]:[5,5]);
+    if(preview)ctx.lineCap='round';
     for(const {p,t} of state.forecast.path){
       if(hit&&t>=hit.t)break;
       if(t>state.age)segment(p);
@@ -208,8 +210,7 @@ const Visor = (() => {
   }
   // From the suit, all points on a straight coast have one screen bearing.
   // Space curved arrows in pixels and retain one end-on mark on a flat projection.
-  function courseGlyphs(cam,state,w,h){
-    const hit=state.forecast.hits[state.hitIndex];
+  function courseGlyphs(cam,state,w,h,hit=state.forecast.hits[state.hitIndex]){
     const stop=hit?.t??state.forecast.path.at(-1).t;
     let previous=null,visible=null;
     const heads=[];
@@ -227,18 +228,41 @@ const Visor = (() => {
     }
     return {heads,visible,behind:dot(state.pos.v,cam.forward)<0};
   }
-  function course(ctx,cam,state,small,w,h,label) {
-    if(!state.time&&!state.throws)return;
-    const m=state.forecast,hit=m.hits[state.hitIndex];
-    coastPath(ctx,cam,state,hit,small);
-    const {heads,visible,behind}=courseGlyphs(cam,state,w,h);
+  function course(ctx,cam,state,small,w,h,label,preview=false) {
+    if(!preview&&!state.time&&!state.throws)return;
+    const m=state.forecast;
+    const hit=preview&&state.soft?m.hits.find(entry=>Flight.softEnough(entry.speed)):m.hits[state.hitIndex];
+    coastPath(ctx,cam,state,hit,small,preview);
+    const {heads,visible,behind}=courseGlyphs(cam,state,w,h,hit??null);
     for(const {at,angle,range} of heads){
       const weight=depthWeight(range),length=(small?3.8:4.6)+(small?4:6)*weight;
       ctx.save();ctx.translate(...at);ctx.rotate(angle);
       ctx.beginPath();ctx.moveTo(-length,-length*.62);ctx.lineTo(0,0);ctx.lineTo(-length,length*.62);
+      if(preview)ctx.closePath();
       ctx.lineJoin='round';ctx.lineWidth=3.4;ctx.strokeStyle='#0b1b22';ctx.stroke();
-      ctx.lineWidth=1.4+.65*weight;ctx.strokeStyle=coastInk(weight);ctx.stroke();
+      ctx.lineWidth=1.4+.65*weight;ctx.strokeStyle=coastInk(weight,preview);
+      if(preview){ctx.fillStyle=ctx.strokeStyle;ctx.fill();}
+      ctx.stroke();
       ctx.restore();
+    }
+    if(preview){
+      const pass=m.hits[0]||m.near,q=cam.world(pass.p);
+      if(q[2]>=near){
+        const [x,y]=cam.screen(q),r=3+3*depthWeight(norm(q));
+        ctx.strokeStyle='#dfb3fd';ctx.lineWidth=1.7;ctx.beginPath();
+        ctx.moveTo(x-r,y);ctx.lineTo(x+r,y);ctx.moveTo(x,y-r);ctx.lineTo(x,y+r);ctx.stroke();
+      }
+      if(!heads.length&&visible){
+        const [x,y]=visible,end=hit||m.path.at(-1);
+        const radius=8+4*depthWeight(norm(sub(end.p,state.pos.p)));
+        ctx.beginPath();ctx.moveTo(x,y-radius);ctx.lineTo(x+radius,y);ctx.lineTo(x,y+radius);ctx.lineTo(x-radius,y);ctx.closePath();
+        ctx.lineWidth=1.8;ctx.strokeStyle='#e1b3ff';ctx.stroke();
+        label(x,clamp(y-radius-5,14,h-5),'AFTER THROW','#eed5ff','center');
+      }else if(!visible){
+        const where=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
+        label(w/2,small?14:h/2-30,'PREVIEW '+where,'#eed5ff','center');
+      }
+      return;
     }
     if(!heads.length && visible){
       ctx.strokeStyle='#a2efd4';ctx.beginPath();ctx.arc(...visible,7,0,Math.PI*2);ctx.stroke();
@@ -286,7 +310,7 @@ const Visor = (() => {
   function drawStars(ctx,cam,w,h,state,sceneHeight){
     // Inertial bearings rotate into the station frame as it follows its orbit.
     const angle=state.mode==='Orbital'?-Flight.n*state.time:0,c=Math.cos(angle),s=Math.sin(angle);
-    const cutoff=1-clamp(w*h/320000,.20,1);
+    const cutoff=1-clamp(w*h/320000,.30,1);
     for(const star of stars){
       if(star.brightness<cutoff)continue;
       const x=c*star.x-s*star.y,y=s*star.x+c*star.y;
@@ -299,7 +323,7 @@ const Visor = (() => {
       ctx.fillRect(px-star.size/2,py-star.size/2,star.size,star.size);
     }
   }
-  function render(canvas,az,el,state,small=false,backdrop=null) {
+  function render(canvas,az,el,state,small=false,backdrop=null,preview=null) {
     const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
     const ratio=Math.min(window.devicePixelRatio||1,1.75);
     const width=Math.round(w*ratio),height=Math.round(h*ratio);
@@ -315,7 +339,9 @@ const Visor = (() => {
     background(surface,ctx,w,sceneHeight,cam,!!(state.dragging||state.keyAiming),h/2);
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const label=captions(ctx,canvas,w,small);
-    station(ctx,cam);course(ctx,cam,state,small,w,h,label);
+    station(ctx,cam);
+    if(preview)course(ctx,cam,preview,small,w,h,label,true);
+    course(ctx,cam,state,small,w,h,label);
     for(const obj of state.objects){
       const where=Flight.motion(obj.start,state.time-obj.time,state.mode).p,q=cam.world(where);if(q[2]<near)continue;
       const [x,y]=cam.screen(q),r=clamp(cam.f*.085/q[2],1.8,9);

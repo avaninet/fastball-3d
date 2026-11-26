@@ -160,7 +160,7 @@
       const ctx=canvas.getContext('2d'),paint=ctx.fillRect.bind(ctx);
       let points;
       ctx.fillRect=(x,y,w,h)=>{
-        if(w===h&&w>0&&w<1.5)points.set(w,[x+w/2,y+h/2]);
+        if(w===h&&w>=1.24&&w<1.84)points.set(w,[x+w/2,y+h/2]);
         paint(x,y,w,h);
       };
       function look(az,el,time=0,small=false,dragging=false){
@@ -198,6 +198,70 @@
     click('tool2');keys('ArrowLeft');set('power',73);click('throw');instruments();
     eq(el('tool2').disabled&&el('tool2').textContent.includes('Released')&&el('budget').textContent.includes(Flight.budgets[flight.mask].toFixed(3)),'rack budget');
     eq(el('advice').getBoundingClientRect().bottom<=innerHeight&&scrollY===0,'read coast');
+  });
+  test('Preview follows the selected release and agrees with both flight models',()=>{
+    const toggle=el('showPreview');
+    eq(!toggle.checked&&!predictThrow(),'preview defaults off');
+    click('showPreview');
+    try{
+      for(const mode of ['Straight-Line','Orbital']){
+        configure(0,mode,true,true);click('away');
+        const committed=flight.forecast,rack=flight.mask,heavy=predictThrow();
+        click('tool6');const light=predictThrow();
+        eq(norm(sub(light.pos.v,flight.pos.v))<norm(sub(heavy.pos.v,flight.pos.v)),'selected mass');
+        set('power',45);const low=predictThrow();
+        close(norm(sub(low.pos.v,flight.pos.v))/norm(sub(light.pos.v,flight.pos.v)),45/95);
+        keys('ArrowLeft');eq(norm(sub(predictThrow().pos.v,low.pos.v))>1e-6,'reticle heading');
+        click('tool5');set('power',95);click('away');
+        const preview=predictThrow();
+        paintVisors();eq(!el('previewResult').hidden&&el('previewResult').textContent===describePreview(preview),'visible readout');
+        eq(flight.forecast===committed&&flight.mask===rack&&!flight.throws&&!flight.log.releases.length,'no simulated release committed');
+        click('throw');
+        eq(JSON.stringify(flight.forecast)===JSON.stringify(preview.forecast),'full sampled coast, entries and nearest pass match');
+        eq(flight.log.releases.length===1&&norm(sub(flight.pos.v,preview.pos.v))<1e-10,'real recoil matches');
+        advance(20);const later=predictThrow();
+        eq(later.forecast.path.at(-1).t===flight.limit-flight.time,'uses remaining oxygen');
+        eq(norm(sub(later.anchor.p,flight.pos.p))<1e-10,'starts from current position');
+      }
+      configure(0,'Orbital',true);keys('p');
+      const freeze=predictThrow();keys('ArrowUp');click('tool6');set('power',35);
+      eq(JSON.stringify(freeze.anchor)===JSON.stringify(predictThrow().anchor)&&!flight.throws,'manual pause still locks aim and release');
+      flight.mask=0;selected=-1;updateRack();paintVisors();
+      eq(toggle.disabled&&el('previewResult').hidden&&!predictThrow(),'empty rack clears preview');
+    }finally{
+      configure(0,'Straight-Line');if(toggle.checked)click('showPreview');paintVisors();
+    }
+  });
+  test('Violet preview projects into either lens with depth and a distinct end-on mark',()=>{
+    const canvas=document.createElement('canvas');
+    canvas.style.cssText='position:fixed;left:-1000px;width:640px;height:320px';
+    document.body.append(canvas);
+    const ctx=canvas.getContext('2d'),stroke=ctx.stroke,fillText=ctx.fillText;
+    let strokes=[],captions=[];
+    ctx.stroke=function(){
+      const ink=this.strokeStyle,red=parseInt(ink.slice(1,3),16),green=parseInt(ink.slice(3,5),16),blue=parseInt(ink.slice(5,7),16);
+      if(blue>red&&red>green+20&&green>=117)strokes.push([this.lineWidth,ink,this.getLineDash().length]);
+      stroke.call(this);
+    };
+    ctx.fillText=function(...args){captions.push(args[0]);fillText.apply(this,args);};
+    try{
+      click('showPreview');
+      for(const mode of ['Straight-Line','Orbital']){
+        configure(0,mode,false,true);click('away');const path=predictThrow();
+        const [az,elevation]=Flight.angles(path.pos.v);
+        for(const small of [false,true]){
+          strokes=[];captions=[];
+          Visor.render(canvas,az,elevation,flight,small,null,path);
+          eq(strokes.length>0&&strokes.every(s=>s[2]===0),'solid violet path');
+          eq(new Set(strokes.map(s=>s[0])).size>2&&new Set(strokes.map(s=>s[1])).size>2,'weight and brightness vary with range');
+          if(mode==='Straight-Line')eq(captions.includes('AFTER THROW'),'distinct end-on diamond caption');
+          captions=[];Visor.render(canvas,az+180,-elevation,flight,small,null,path);
+          eq(captions.includes(small?'PREVIEW FORWARD':'PREVIEW AFT'),'opposite lens shows the preview bearing');
+          strokes=[];Visor.render(canvas,az,elevation,flight,small);
+          eq(!strokes.length,'violet disappears when preview is off');
+        }
+      }
+    }finally{canvas.remove();if(el('showPreview').checked)click('showPreview');}
   });
   test('Story bearings, paused lineup and historical battery',()=>{
     for(const mode of ['Straight-Line','Orbital']){

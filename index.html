@@ -141,6 +141,10 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
 .driftData{padding-top:5px;border-top:1px solid var(--instrument-line);display:flex;justify-content:space-between;gap:4px;flex-wrap:wrap}
 .driftData .micro,.driftData span:last-child{font:12px/1.25 var(--sans);color:#d8e5e7;text-transform:none;letter-spacing:0}
 .velocity{padding:8px 10px;border-top:1px solid var(--instrument-line)}
+.previewControl{border-top:1px solid var(--instrument-line);padding:2px 10px}
+.previewControl label{display:flex;align-items:center;gap:6px;min-height:30px;cursor:pointer;font:600 13px/1.25 var(--sans);color:#e6c5ff}
+.previewControl input{margin:0;width:15px;height:15px;accent-color:#dba6ff}
+.previewControl output:not([hidden]){display:block;padding-bottom:5px;font:12px/1.25 var(--sans);color:#f0dbff}
 .velocity dl{display:flex;flex-direction:column;gap:3px}
 .velocity h2{font-size:12px}.velocity h2 small,.velocity dt{font:12px/1.2 var(--sans);color:#d8e6e8}
 .velocity dd{font:12px/1.25 var(--mono);color:#c5f4e2}
@@ -240,6 +244,7 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
 <article class="aftPod"><div class="panelTitle"><h2 class="camLabel"><span class="indicator"></span>Aft camera</h2><span class="cameraMeta">Reverse view</span></div><div class="view aft"><canvas id="aft" aria-label="Unmirrored view opposite the forward visor"></canvas><span class="gameOverFlag" aria-hidden="true">GAME OVER</span></div></article>
 <section class="panel metrics" aria-label="Flight instruments"><div class="metricStrip"><div class="metric"><span class="caption">Bar range</span><strong id="range"></strong><small>m</small></div><div class="metric"><span class="caption" title="Negative means the gap to the grab bars is shrinking">Range rate</span><strong id="rate"></strong><small>m/s</small></div><div class="metric"><span class="caption">Relative speed</span><strong id="speed"></strong><small>m/s</small><div id="speedGauge" role="meter" aria-label="Relative speed" aria-valuemin="0" aria-valuemax="0.12" aria-valuenow="0"><i></i></div><span id="speedRef"></span></div><div class="metric clock"><span class="caption">Oxygen reserve</span><strong id="oxygen"></strong></div></div>
 <article class="panel coastPanel"><div class="coastTitle"><span class="trace"></span><h2>Current coast</h2></div><div class="readout" id="coast"></div><p id="advice"></p><div class="driftData"><span class="micro">Drift direction</span><span id="driftAngles"></span></div></article>
+<div class="previewControl"><label title="Show the suit’s predicted coast if you release the selected tool now"><input id="showPreview" type="checkbox" aria-describedby="previewResult">Preview throw</label><output id="previewResult" for="showPreview power" aria-live="off" hidden></output></div>
 <div class="velocity"><h2>Station-relative velocity <small>m/s</small></h2><dl><div><dt>Radial · X</dt><dd id="velX"></dd></div><div><dt>Along-track · Y</dt><dd id="velY"></dd></div><div><dt>Cross-track · Z</dt><dd id="velZ"></dd></div><div><dt>Suit + gear</dt><dd id="suitMass"></dd></div></dl></div>
 </section>
 <div class="pitchPod">
@@ -260,6 +265,7 @@ main{flex:1;display:flex;flex-direction:column;padding-bottom:10px}
 <p>BOREX designed its first spacesuit for servicing fleets of commercial datacenter satellites. It gives a technician more room to maneuver and is supposed to bring them home automatically. Tommi is out to cold-reboot an inference server when her tether parts and the thruster valves stick closed. Without either, a drifting astronaut is presumed lost. Station commander Julian Bern still has her on radar.</p>
 <p>Newton’s third law gives Tommi one last pitch. Fling a wrench out into space and the wrench pushes back on you. She grips the handle, loosens her fingers and grips again, just as she would a ball on Saturday. Ten minutes of air. The station a little farther away with every second. Here in Earth’s shadow under a new moon, Tommi looks down the throat of death. She takes a breath. She’s going to pitch her way home. Bern would appreciate it if she could spare the drill. It’s practically her pet, and the crew only has the one.</p></details>
 <h3>Pitch from the forward visor</h3><p>Begin flight starts the oxygen clock. Drag to turn or tap to center a bearing. Select a slot, adjust power and press Throw. Turning alone leaves your velocity unchanged.</p>
+<h3>Preview a throw</h3><p>Switch on Preview throw under Current coast to see where your suit would go if you released the selected tool now. The solid violet line and filled arrows update with your aim, tool and power. Farther arrows are smaller and dimmer. A violet cross marks the first contact or nearest pass. Looking straight down the path, you’ll see a diamond. The sidebar gives the projected grab, fast entry or closest clearance. Check aft when recoil takes you behind the crosshair. The dashed mint line shows your actual coast.</p>
 <h3>The night-side sky</h3><p>Tommi is in Earth’s shadow. The Moon is new. On this pass, it lies below Tommi’s horizon along with the Sun. Look for the faint stars above Earth’s curved edge. They give you a reference as you turn the visor.</p>
 <h3>Read both cameras</h3><p>STN points toward the station when it leaves the frame. The aft view looks straight behind you. Mint arrows point along your committed coast. Nearby dashes are brighter and thicker. Farther arrows look smaller. Looking straight down a Straight-Line coast, you’ll see a ring and the distance from your suit to contact or to your position at oxygen expiry. If the path looks end-on, read the time, side and clearance under Current coast. A negative range rate means the gap to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the 0.080 m/s soft limit, shown as a reference during any-speed flights. Positive X points away from Earth, +Y along the orbit and +Z above its plane. The whole 14 × 14 × 3.2 m outline is within reach, including the gaps between panels.</p>
 <h3>Trim and brake</h3><p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you which way to aim in the forward visor. If it says to aim up and right, a light pitch that way nudges the suit down and left. The hint follows you as you turn. Pitch along measured drift to brake. Soft capture takes effect anywhere inside the bars at 0.080 m/s or slower. After a fast entry, brake while still within reach or coast through and return. After the last throw, the flight ends if the coast misses the bars or every remaining chance to grab is too fast. If Orbital drift will slow you enough within reach, keep coasting.</p>
@@ -588,7 +594,7 @@ const Visor = (() => {
     const z=2*starRandom()-1,azimuth=2*Math.PI*starRandom(),radius=Math.sqrt(1-z*z);
     const brightness=starRandom();
     return {x:radius*Math.cos(azimuth),y:radius*Math.sin(azimuth),z,brightness,
-      size:.95+.48*brightness,color:brightness>.94?'#a2b8c3':brightness>.72?'#768c99':'#586c79'};
+      size:1.24+.59*brightness,color:brightness>.94?'#e4eff8':brightness>.72?'#c3d6e5':'#98afbf'};
   });
   const half=Flight.half,edges=[];
   for(let axis=0;axis<3;axis++)for(const j of [-1,1])for(const k of [-1,1]){
@@ -698,10 +704,11 @@ const Visor = (() => {
   // Measure from the suit in metres. A coast that curves back toward the
   // viewer should brighten again even though those samples are later in time.
   function depthWeight(range){return 14/(14+range);}
-  function coastInk(weight){
+  function coastInk(weight,preview){
+    if(preview)return 'rgb('+Math.round(163+77*weight)+','+Math.round(117+81*weight)+','+Math.round(214+41*weight)+')';
     return 'rgb('+Math.round(100+91*weight)+','+Math.round(172+82*weight)+','+Math.round(171+59*weight)+')';
   }
-  function coastPath(ctx,cam,state,hit,small){
+  function coastPath(ctx,cam,state,hit,small,preview){
     let previous=cam.world(state.pos.p),dashOffset=0;
     function segment(point){
       const current=cam.world(point);
@@ -712,10 +719,11 @@ const Visor = (() => {
       const start=cam.screen(a),end=cam.screen(b);
       const weight=(depthWeight(norm(a))+depthWeight(norm(b)))/2;
       ctx.lineDashOffset=dashOffset;
-      stroke(ctx,start,end,coastInk(weight),(small?1.1:1.4)+weight);
+      stroke(ctx,start,end,coastInk(weight,preview),(small?1.1:1.4)+weight);
       dashOffset=(dashOffset+Math.hypot(end[0]-start[0],end[1]-start[1]))%10;
     }
-    ctx.save();ctx.setLineDash([5,5]);
+    ctx.save();ctx.setLineDash(preview?[]:[5,5]);
+    if(preview)ctx.lineCap='round';
     for(const {p,t} of state.forecast.path){
       if(hit&&t>=hit.t)break;
       if(t>state.age)segment(p);
@@ -725,8 +733,7 @@ const Visor = (() => {
   }
   // From the suit, all points on a straight coast have one screen bearing.
   // Space curved arrows in pixels and retain one end-on mark on a flat projection.
-  function courseGlyphs(cam,state,w,h){
-    const hit=state.forecast.hits[state.hitIndex];
+  function courseGlyphs(cam,state,w,h,hit=state.forecast.hits[state.hitIndex]){
     const stop=hit?.t??state.forecast.path.at(-1).t;
     let previous=null,visible=null;
     const heads=[];
@@ -744,18 +751,41 @@ const Visor = (() => {
     }
     return {heads,visible,behind:dot(state.pos.v,cam.forward)<0};
   }
-  function course(ctx,cam,state,small,w,h,label) {
-    if(!state.time&&!state.throws)return;
-    const m=state.forecast,hit=m.hits[state.hitIndex];
-    coastPath(ctx,cam,state,hit,small);
-    const {heads,visible,behind}=courseGlyphs(cam,state,w,h);
+  function course(ctx,cam,state,small,w,h,label,preview=false) {
+    if(!preview&&!state.time&&!state.throws)return;
+    const m=state.forecast;
+    const hit=preview&&state.soft?m.hits.find(entry=>Flight.softEnough(entry.speed)):m.hits[state.hitIndex];
+    coastPath(ctx,cam,state,hit,small,preview);
+    const {heads,visible,behind}=courseGlyphs(cam,state,w,h,hit??null);
     for(const {at,angle,range} of heads){
       const weight=depthWeight(range),length=(small?3.8:4.6)+(small?4:6)*weight;
       ctx.save();ctx.translate(...at);ctx.rotate(angle);
       ctx.beginPath();ctx.moveTo(-length,-length*.62);ctx.lineTo(0,0);ctx.lineTo(-length,length*.62);
+      if(preview)ctx.closePath();
       ctx.lineJoin='round';ctx.lineWidth=3.4;ctx.strokeStyle='#0b1b22';ctx.stroke();
-      ctx.lineWidth=1.4+.65*weight;ctx.strokeStyle=coastInk(weight);ctx.stroke();
+      ctx.lineWidth=1.4+.65*weight;ctx.strokeStyle=coastInk(weight,preview);
+      if(preview){ctx.fillStyle=ctx.strokeStyle;ctx.fill();}
+      ctx.stroke();
       ctx.restore();
+    }
+    if(preview){
+      const pass=m.hits[0]||m.near,q=cam.world(pass.p);
+      if(q[2]>=near){
+        const [x,y]=cam.screen(q),r=3+3*depthWeight(norm(q));
+        ctx.strokeStyle='#dfb3fd';ctx.lineWidth=1.7;ctx.beginPath();
+        ctx.moveTo(x-r,y);ctx.lineTo(x+r,y);ctx.moveTo(x,y-r);ctx.lineTo(x,y+r);ctx.stroke();
+      }
+      if(!heads.length&&visible){
+        const [x,y]=visible,end=hit||m.path.at(-1);
+        const radius=8+4*depthWeight(norm(sub(end.p,state.pos.p)));
+        ctx.beginPath();ctx.moveTo(x,y-radius);ctx.lineTo(x+radius,y);ctx.lineTo(x,y+radius);ctx.lineTo(x-radius,y);ctx.closePath();
+        ctx.lineWidth=1.8;ctx.strokeStyle='#e1b3ff';ctx.stroke();
+        label(x,clamp(y-radius-5,14,h-5),'AFTER THROW','#eed5ff','center');
+      }else if(!visible){
+        const where=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
+        label(w/2,small?14:h/2-30,'PREVIEW '+where,'#eed5ff','center');
+      }
+      return;
     }
     if(!heads.length && visible){
       ctx.strokeStyle='#a2efd4';ctx.beginPath();ctx.arc(...visible,7,0,Math.PI*2);ctx.stroke();
@@ -803,7 +833,7 @@ const Visor = (() => {
   function drawStars(ctx,cam,w,h,state,sceneHeight){
     // Inertial bearings rotate into the station frame as it follows its orbit.
     const angle=state.mode==='Orbital'?-Flight.n*state.time:0,c=Math.cos(angle),s=Math.sin(angle);
-    const cutoff=1-clamp(w*h/320000,.20,1);
+    const cutoff=1-clamp(w*h/320000,.30,1);
     for(const star of stars){
       if(star.brightness<cutoff)continue;
       const x=c*star.x-s*star.y,y=s*star.x+c*star.y;
@@ -816,7 +846,7 @@ const Visor = (() => {
       ctx.fillRect(px-star.size/2,py-star.size/2,star.size,star.size);
     }
   }
-  function render(canvas,az,el,state,small=false,backdrop=null) {
+  function render(canvas,az,el,state,small=false,backdrop=null,preview=null) {
     const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
     const ratio=Math.min(window.devicePixelRatio||1,1.75);
     const width=Math.round(w*ratio),height=Math.round(h*ratio);
@@ -832,7 +862,9 @@ const Visor = (() => {
     background(surface,ctx,w,sceneHeight,cam,!!(state.dragging||state.keyAiming),h/2);
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const label=captions(ctx,canvas,w,small);
-    station(ctx,cam);course(ctx,cam,state,small,w,h,label);
+    station(ctx,cam);
+    if(preview)course(ctx,cam,preview,small,w,h,label,true);
+    course(ctx,cam,state,small,w,h,label);
     for(const obj of state.objects){
       const where=Flight.motion(obj.start,state.time-obj.time,state.mode).p,q=cam.world(where);if(q[2]<near)continue;
       const [x,y]=cam.screen(q),r=clamp(cam.f*.085/q[2],1.8,9);
@@ -1103,9 +1135,29 @@ const randomSeed=()=>'D-'+hex(crypto.getRandomValues(new Uint32Array(1))[0]);
 function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector);dirty=true;}}
 function setMsg(msg){el('message').textContent=msg;}
 function stationDirection(){return scale(flight.pos.p,-1);}
+function forecastFrom(anchor,skipInitial){
+  return Flight.forecast(anchor,Math.max(0,flight.limit-flight.time),flight.mode,skipInitial,flight.soft);
+}
 function reseat(skipInitial=false) {
   flight.anchor={p:flight.pos.p.slice(),v:flight.pos.v.slice()};flight.age=0;flight.hitIndex=0;
-  flight.forecast=Flight.forecast(flight.anchor,Math.max(0,flight.limit-flight.time),flight.mode,skipInitial,flight.soft);
+  flight.forecast=forecastFrom(flight.anchor,skipInitial);
+}
+function predictThrow(){
+  if(!el('showPreview').checked||flight.done||selected<0||!(flight.mask&(1<<selected)))return null;
+  const anchor=Flight.release(flight.pos,selected,power,Flight.direction(yaw,pitch),flight.mask);
+  const forecast=forecastFrom(anchor,Flight.inside(anchor.p)&&flight.misses>0);
+  return {anchor,pos:anchor,mode:flight.mode,soft:flight.soft,age:0,forecast,hitIndex:0};
+}
+function describePreview(preview){
+  const hit=preview.forecast.hits[0];
+  if(hit){
+    const fast=preview.soft&&!Flight.softEnough(hit.speed);
+    const event=fast?'Fast entry':'Grab';
+    return event+(hit.t===0?' now':' in '+clock(Math.ceil(hit.t)))+' · '+Readout.speed(hit.speed)+' m/s';
+  }
+  const near=preview.forecast.near;
+  if(Flight.inside(preview.anchor.p))return 'Inside bars · '+Readout.speed(norm(preview.anchor.v))+' m/s';
+  return 'Closest clearance '+near.d.toFixed(1)+' m · '+(near.t<.01?'now':clock(Math.ceil(near.t))+' from now');
 }
 function start(index,mode,soft,seed=0,story=false,lesson=null) {
   const initial=Flight.opening(index,seed,story);
@@ -1189,6 +1241,8 @@ function sync(now=performance.now()) {
   return true;
 }
 function updateRack() {
+  dirty=true;
+  el('showPreview').disabled=!!flight.done||selected<0;
   for(const [i,g] of Flight.gear.entries()) {
     const b=el('tool'+i),present=!!(flight.mask&(1<<i));b.disabled=!present||!canPitch();
     b.classList.toggle('spent',!present);
@@ -1311,6 +1365,14 @@ function pause(){
   invalidateInput();started=true;running=true;lastTime=performance.now();dirty=true;updateRack();instruments();
   setMsg(flight.story?'Clock running. Aim, throw, or pause to line up.':'Clock running. Drag or tap the visor, choose power, then throw.');
 }
+function paintVisors(){
+  const preview=predictThrow(),result=el('previewResult');
+  result.hidden=!preview;
+  const description=preview?describePreview(preview):'';
+  if(result.textContent!==description)result.textContent=description;
+  Visor.render(visor,yaw,pitch,flight,false,visorBackdrop,preview);
+  Visor.render(aft,yaw+180,-pitch,flight,true,null,preview);
+}
 function frame(now) {
   sync(now);
   updateLossDebrief(now);
@@ -1319,11 +1381,12 @@ function frame(now) {
     el('visorHeading').textContent='HDG '+Readout.heading(yaw,2)+'°';
     el('visorElevation').textContent='EL '+Readout.signed(pitch,2)+'°';
     el('flightTime').textContent=clock(flight.time);
-    Visor.render(visor,yaw,pitch,flight,false,visorBackdrop);Visor.render(aft,yaw+180,-pitch,flight,true);lastPaint=now;dirty=false;
+    paintVisors();lastPaint=now;dirty=false;
   }
   if(running && now-lastText>=135){instruments();lastText=now;}
   requestAnimationFrame(frame);
 }
+el('showPreview').onchange=()=>{dirty=true;};
 for(const [slot,i] of rackOrder.entries()) {
   const g=Flight.gear[i],keyNumber=slot+1;
   const b=document.createElement('button');b.id='tool'+i;b.className='tool';b.title=g.name+' · '+weightClass(g)+' · '+g.mass.toFixed(1)+' kg · key '+keyNumber;
