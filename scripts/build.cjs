@@ -15,6 +15,8 @@ const parts = {
   STORY: read('src/story.js', 'utf8'),
   PHYSICS: read('src/physics.js', 'utf8'),
   EARTH_SKY: read('src/earth.js', 'utf8'),
+  STATION: read('src/station.js', 'utf8'),
+  EQUIPMENT: read('src/equipment.js', 'utf8'),
   DRAW: read('src/draw.js', 'utf8'),
   GAME: read('src/game.js', 'utf8'),
   PATCH: 'data:image/webp;base64,' + read('assets/mission-patch.webp', 'base64'),

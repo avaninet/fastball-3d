@@ -303,6 +303,7 @@
     const ctx=canvas.getContext('2d'),stroke=ctx.stroke,fillText=ctx.fillText;
     let strokes=[],captions=[];
     ctx.stroke=function(){
+      if(typeof this.strokeStyle!=='string')return stroke.call(this);
       const ink=this.strokeStyle,red=parseInt(ink.slice(1,3),16),green=parseInt(ink.slice(3,5),16),blue=parseInt(ink.slice(5,7),16);
       if(blue>red&&red>green+20&&green>=117)strokes.push([this.lineWidth,ink,this.getLineDash().length]);
       stroke.call(this);
@@ -326,6 +327,79 @@
         }
       }
     }finally{canvas.remove();if(el('showPreview').checked)click('showPreview');}
+  });
+  test('Each thrown tool matches its rack silhouette in both lenses, including off-axis',()=>{
+    const canvas=document.createElement('canvas');
+    canvas.style.cssText='position:fixed;left:-2000px;width:640px;height:320px';document.body.append(canvas);
+    const ctx=canvas.getContext('2d'),draw=ctx.drawImage;
+    let draws=[];
+    ctx.drawImage=function(image,x,y,w,h){
+      if(arguments.length===5&&image.width===160&&image.height===112)draws.push({image,x,y,w,h});
+      return draw.apply(this,arguments);
+    };
+    function view(az,elv,small){draws=[];Visor.render(canvas,az,elv,flight,small);return draws;}
+    try{
+      for(const [i,g] of Flight.gear.entries()){
+        start(0,'Straight-Line',false,0,true);click('away');choose(i);click('throw');
+        const obj=flight.objects[0],atHand=view(yaw,pitch,false)[0];
+        eq(obj.tool===i&&atHand&&atHand.y+atHand.h/2>canvas.clientHeight/2,'leaves the hand below the reticle');
+        const image=atHand.image,rack=el('tool'+i).querySelector('canvas');
+        const raster=c=>c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+        const pixels=raster(rack);eq(raster(image).every((v,j)=>v===pixels[j]),g.name+' uses its own rack art');
+        close(atHand.w/atHand.h,image.width/image.height);
+        eq(!view(yaw+180,-pitch,true).length,'in front of the suit only');
+        const side=view(yaw+12,pitch,false)[0],aftView=view(yaw,pitch,true)[0];
+        eq(side&&aftView&&Math.abs(side.x-atHand.x)>5,'world position follows camera bearing');
+        eq(aftView.image===image&&side.image===image,'same cached bitmap for either lens');
+        close(side.w/side.h,image.width/image.height);close(aftView.w/aftView.h,image.width/image.height);
+      }
+    }finally{canvas.remove();}
+  });
+  test('Real release speed sets sprite recession, fade and retirement',()=>{
+    for(const mode of ['Straight-Line','Orbital']){
+      const samples=[];
+      for(const power of [10,100]){
+        start(0,mode,false,0,true);click('away');choose(4);set('power',power);click('throw');
+        advance(3);
+        const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+        const cam=Visor.camera(flight.pos.p,yaw,pitch,640,320,false),obj=flight.objects[0];
+        let measured;
+        ctx.drawImage=function(image,x,y,w){measured={w,alpha:this.globalAlpha,range:obj.range};};
+        Equipment.draw(ctx,cam,640,320,flight.objects,false);samples.push(measured);
+        click('pause');const position=obj.p.slice();sync(lastTime+300);
+        close(norm(sub(position,obj.p)),0);click('pause');
+        advance(12);eq(flight.objects.length===(power===10?1:0),'only the distant copy retires');
+        eq(flight.log.releases.length===1&&flight.log.releases[0].tool===4,'complete flight record survives');
+      }
+      eq(samples[0].range<samples[1].range&&samples[0].w>samples[1].w&&samples[0].alpha>samples[1].alpha,'gentler toss stays larger and brighter');
+    }
+  });
+  test('Tool visuals sweep hull and panels at speed and fly through empty gaps',()=>{
+    for(const mode of ['Straight-Line','Orbital'])for(const [x,z,open] of [[0,-2.5,false],[4,3.4,false],[2.3,1.4,true]]){
+      const state={mode,time:0,pos:{p:[x,-6,z],v:[0,0,0]},objects:[]};
+      Equipment.launch(state,4,100,orientation(90,0));eq(state.objects.length===1,'launch clear of structure');
+      state.time=3;Equipment.advance(state);
+      eq(state.objects.length===Number(open),'swept geometry at '+[mode,x,z]);
+      if(open)eq(!state.objects[0].hidden,'unobstructed sight through the gap');
+      state.time=30;Equipment.advance(state);eq(!state.objects.length,'no distant or retired visual returns');
+    }
+  });
+  test('Station gradients and amber markings read in both lenses and distant grid lines drop away',()=>{
+    const canvas=document.createElement('canvas');canvas.style.cssText='position:fixed;left:-2000px;width:640px;height:360px';
+    document.body.append(canvas);
+    const ctx=canvas.getContext('2d'),stroke=ctx.stroke,fill=ctx.fill,gradient=ctx.createLinearGradient;
+    let grid,bands,gradients;
+    ctx.stroke=function(){if(this.strokeStyle==='#91a5b6'||this.strokeStyle==='#687f96')grid++;stroke.call(this);};
+    ctx.fill=function(){if(this.fillStyle==='#d39c48')bands++;fill.call(this);};
+    ctx.createLinearGradient=function(...args){gradients++;return gradient.apply(this,args);};
+    try{
+      for(const small of [false,true])for(const far of [false,true]){
+        flight.pos.p=Flight.scale([7,-18,8],far?120:1);const [az,elv]=Flight.angles(stationDirection());
+        grid=bands=gradients=0;Visor.render(canvas,az,elv,flight,small);
+        eq(far?grid===0:grid>0,'panel subdivisions depend on projected spacing');
+        if(!far)eq(gradients>0&&bands>=2,'shading and marked end visible');
+      }
+    }finally{canvas.remove();}
   });
   test('Story bearings, paused lineup and historical battery',()=>{
     for(const mode of ['Straight-Line','Orbital']){
@@ -354,7 +428,7 @@
         }
         keys('ArrowLeft');
       }
-      eq(flight.throws===27&&flight.objects.length===27,'all actual pitches launched');
+      eq(flight.throws===27&&flight.log.releases.length===27,'all actual pitches logged');
       tick(600,30);eq(flight.done==='oxygen','clock ran through to oxygen expiry');
       completeLossTransition();click('viewLog');
       eq(el('logThrows').children.length===27&&el('logSummary').textContent.includes('27 throws'),'full release record');

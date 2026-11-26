@@ -94,6 +94,7 @@ function advance(dt) {
     const h=hits[flight.hitIndex++];
     if(!flight.soft || Flight.softEnough(h.speed)) {
       flight.time+=Math.max(0,h.t-flight.age);flight.age=h.t;flight.pos=Flight.motion(flight.anchor,h.t,flight.mode);
+      Equipment.advance(flight);
       finish('capture');return;
     }
     flight.log.fast.push({time:flight.time-flight.age+h.t,p:h.p.slice(),speed:h.speed});
@@ -101,6 +102,7 @@ function advance(dt) {
     setMsg('Fast pass at '+Readout.speed(h.speed)+' m/s. '+(flight.mask?'Brake while within reach, or circle back for a slower grab.':'Keep coasting. A slower grab is still ahead.'));
   }
   flight.time+=step;flight.age=end;flight.pos=Flight.motion(flight.anchor,end,flight.mode);
+  Equipment.advance(flight);
   if(flight.time>=flight.limit-1e-8)finish('oxygen');
   else if(flight.checkAt!==null && flight.time>=flight.checkAt-1e-8){
     flight.checkAt=null;flight.checked=true;freezeClock();
@@ -140,10 +142,10 @@ function throwTool() {
   if(!canPitch())return;
   const epoch=inputEpoch;
   sync();if(epoch!==inputEpoch||!canPitch()||selected<0||!(flight.mask&(1<<selected)))return;
-  const dir=Flight.direction(yaw,pitch),g=Flight.gear[selected],old=flight.pos;
+  const aim=orientation(yaw,pitch),dir=aim.forward,g=Flight.gear[selected],old=flight.pos;
   flight.pos=Flight.release(old,selected,power,dir,flight.mask);
   flight.log.releases.push({time:flight.time,tool:selected,power,dir:dir.slice(),p:old.p.slice(),v:flight.pos.v.slice()});
-  flight.objects.push({time:flight.time,start:{p:old.p.slice(),v:Flight.add(flight.pos.v,scale(dir,g.speed*power/100))}});
+  Equipment.launch(flight,selected,power,aim);
   flight.mask=Flight.rackAfterThrow(flight.mask,selected,flight.story);
   flight.throws++;
   if(!flight.story)selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;

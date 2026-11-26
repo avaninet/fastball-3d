@@ -1,53 +1,7 @@
 const fontStyle=getComputedStyle(document.documentElement);
 const cockpitFonts={sans:fontStyle.getPropertyValue('--sans').trim(),mono:fontStyle.getPropertyValue('--mono').trim()};
 const Visor = (() => {
-  const {add,sub,scale,dot,norm,unit,direction,clamp,rad}=Flight;
-  const faces=[];
-  function face(points,color,lines=[],edge='#384950') {faces.push({points,color,lines,edge,center:scale(points.reduce(add),1/points.length)});}
-  function box(x,y,z,w,d,h,colors) {
-    const p=(i,j,k)=>[x+i*w/2,y+j*d/2,z+k*h/2];
-    for(const k of [-1,1]) {
-      face([p(-1,-1,k),p(1,-1,k),p(1,1,k),p(-1,1,k)],colors[k>0?0:2]);
-      face([p(-1,k,-1),p(1,k,-1),p(1,k,1),p(-1,k,1)],colors[1]);
-      face([p(k,-1,-1),p(k,1,-1),p(k,1,1),p(k,-1,1)],colors[2]);
-    }
-  }
-  const steel=['#e4e2ce','#adb8b7','#76858b'],rail=['#d5c089','#a48c61','#6c675c'];
-  function wing(x,z,w,h,solar) {
-    const accent=solar?'#91a5b6':'#969e96', col=solar?'#364d69':'#d2d6c8';
-    box(x,0,z,w,.13,h,solar?['#d0a769',col,'#746247']:steel);
-    for(const side of [-1,1]) {
-      const p=(a,b)=>[x+(a-.5)*w,.074*side,z+(b-.5)*h], lines=[];
-      for(let k=1;k<(solar?8:5);k++) lines.push([p(k/(solar?8:5),0),p(k/(solar?8:5),1),accent]);
-      for(let k=1;k<(solar?5:3);k++) lines.push([p(0,k/(solar?5:3)),p(1,k/(solar?5:3)),solar?'#687f96':'#a4aaa0']);
-      if(solar) lines.push([p(.5,0),p(.5,1),'#d5ab72',1.4]);
-      face([p(0,0),p(1,0),p(1,1),p(0,1)],col,lines,solar?'#e4b778':'#edf0dd');
-    }
-  }
-  function moduleZ(z0,z1,radius,x=0,y=-.2) {
-    const ring=(a,z,r=radius)=>[x+Math.cos(a)*r,y+Math.sin(a)*r,z];
-    const shades=['#d8ddcf','#a1aaa9','#899391','#7c8587','#889593','#aeb7af','#dce1d6','#f0eee1','#e0e2d4','#c8cfc6'];
-    const ends=[[],[]];
-    for(let i=0;i<10;i++) {
-      const a=i*Math.PI/5,b=(i+1)*Math.PI/5;
-      const lines=[.14,.81,.9].map(t=>[ring(a,z0+(z1-z0)*t),ring(b,z0+(z1-z0)*t),'#737f80',1]);
-      face([ring(a,z0),ring(b,z0),ring(b,z1),ring(a,z1)],shades[i],lines,'#8b9596');
-      ends[0].push(ring(a,z0));ends[1].push(ring(a,z1));
-    }
-    face(ends[0],'#8b9694');face(ends[1],'#e4e3d5');
-  }
-  box(0,.2,0,13.5,.38,.34,steel);
-  box(0,.18,0,.42,.42,13.6,rail);
-  for(const side of [-1,1]) {
-    for(const lane of [-1,1]) {
-      box(side*3.95,.13,lane*3.75,6,.23,.19,rail);
-      wing(side*4.22,lane*3.75,4.9,3.5,true);
-    }
-    wing(side*4.8,0,3.65,1.55,false);
-    box(side*1.78,-.26,0,1.45,1.13,1.3,steel);
-  }
-  moduleZ(-4.65,-1.62,.74);moduleZ(-1.5,1.54,1.15);moduleZ(1.65,4.5,.82);
-  moduleZ(4.55,5.75,.53);box(0,-1.24,.28,1.13,.5,.86,['#f0d69f','#d5b171','#8a7350']);
+  const {add,sub,scale,dot,norm,unit,clamp}=Flight;
   const starRandom=Flight.seedStream(8180);
   const stars=Array.from({length:1500},()=>{
     const z=2*starRandom()-1,azimuth=2*Math.PI*starRandom(),radius=Math.sqrt(1-z*z);
@@ -66,7 +20,7 @@ const Visor = (() => {
     const f=Math.min(w*(small?.64:.75),h*(small?.87:1.05));
     const world=q=>local(sub(q,p));
     const screen=q=>[w/2+f*q[0]/q[2],h/2-f*q[1]/q[2]];
-    return {az,el,forward,right,up,f,local,world,screen};
+    return {p,az,el,forward,right,up,f,local,world,screen};
   }
   function intersect(a,b){return add(a,scale(sub(b,a),(near-a[2])/(b[2]-a[2])));}
   function clip(poly) {
@@ -86,15 +40,60 @@ const Visor = (() => {
     if(x[2]<near)x=intersect(x,y);else if(y[2]<near)y=intersect(y,x);
     stroke(ctx,cam.screen(x),cam.screen(y),color,width);
   }
+  // Project the distance between opposite edges perpendicular to their length.
+  // This keeps lighting fixed to the metal and measures actual grid spacing
+  // even when a wing is nearly edge-on in the aft camera.
+  function faceSpan(xy,axis){
+    const a=xy[0],b=xy[axis===0?1:3],c=xy[2],d=xy[axis===0?3:1];
+    const x=(a[0]+d[0])/2,y=(a[1]+d[1])/2;
+    let dx=(b[0]+c[0])/2-x,dy=(b[1]+c[1])/2-y;
+    const ex=d[0]-a[0]+c[0]-b[0],ey=d[1]-a[1]+c[1]-b[1],len2=ex*ex+ey*ey;
+    if(len2>1e-6){
+      const parallel=(dx*ex+dy*ey)/len2;
+      dx-=ex*parallel;dy-=ey*parallel;
+    }
+    return {x,y,dx,dy,length:Math.hypot(dx,dy)};
+  }
+  function polygon(ctx,xy){
+    ctx.beginPath();ctx.moveTo(...xy[0]);for(let i=1;i<xy.length;i++)ctx.lineTo(...xy[i]);ctx.closePath();
+  }
   function station(ctx,cam) {
-    const sorted=faces.map(surface=>[cam.world(surface.center)[2],surface]).sort((a,b)=>b[0]-a[0]);
+    const sorted=Station.faces.filter(face=>dot(face.normal,cam.p)>face.plane)
+      .map(face=>[cam.world(face.center)[2],face]).sort((a,b)=>b[0]-a[0]);
     for(const [,face] of sorted) {
-      const clipped=clip(face.points.map(cam.world));
+      const vertices=face.points.map(cam.world),whole=vertices.every(q=>q[2]>=near);
+      const clipped=whole?vertices:clip(vertices);
       if(clipped.length<3)continue;
       const xy=clipped.map(cam.screen);
-      ctx.beginPath();ctx.moveTo(...xy[0]);for(const p of xy.slice(1))ctx.lineTo(...p);ctx.closePath();
-      ctx.fillStyle=face.color;ctx.fill();ctx.strokeStyle=face.edge;ctx.lineWidth=.65;ctx.stroke();
+      // A clipped polygon no longer has the four material corners.
+      const across=whole&&(face.tones||face.grid)?faceSpan(xy,0):null;
+      let fill=face.color;
+      if(face.tones && across && across.length>=2){
+        const {x,y,dx,dy}=across;
+        fill=ctx.createLinearGradient(x,y,x+dx,y+dy);
+        fill.addColorStop(0,face.tones[0]);fill.addColorStop(1,face.tones[1]);
+      }
+      polygon(ctx,xy);ctx.fillStyle=fill;ctx.fill();
+      ctx.strokeStyle=face.edge??fill;ctx.lineWidth=.65;ctx.stroke();
+      if(face.grid){
+        const spans=[across,whole?faceSpan(xy,1):null];
+        for(const [axis,lines] of face.grid.entries()){
+          const spacing=spans[axis]?spans[axis].length/face.divisions[axis]:Infinity;
+          if(spacing<=1)continue;
+          const alpha=ctx.globalAlpha;
+          if(spacing<2.5)ctx.globalAlpha=alpha*(spacing-1)/1.5;
+          for(const [a,b,color] of lines)line3(ctx,cam,a,b,color,.65);
+          if(spacing<2.5)ctx.globalAlpha=alpha;
+        }
+      }
       for(const [a,b,c,w] of face.lines)line3(ctx,cam,a,b,c,w||.65);
+      if(face.stripes?.length){
+        ctx.fillStyle='#d39c48';
+        for(const stripe of face.stripes){
+          const visible=clip(stripe.map(cam.world));
+          if(visible.length>=3){polygon(ctx,visible.map(cam.screen));ctx.fill();}
+        }
+      }
     }
     for(const [a,b] of edges)line3(ctx,cam,a,b,'#8ce8b47a',.8);
     for(const [a,b] of edges)for(const k of [0,.94])
@@ -280,13 +279,9 @@ const Visor = (() => {
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const label=captions(ctx,canvas,w,small);
     station(ctx,cam);
+    Equipment.draw(ctx,cam,w,sceneHeight,state.objects,small);
     if(preview)course(ctx,cam,preview,small,w,h,label,true);
     course(ctx,cam,state,small,w,h,label);
-    for(const obj of state.objects){
-      const where=Flight.motion(obj.start,state.time-obj.time,state.mode).p,q=cam.world(where);if(q[2]<near)continue;
-      const [x,y]=cam.screen(q),r=clamp(cam.f*.085/q[2],1.8,9);
-      ctx.fillStyle='#e7b36c';ctx.fillRect(x-r,y-r/2,r*2,r);
-    }
     const cx=w/2,cy=h/2,r=Math.min(w,h)*(small?.28:.34);
     const drift=cam.local(unit(state.pos.v));
     if(drift[2]>.15 && norm(state.pos.v)>1e-6){
@@ -314,32 +309,6 @@ const Visor = (() => {
       view.drawImage(surface,0,0,width,height,0,0,width,height);view.restore();
     }
   }
-  function toolArt(canvas,i) {
-    canvas.width=140;canvas.height=58;
-    const c=canvas.getContext('2d');c.translate(70,30);c.rotate(-.16);
-    function shape(pts,fill,edge='#738082'){c.beginPath();c.moveTo(...pts[0]);for(const p of pts.slice(1))c.lineTo(...p);c.closePath();c.fillStyle=fill;c.fill();c.strokeStyle=edge;c.lineWidth=1.2;c.stroke();}
-    function rect(x,y,w,h,color){c.fillStyle=color;c.fillRect(x,y,w,h);}
-    const silver='#bbc8c7',dark='#6c7776',amber='#cda366';
-    if(i===0){rect(-27,-2,43,4,silver);shape([[5,-5],[24,-5],[28,-2],[27,4],[24,6],[5,5]],dark);rect(10,-4,12,2,amber);rect(-30,-4,6,8,silver);}
-    if(i===1){rect(-3,-9,5,31,silver);shape([[-22,-11],[20,-11],[23,-7],[21,-4],[-22,-4],[-24,-8]],dark);rect(-19,-10,35,2,silver);rect(-4,16,7,5,amber);}
-    if(i===2){shape([[-22,-7],[-14,-10],[17,-10],[24,-5],[24,5],[17,10],[-15,10],[-22,6]],silver);rect(-27,-4,6,8,dark);rect(-11,-9,6,18,amber);rect(8,-9,3,18,dark);}
-    if(i===3){shape([[-24,-9],[-10,-15],[22,-11],[26,10],[17,14],[-25,9]],'#987950');shape([[-24,-9],[-10,-14],[23,-10],[12,-3],[-23,-4]],'#c7a675');rect(-9,-10,5,21,'#545457');rect(9,-8,4,21,'#545457');rect(-7,1,3,4,silver);}
-    if(i===4){shape([[-8,-4],[3,-4],[0,14],[-4,19],[-13,15]],dark);shape([[-19,-14],[9,-14],[17,-8],[17,0],[8,5],[-17,1],[-22,-4]],amber);rect(15,-9,9,9,silver);rect(24,-6,10,3,dark);rect(-18,-13,13,5,'#696f69');rect(-15,15,17,6,'#a99c73');}
-    if(i===5){shape([[-25,-9],[-13,-16],[25,-11],[25,7],[13,15],[-25,10]],dark);shape([[-25,-9],[-13,-15],[25,-11],[13,-4]],silver);shape([[13,-4],[25,-11],[25,8],[13,15]],'#7f8d8d');rect(-21,-5,28,4,amber);rect(-18,3,10,3,'#c2cbc8');}
-    if(i===6){ // Spring-gate tether clip
-      c.lineWidth=5;c.strokeStyle=silver;c.beginPath();c.ellipse(0,0,20,10,-.28,0,Math.PI*2);c.stroke();
-      c.strokeStyle=amber;c.beginPath();c.moveTo(4,-11);c.lineTo(18,-6);c.stroke();
-    }
-    if(i===7){ // Hand lamp with a flared reflector and a ribbed grip
-      rect(-23,-6,28,12,dark);for(const x of [-18,-12,-6])rect(x,-5,2,10,silver);
-      shape([[4,-6],[18,-13],[23,-12],[23,12],[18,13],[4,6]],amber);rect(21,-11,4,22,'#dfeddb');
-    }
-    if(i===8){ // Protective camera housing and its recessed lens
-      shape([[-24,-12],[13,-12],[23,-6],[23,12],[-24,12]],silver);rect(-19,-8,9,4,amber);
-      c.fillStyle=dark;c.beginPath();c.arc(7,0,10,0,Math.PI*2);c.fill();
-      c.fillStyle='#425c69';c.beginPath();c.arc(7,0,6,0,Math.PI*2);c.fill();
-    }
-  }
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-  return {render,camera,orientation,courseGlyphs,loadEarth:EarthSky.load,toolArt,clockText};
+  return {render,camera,orientation,courseGlyphs,loadEarth:EarthSky.load,toolArt:Equipment.toolArt,clockText};
 })();

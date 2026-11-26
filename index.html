@@ -334,6 +334,7 @@ h1 {
 }
 
 .tool canvas {
+  object-fit: contain;
   display: block;
 }
 
@@ -2068,10 +2069,10 @@ main {
 <p>Mission specialist Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays, the former high-school star pitcher still takes the mound with friends. Sometimes the next town comes over for a game.</p>
 <p>BOREX designed its first spacesuit for servicing fleets of commercial datacenter satellites. It gives a technician more room to maneuver and is supposed to bring them home automatically. Tommi is out to cold-reboot an inference server when her tether parts and the thruster valves stick closed. Without either, a drifting astronaut is presumed lost. Station commander Julian Bern still has her on radar.</p>
 <p>Newton’s third law gives Tommi one last pitch. Fling a wrench out into space and the wrench pushes back on you. She grips the handle, loosens her fingers and grips again, just as she would a ball on Saturday. Ten minutes of air. The station a little farther away with every second. Here in Earth’s shadow under a new moon, Tommi looks down the throat of death. She takes a breath. She’s going to pitch her way home. Bern would appreciate it if she could spare the drill. It’s practically her pet, and the crew only has the one.</p></details>
-<h3>Pitch from the forward visor</h3><p>Begin flight starts the oxygen clock. Drag to turn or tap to center a bearing. Select a slot, adjust power and press Throw. Turning alone leaves your velocity unchanged.</p>
+<h3>Pitch from the forward visor</h3><p>Begin flight starts the oxygen clock. Drag to turn or tap to center a bearing. Select a slot, adjust power and press Throw. Watch the tool leave just below the crosshair. A gentle toss stays in view longer. Turning alone leaves your velocity unchanged.</p>
 <h3>Preview a throw</h3><p>Switch on Preview throw under Current coast to see where your suit would go if you released the selected tool now. The solid violet line and filled arrows update with your aim, tool and power. Farther arrows are smaller and dimmer. A violet cross marks the first contact or nearest pass. Looking straight down the path, you’ll see a diamond. The sidebar gives the projected grab, fast entry or closest clearance. Check aft when recoil takes you behind the crosshair. The dashed mint line shows your actual coast.</p>
 <h3>The night-side sky</h3><p>Tommi is in Earth’s shadow. The Moon is new. On this pass, it lies below Tommi’s horizon along with the Sun. Look for the faint stars above Earth’s curved edge. They give you a reference as you turn the visor.</p>
-<h3>Read both cameras</h3><p>STN points toward the station when it leaves the frame. The aft view looks straight behind you. Mint arrows point along your committed coast. Nearby dashes are brighter and thicker. Farther arrows look smaller. Looking straight down a Straight-Line coast, you’ll see a ring and the distance from your suit to contact or to your position at oxygen expiry. If the path looks end-on, read the time, side and clearance under Current coast. A negative range rate means the gap to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the <span data-soft-limit></span> m/s soft limit, shown as a reference during any-speed flights. Positive X points away from Earth, +Y along the orbit and +Z above its plane. The whole <span id="envelopeSize"></span> m outline is within reach, including the gaps between panels.</p>
+<h3>Read both cameras</h3><p>STN points toward the station when it leaves the frame. The aft view looks straight behind you. A pair of amber bands marks one end of the station in both views. Mint arrows point along your committed coast. Nearby dashes are brighter and thicker. Farther arrows look smaller. Looking straight down a Straight-Line coast, you’ll see a ring and the distance from your suit to contact or to your position at oxygen expiry. If the path looks end-on, read the time, side and clearance under Current coast. A negative range rate means the gap to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the <span data-soft-limit></span> m/s soft limit, shown as a reference during any-speed flights. Positive X points away from Earth, +Y along the orbit and +Z above its plane. The whole <span id="envelopeSize"></span> m outline is within reach, including the gaps between panels.</p>
 <h3>Trim and brake</h3><p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you which way to aim in the forward visor. If it says to aim up and right, a light pitch that way nudges the suit down and left. The hint follows you as you turn. Pitch along measured drift to brake. Soft capture takes effect anywhere inside the bars at <span data-soft-limit></span> m/s or slower. After a fast entry, brake while still within reach or coast through and return. In manual flight, after the last throw the flight ends if the coast misses the bars or every remaining chance to grab is too fast. If Orbital drift will slow you enough within reach, keep coasting.</p>
 <h3>Time and controls</h3><p>Straight-Line holds velocity between releases. Orbital bends the coast in a rotating frame. Every flight starts with 10:00 of oxygen, including First rescue. Play speed stops at 1×, 10×, 20× and 30×. Throwing resets it to 1×. Pause to read instruments, then resume to aim. Arrow keys turn 2°, or 0.25° with Shift. Keys 1–9 select a tool, [ and ] change power, Enter throws from the visor, and P controls the clock.</p>
 <h3>Compare rescues</h3><p>Δv (delta-v) is how much more you could change your speed or direction with the tools aboard. Manual flights score the remaining tool budget at rescue. A lost suit brings home zero. In Story, compare throw count and grab speed. Grab speed measures how gently you reached the bars, including sideways motion.</p>
@@ -2651,43 +2652,69 @@ const EarthSky = (() => {
 
   return {load, draw, frame, limbX:-Math.cos(limbAngle*Flight.rad)};
 })();
-</script><script>const fontStyle=getComputedStyle(document.documentElement);
-const cockpitFonts={sans:fontStyle.getPropertyValue('--sans').trim(),mono:fontStyle.getPropertyValue('--mono').trim()};
-const Visor = (() => {
-  const {add,sub,scale,dot,norm,unit,direction,clamp,rad}=Flight;
-  const faces=[];
-  function face(points,color,lines=[],edge='#384950') {faces.push({points,color,lines,edge,center:scale(points.reduce(add),1/points.length)});}
-  function box(x,y,z,w,d,h,colors) {
+</script><script>const Station = (() => {
+  const {add,scale}=Flight;
+  const faces=[],solids=[];
+  const axes=[[1,0,0],[0,1,0],[0,0,1]];
+  // Five opposing pairs of planes describe the ten sides of a hull module.
+  const radialPlanes=Array.from({length:5},(_,i)=>{
+    const angle=(i+.5)*Math.PI/5;
+    return [Math.cos(angle),Math.sin(angle),0];
+  });
+  function face(points,color,{normal,lines=[],edge='#384950',...material}){
+    const center=scale(points.reduce(add),1/points.length);
+    faces.push({points,center,color,lines,edge,normal,plane:Flight.dot(normal,center),...material});
+  }
+  function box(x,y,z,w,d,h,colors,panel=false) {
+    const sizes=[w,d,h],center=[x,y,z];
+    solids.push(axes.map((n,i)=>[n,center[i]-sizes[i]/2,center[i]+sizes[i]/2]));
     const p=(i,j,k)=>[x+i*w/2,y+j*d/2,z+k*h/2];
     for(const k of [-1,1]) {
-      face([p(-1,-1,k),p(1,-1,k),p(1,1,k),p(-1,1,k)],colors[k>0?0:2]);
-      face([p(-1,k,-1),p(1,k,-1),p(1,k,1),p(-1,k,1)],colors[1]);
-      face([p(k,-1,-1),p(k,1,-1),p(k,1,1),p(k,-1,1)],colors[2]);
+      face([p(-1,-1,k),p(1,-1,k),p(1,1,k),p(-1,1,k)],colors[k>0?0:2],{normal:[0,0,k]});
+      if(!panel)face([p(-1,k,-1),p(1,k,-1),p(1,k,1),p(-1,k,1)],colors[1],{normal:[0,k,0]});
+      face([p(k,-1,-1),p(k,1,-1),p(k,1,1),p(k,-1,1)],colors[2],{normal:[k,0,0]});
     }
   }
   const steel=['#e4e2ce','#adb8b7','#76858b'],rail=['#d5c089','#a48c61','#6c675c'];
   function wing(x,z,w,h,solar) {
     const accent=solar?'#91a5b6':'#969e96', col=solar?'#364d69':'#d2d6c8';
-    box(x,0,z,w,.13,h,solar?['#d0a769',col,'#746247']:steel);
+    box(x,0,z,w,.148,h,solar?['#d0a769',col,'#746247']:steel,true);
     for(const side of [-1,1]) {
       const p=(a,b)=>[x+(a-.5)*w,.074*side,z+(b-.5)*h], lines=[];
-      for(let k=1;k<(solar?8:5);k++) lines.push([p(k/(solar?8:5),0),p(k/(solar?8:5),1),accent]);
-      for(let k=1;k<(solar?5:3);k++) lines.push([p(0,k/(solar?5:3)),p(1,k/(solar?5:3)),solar?'#687f96':'#a4aaa0']);
+      const columns=solar?8:5,rows=solar?5:3;
+      const grid=[[],[]];
+      for(let k=1;k<columns;k++)grid[0].push([p(k/columns,0),p(k/columns,1),accent]);
+      for(let k=1;k<rows;k++)grid[1].push([p(0,k/rows),p(1,k/rows),solar?'#687f96':'#a4aaa0']);
       if(solar) lines.push([p(.5,0),p(.5,1),'#d5ab72',1.4]);
-      face([p(0,0),p(1,0),p(1,1),p(0,1)],col,lines,solar?'#e4b778':'#edf0dd');
+      face([p(0,0),p(1,0),p(1,1),p(0,1)],col,{
+        lines,edge:solar?'#b6bdbb':'#edf0dd',normal:[0,side,0],
+        grid,divisions:[columns,rows],tones:solar?['#293f5a','#4c637f']:null
+      });
     }
   }
-  function moduleZ(z0,z1,radius,x=0,y=-.2) {
+  function moduleZ(z0,z1,radius,marked=false) {
+    const x=0,y=-.2,apothem=radius*Math.cos(Math.PI/10);
+    solids.push([[axes[2],z0,z1],...radialPlanes.map(n=>{
+      const center=x*n[0]+y*n[1];return [n,center-apothem,center+apothem];
+    })]);
     const ring=(a,z,r=radius)=>[x+Math.cos(a)*r,y+Math.sin(a)*r,z];
     const shades=['#d8ddcf','#a1aaa9','#899391','#7c8587','#889593','#aeb7af','#dce1d6','#f0eee1','#e0e2d4','#c8cfc6'];
     const ends=[[],[]];
     for(let i=0;i<10;i++) {
       const a=i*Math.PI/5,b=(i+1)*Math.PI/5;
       const lines=[.14,.81,.9].map(t=>[ring(a,z0+(z1-z0)*t),ring(b,z0+(z1-z0)*t),'#737f80',1]);
-      face([ring(a,z0),ring(b,z0),ring(b,z1),ring(a,z1)],shades[i],lines,'#8b9596');
+      const stripes=marked?[[.19,.35],[.57,.73]].map(([lo,hi])=>{
+        const z=z0+(z1-z0)*lo,end=z0+(z1-z0)*hi;
+        return [ring(a,z),ring(b,z),ring(b,end),ring(a,end)];
+      }):[];
+      face([ring(a,z0),ring(b,z0),ring(b,z1),ring(a,z1)],shades[i],{
+        lines,edge:null,normal:[Math.cos((a+b)/2),Math.sin((a+b)/2),0],tones:[shades[i],shades[(i+1)%10]],stripes
+      });
       ends[0].push(ring(a,z0));ends[1].push(ring(a,z1));
     }
-    face(ends[0],'#8b9694');face(ends[1],'#e4e3d5');
+    face(ends[0],'#8b9694',{normal:[0,0,-1]});
+    const stripes=marked?[-.21,.12].map(dx=>[[dx,-.27],[dx+.10,-.27],[dx+.10,.27],[dx,.27]].map(([a,b])=>[x+a,y+b,z1])):[];
+    face(ends[1],'#e4e3d5',{stripes,normal:[0,0,1]});
   }
   box(0,.2,0,13.5,.38,.34,steel);
   box(0,.18,0,.42,.42,13.6,rail);
@@ -2700,7 +2727,179 @@ const Visor = (() => {
     box(side*1.78,-.26,0,1.45,1.13,1.3,steel);
   }
   moduleZ(-4.65,-1.62,.74);moduleZ(-1.5,1.54,1.15);moduleZ(1.65,4.5,.82);
-  moduleZ(4.55,5.75,.53);box(0,-1.24,.28,1.13,.5,.86,['#f0d69f','#d5b171','#8a7350']);
+  moduleZ(4.55,5.75,.53,true);box(0,-1.24,.28,1.13,.5,.86,['#f0d69f','#d5b171','#8a7350']);
+
+  // Sweep against the same boxes and faceted hull used for drawing. The grab
+  // envelope only rejects distant segments. Gaps between panels stay open.
+  function crosses(from,to){
+    if(Flight.half.some((h,i)=>Math.min(from[i],to[i])>h || Math.max(from[i],to[i])<-h))return false;
+    const delta=Flight.sub(to,from);
+    return solids.some(planes=>{
+      let enter=0,leave=1;
+      for(const [normal,lo,hi] of planes){
+        const pos=Flight.dot(normal,from),step=Flight.dot(normal,delta);
+        if(Math.abs(step)<1e-10){
+          if(pos<lo || pos>hi)return false;
+        }else{
+          const a=(lo-pos)/step,b=(hi-pos)/step;
+          enter=Math.max(enter,Math.min(a,b));leave=Math.min(leave,Math.max(a,b));
+          if(enter>leave)return false;
+        }
+      }
+      return true;
+    });
+  }
+  return {faces,crosses};
+})();
+</script><script>const Equipment = (() => {
+  function makeSprite(i) {
+    const canvas=document.createElement('canvas');
+    canvas.width=160;canvas.height=112;
+    const c=canvas.getContext('2d');c.scale(2,2);c.translate(40,28);c.rotate(-.16);
+    function shape(pts,fill,edge='#738082'){c.beginPath();c.moveTo(...pts[0]);for(const p of pts.slice(1))c.lineTo(...p);c.closePath();c.fillStyle=fill;c.fill();c.strokeStyle=edge;c.lineWidth=1.2;c.stroke();}
+    function rect(x,y,w,h,color){c.fillStyle=color;c.fillRect(x,y,w,h);}
+    const silver='#bbc8c7',dark='#6c7776',amber='#cda366';
+    // Use the same oblique view of each tool at every distance. Distinctive
+    // parts (the socket, gate, chuck and lens) carry the silhouette at small sizes.
+    if(i===0){ // Socket driver, with a steel shaft and a recessed socket.
+      rect(-25,-2,31,4,silver);
+      shape([[4,-5],[10,-7],[24,-7],[29,-3],[28,4],[23,7],[9,6],[4,4]],dark);
+      rect(10,-6,13,2,amber);rect(12,-1,10,2,'#919e9e');
+      shape([[-30,-4],[-27,-6],[-21,-5],[-19,-2],[-20,4],[-27,5],[-30,3]],silver);
+      rect(-29,-2,2,5,'#536163');
+    }
+    if(i===1){ // T-handle
+      rect(-3,-9,5,30,silver);
+      shape([[-22,-11],[20,-11],[23,-7],[21,-4],[-22,-4],[-24,-8]],dark);
+      rect(-19,-10,35,2,silver);rect(-4,16,7,5,amber);rect(-2,20,4,3,silver);
+    }
+    if(i===2){ // Gas cartridge, valve neck at the left and a rolled base at the right.
+      shape([[-18,-6],[-12,-10],[16,-10],[22,-7],[24,-2],[24,5],[20,10],[-12,10],[-18,6],[-21,3],[-21,-3]],silver);
+      rect(-28,-3,8,6,dark);rect(-29,-5,3,10,silver);rect(-11,-9,6,18,amber);
+      rect(-2,-7,16,2,'#d9e4e0');rect(18,-7,2,15,dark);
+    }
+    if(i===3){ // Wrench pouch with one open jaw showing above the flap.
+      shape([[-3,-8],[1,-15],[-1,-19],[1,-23],[4,-19],[7,-19],[10,-23],[11,-18],[7,-14],[4,-7]],silver);
+      shape([[-24,-9],[-10,-15],[22,-11],[26,10],[17,14],[-25,9]],'#987950');
+      shape([[-24,-9],[-10,-14],[23,-10],[12,-3],[-23,-4]],'#c7a675');
+      rect(-9,-10,5,21,'#545457');rect(9,-8,4,21,'#545457');rect(-7,1,3,4,silver);
+    }
+    if(i===4){ // Cordless drill with a separate trigger, grip, foot, chuck and bit.
+      shape([[-9,-3],[2,-3],[-1,15],[-7,19],[-14,15]],dark);
+      rect(0,2,5,4,'#c3ccca');
+      shape([[-19,-14],[9,-14],[17,-8],[17,0],[8,5],[-17,1],[-22,-4]],amber);
+      rect(15,-9,8,9,silver);rect(23,-7,3,5,dark);rect(26,-6,8,3,silver);
+      for(const x of [-17,-13,-9])rect(x,-11,2,5,'#696f69');
+      shape([[-16,13],[-1,15],[2,19],[1,22],[-18,19]],'#b29a65');
+    }
+    if(i===5){ // Spare battery with two exposed contacts on its top face.
+      shape([[-25,-9],[-13,-16],[25,-11],[25,7],[13,15],[-25,10]],dark);
+      shape([[-25,-9],[-13,-15],[25,-11],[13,-4]],silver);
+      shape([[13,-4],[25,-11],[25,8],[13,15]],'#7f8d8d');
+      rect(-11,-15,6,3,'#575e5c');rect(0,-14,6,3,'#575e5c');
+      rect(-21,-5,28,4,amber);rect(-18,3,10,3,'#c2cbc8');
+    }
+    if(i===6){ // Asymmetric carabiner with a straight spring gate and hinge.
+      c.lineCap='round';c.lineWidth=4.5;c.strokeStyle=silver;c.beginPath();
+      c.moveTo(4,-12);c.bezierCurveTo(-5,-16,-25,-4,-23,5);
+      c.bezierCurveTo(-22,12,-15,14,-8,11);c.lineTo(14,5);
+      c.bezierCurveTo(23,3,23,-5,17,-8);c.stroke();
+      c.strokeStyle=amber;c.lineWidth=3.5;c.beginPath();c.moveTo(4,-12);c.lineTo(17,-8);c.stroke();
+      c.fillStyle=dark;c.beginPath();c.arc(5,-12,1.5,0,2*Math.PI);c.fill();
+    }
+    if(i===7){ // Hand lamp with a flared reflector and ribbed grip.
+      rect(-23,-6,28,12,dark);for(const x of [-18,-12,-6])rect(x,-5,2,10,silver);
+      shape([[4,-6],[18,-13],[23,-12],[23,12],[18,13],[4,6]],amber);
+      rect(20,-11,4,22,'#dfeddb');rect(21,-7,2,14,'#b8d4d3');
+    }
+    if(i===8){ // Protective camera housing with a raised shutter and recessed lens.
+      rect(-16,-15,9,4,dark);shape([[-24,-12],[13,-12],[23,-6],[23,12],[-24,12]],silver);
+      rect(-19,-8,9,4,amber);
+      c.fillStyle=dark;c.beginPath();c.arc(7,0,10,0,Math.PI*2);c.fill();
+      c.fillStyle='#425c69';c.beginPath();c.arc(7,0,6,0,Math.PI*2);c.fill();
+      c.fillStyle='#bdd0cf';c.beginPath();c.arc(5,-2,1.6,0,Math.PI*2);c.fill();
+    }
+    return canvas;
+  }
+
+  // Cache the same drawing for rack and flight. Distant shades can use a
+  // smaller bitmap because they appear at only a few pixels across.
+  const sprites=Flight.gear.map((_,i)=>{
+    const original=makeSprite(i),shades=[original];
+    for(let level=1;level<=4;level++){
+      const tile=document.createElement('canvas');tile.width=80;tile.height=56;
+      const ctx=tile.getContext('2d');ctx.drawImage(original,0,0,tile.width,tile.height);
+      ctx.globalCompositeOperation='source-atop';ctx.fillStyle='rgba(9,16,21,'+(level*.12)+')';
+      ctx.fillRect(0,0,tile.width,tile.height);shades.push(tile);
+    }
+    return shades;
+  });
+  function toolArt(canvas,i){
+    const image=sprites[i][0];
+    canvas.width=image.width;canvas.height=image.height;
+    canvas.getContext('2d').drawImage(image,0,0);
+  }
+
+  const farRange=48;
+  function launch(state,tool,power,aim){
+    const {add,scale}=Flight;
+    // The hand is ahead of and below the release-time visor. Both cameras see
+    // one world position, including if the pilot immediately turns around.
+    const hand=add(state.pos.p,add(scale(aim.forward,.72),add(scale(aim.up,-.18),scale(aim.right,.07))));
+    if(Station.crosses(state.pos.p,hand))return;
+    const speed=Flight.gear[tool].speed*power/100;
+    const start={p:hand,v:add(state.pos.v,scale(aim.forward,speed))};
+    state.objects.push({tool,start,time:state.time,updated:state.time,p:hand,range:Flight.norm(Flight.sub(hand,state.pos.p)),hidden:false});
+  }
+  function advance(state){
+    let count=0;
+    for(const obj of state.objects){
+      const now=state.time;
+      if(now>obj.updated){
+        const p=Flight.motion(obj.start,now-obj.time,state.mode).p;
+        const range=Flight.norm(Flight.sub(p,state.pos.p));
+        if(range>=farRange)continue;
+        // Sweep thin panels between frames. Subdivide long Orbital jumps so a
+        // fast clock or guided coast follows the bend through the station.
+        let prev=obj.p,hit=false;
+        if(state.mode==='Orbital'){
+          for(let t=obj.updated+1;t<now;t++){
+            const next=Flight.motion(obj.start,t-obj.time,state.mode).p;
+            if(Station.crosses(prev,next)){hit=true;break;}
+            prev=next;
+          }
+        }
+        if(hit||Station.crosses(prev,p))continue;
+        obj.p=p;obj.updated=now;obj.range=range;obj.hidden=Station.crosses(state.pos.p,p);
+      }
+      state.objects[count++]=obj;
+    }
+    state.objects.length=count;
+  }
+  function draw(ctx,cam,w,h,objects,small){
+    if(!objects.length)return;
+    ctx.save();
+    for(const obj of objects){
+      if(obj.hidden)continue;
+      const q=cam.world(obj.p);
+      if(q[2]<.09)continue;
+      // Ease the perspective size near the hand. Use one scale for both axes
+      // so even a tool near the edge of the visor keeps its original silhouette.
+      const span=.44*cam.f,width=span/(q[2]+span/(small?68:128));
+      const [x,y]=cam.screen(q),fade=Flight.clamp((obj.range-2)/(farRange-2),0,1);
+      const tile=sprites[obj.tool][Math.min(4,Math.floor(fade*5))],height=width*tile.height/tile.width;
+      if(width<1||x+width/2<0||x-width/2>w||y+height/2<0||y-height/2>h)continue;
+      ctx.globalAlpha=1-fade;
+      ctx.drawImage(tile,x-width/2,y-height/2,width,height);
+    }
+    ctx.restore();
+  }
+  return {launch,advance,draw,toolArt};
+})();
+</script><script>const fontStyle=getComputedStyle(document.documentElement);
+const cockpitFonts={sans:fontStyle.getPropertyValue('--sans').trim(),mono:fontStyle.getPropertyValue('--mono').trim()};
+const Visor = (() => {
+  const {add,sub,scale,dot,norm,unit,clamp}=Flight;
   const starRandom=Flight.seedStream(8180);
   const stars=Array.from({length:1500},()=>{
     const z=2*starRandom()-1,azimuth=2*Math.PI*starRandom(),radius=Math.sqrt(1-z*z);
@@ -2719,7 +2918,7 @@ const Visor = (() => {
     const f=Math.min(w*(small?.64:.75),h*(small?.87:1.05));
     const world=q=>local(sub(q,p));
     const screen=q=>[w/2+f*q[0]/q[2],h/2-f*q[1]/q[2]];
-    return {az,el,forward,right,up,f,local,world,screen};
+    return {p,az,el,forward,right,up,f,local,world,screen};
   }
   function intersect(a,b){return add(a,scale(sub(b,a),(near-a[2])/(b[2]-a[2])));}
   function clip(poly) {
@@ -2739,15 +2938,60 @@ const Visor = (() => {
     if(x[2]<near)x=intersect(x,y);else if(y[2]<near)y=intersect(y,x);
     stroke(ctx,cam.screen(x),cam.screen(y),color,width);
   }
+  // Project the distance between opposite edges perpendicular to their length.
+  // This keeps lighting fixed to the metal and measures actual grid spacing
+  // even when a wing is nearly edge-on in the aft camera.
+  function faceSpan(xy,axis){
+    const a=xy[0],b=xy[axis===0?1:3],c=xy[2],d=xy[axis===0?3:1];
+    const x=(a[0]+d[0])/2,y=(a[1]+d[1])/2;
+    let dx=(b[0]+c[0])/2-x,dy=(b[1]+c[1])/2-y;
+    const ex=d[0]-a[0]+c[0]-b[0],ey=d[1]-a[1]+c[1]-b[1],len2=ex*ex+ey*ey;
+    if(len2>1e-6){
+      const parallel=(dx*ex+dy*ey)/len2;
+      dx-=ex*parallel;dy-=ey*parallel;
+    }
+    return {x,y,dx,dy,length:Math.hypot(dx,dy)};
+  }
+  function polygon(ctx,xy){
+    ctx.beginPath();ctx.moveTo(...xy[0]);for(let i=1;i<xy.length;i++)ctx.lineTo(...xy[i]);ctx.closePath();
+  }
   function station(ctx,cam) {
-    const sorted=faces.map(surface=>[cam.world(surface.center)[2],surface]).sort((a,b)=>b[0]-a[0]);
+    const sorted=Station.faces.filter(face=>dot(face.normal,cam.p)>face.plane)
+      .map(face=>[cam.world(face.center)[2],face]).sort((a,b)=>b[0]-a[0]);
     for(const [,face] of sorted) {
-      const clipped=clip(face.points.map(cam.world));
+      const vertices=face.points.map(cam.world),whole=vertices.every(q=>q[2]>=near);
+      const clipped=whole?vertices:clip(vertices);
       if(clipped.length<3)continue;
       const xy=clipped.map(cam.screen);
-      ctx.beginPath();ctx.moveTo(...xy[0]);for(const p of xy.slice(1))ctx.lineTo(...p);ctx.closePath();
-      ctx.fillStyle=face.color;ctx.fill();ctx.strokeStyle=face.edge;ctx.lineWidth=.65;ctx.stroke();
+      // A clipped polygon no longer has the four material corners.
+      const across=whole&&(face.tones||face.grid)?faceSpan(xy,0):null;
+      let fill=face.color;
+      if(face.tones && across && across.length>=2){
+        const {x,y,dx,dy}=across;
+        fill=ctx.createLinearGradient(x,y,x+dx,y+dy);
+        fill.addColorStop(0,face.tones[0]);fill.addColorStop(1,face.tones[1]);
+      }
+      polygon(ctx,xy);ctx.fillStyle=fill;ctx.fill();
+      ctx.strokeStyle=face.edge??fill;ctx.lineWidth=.65;ctx.stroke();
+      if(face.grid){
+        const spans=[across,whole?faceSpan(xy,1):null];
+        for(const [axis,lines] of face.grid.entries()){
+          const spacing=spans[axis]?spans[axis].length/face.divisions[axis]:Infinity;
+          if(spacing<=1)continue;
+          const alpha=ctx.globalAlpha;
+          if(spacing<2.5)ctx.globalAlpha=alpha*(spacing-1)/1.5;
+          for(const [a,b,color] of lines)line3(ctx,cam,a,b,color,.65);
+          if(spacing<2.5)ctx.globalAlpha=alpha;
+        }
+      }
       for(const [a,b,c,w] of face.lines)line3(ctx,cam,a,b,c,w||.65);
+      if(face.stripes?.length){
+        ctx.fillStyle='#d39c48';
+        for(const stripe of face.stripes){
+          const visible=clip(stripe.map(cam.world));
+          if(visible.length>=3){polygon(ctx,visible.map(cam.screen));ctx.fill();}
+        }
+      }
     }
     for(const [a,b] of edges)line3(ctx,cam,a,b,'#8ce8b47a',.8);
     for(const [a,b] of edges)for(const k of [0,.94])
@@ -2933,13 +3177,9 @@ const Visor = (() => {
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const label=captions(ctx,canvas,w,small);
     station(ctx,cam);
+    Equipment.draw(ctx,cam,w,sceneHeight,state.objects,small);
     if(preview)course(ctx,cam,preview,small,w,h,label,true);
     course(ctx,cam,state,small,w,h,label);
-    for(const obj of state.objects){
-      const where=Flight.motion(obj.start,state.time-obj.time,state.mode).p,q=cam.world(where);if(q[2]<near)continue;
-      const [x,y]=cam.screen(q),r=clamp(cam.f*.085/q[2],1.8,9);
-      ctx.fillStyle='#e7b36c';ctx.fillRect(x-r,y-r/2,r*2,r);
-    }
     const cx=w/2,cy=h/2,r=Math.min(w,h)*(small?.28:.34);
     const drift=cam.local(unit(state.pos.v));
     if(drift[2]>.15 && norm(state.pos.v)>1e-6){
@@ -2967,34 +3207,8 @@ const Visor = (() => {
       view.drawImage(surface,0,0,width,height,0,0,width,height);view.restore();
     }
   }
-  function toolArt(canvas,i) {
-    canvas.width=140;canvas.height=58;
-    const c=canvas.getContext('2d');c.translate(70,30);c.rotate(-.16);
-    function shape(pts,fill,edge='#738082'){c.beginPath();c.moveTo(...pts[0]);for(const p of pts.slice(1))c.lineTo(...p);c.closePath();c.fillStyle=fill;c.fill();c.strokeStyle=edge;c.lineWidth=1.2;c.stroke();}
-    function rect(x,y,w,h,color){c.fillStyle=color;c.fillRect(x,y,w,h);}
-    const silver='#bbc8c7',dark='#6c7776',amber='#cda366';
-    if(i===0){rect(-27,-2,43,4,silver);shape([[5,-5],[24,-5],[28,-2],[27,4],[24,6],[5,5]],dark);rect(10,-4,12,2,amber);rect(-30,-4,6,8,silver);}
-    if(i===1){rect(-3,-9,5,31,silver);shape([[-22,-11],[20,-11],[23,-7],[21,-4],[-22,-4],[-24,-8]],dark);rect(-19,-10,35,2,silver);rect(-4,16,7,5,amber);}
-    if(i===2){shape([[-22,-7],[-14,-10],[17,-10],[24,-5],[24,5],[17,10],[-15,10],[-22,6]],silver);rect(-27,-4,6,8,dark);rect(-11,-9,6,18,amber);rect(8,-9,3,18,dark);}
-    if(i===3){shape([[-24,-9],[-10,-15],[22,-11],[26,10],[17,14],[-25,9]],'#987950');shape([[-24,-9],[-10,-14],[23,-10],[12,-3],[-23,-4]],'#c7a675');rect(-9,-10,5,21,'#545457');rect(9,-8,4,21,'#545457');rect(-7,1,3,4,silver);}
-    if(i===4){shape([[-8,-4],[3,-4],[0,14],[-4,19],[-13,15]],dark);shape([[-19,-14],[9,-14],[17,-8],[17,0],[8,5],[-17,1],[-22,-4]],amber);rect(15,-9,9,9,silver);rect(24,-6,10,3,dark);rect(-18,-13,13,5,'#696f69');rect(-15,15,17,6,'#a99c73');}
-    if(i===5){shape([[-25,-9],[-13,-16],[25,-11],[25,7],[13,15],[-25,10]],dark);shape([[-25,-9],[-13,-15],[25,-11],[13,-4]],silver);shape([[13,-4],[25,-11],[25,8],[13,15]],'#7f8d8d');rect(-21,-5,28,4,amber);rect(-18,3,10,3,'#c2cbc8');}
-    if(i===6){ // Spring-gate tether clip
-      c.lineWidth=5;c.strokeStyle=silver;c.beginPath();c.ellipse(0,0,20,10,-.28,0,Math.PI*2);c.stroke();
-      c.strokeStyle=amber;c.beginPath();c.moveTo(4,-11);c.lineTo(18,-6);c.stroke();
-    }
-    if(i===7){ // Hand lamp with a flared reflector and a ribbed grip
-      rect(-23,-6,28,12,dark);for(const x of [-18,-12,-6])rect(x,-5,2,10,silver);
-      shape([[4,-6],[18,-13],[23,-12],[23,12],[18,13],[4,6]],amber);rect(21,-11,4,22,'#dfeddb');
-    }
-    if(i===8){ // Protective camera housing and its recessed lens
-      shape([[-24,-12],[13,-12],[23,-6],[23,12],[-24,12]],silver);rect(-19,-8,9,4,amber);
-      c.fillStyle=dark;c.beginPath();c.arc(7,0,10,0,Math.PI*2);c.fill();
-      c.fillStyle='#425c69';c.beginPath();c.arc(7,0,6,0,Math.PI*2);c.fill();
-    }
-  }
   function clockText(t){const s=Math.max(0,Math.floor(t+1e-7));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
-  return {render,camera,orientation,courseGlyphs,loadEarth:EarthSky.load,toolArt,clockText};
+  return {render,camera,orientation,courseGlyphs,loadEarth:EarthSky.load,toolArt:Equipment.toolArt,clockText};
 })();
 </script><script>const el=id=>document.getElementById(id), {scale,unit,norm,dot,sub,clamp}=Flight;
 // Gear indices identify physical items in flight records and inventory masks.
@@ -3092,6 +3306,7 @@ function advance(dt) {
     const h=hits[flight.hitIndex++];
     if(!flight.soft || Flight.softEnough(h.speed)) {
       flight.time+=Math.max(0,h.t-flight.age);flight.age=h.t;flight.pos=Flight.motion(flight.anchor,h.t,flight.mode);
+      Equipment.advance(flight);
       finish('capture');return;
     }
     flight.log.fast.push({time:flight.time-flight.age+h.t,p:h.p.slice(),speed:h.speed});
@@ -3099,6 +3314,7 @@ function advance(dt) {
     setMsg('Fast pass at '+Readout.speed(h.speed)+' m/s. '+(flight.mask?'Brake while within reach, or circle back for a slower grab.':'Keep coasting. A slower grab is still ahead.'));
   }
   flight.time+=step;flight.age=end;flight.pos=Flight.motion(flight.anchor,end,flight.mode);
+  Equipment.advance(flight);
   if(flight.time>=flight.limit-1e-8)finish('oxygen');
   else if(flight.checkAt!==null && flight.time>=flight.checkAt-1e-8){
     flight.checkAt=null;flight.checked=true;freezeClock();
@@ -3138,10 +3354,10 @@ function throwTool() {
   if(!canPitch())return;
   const epoch=inputEpoch;
   sync();if(epoch!==inputEpoch||!canPitch()||selected<0||!(flight.mask&(1<<selected)))return;
-  const dir=Flight.direction(yaw,pitch),g=Flight.gear[selected],old=flight.pos;
+  const aim=orientation(yaw,pitch),dir=aim.forward,g=Flight.gear[selected],old=flight.pos;
   flight.pos=Flight.release(old,selected,power,dir,flight.mask);
   flight.log.releases.push({time:flight.time,tool:selected,power,dir:dir.slice(),p:old.p.slice(),v:flight.pos.v.slice()});
-  flight.objects.push({time:flight.time,start:{p:old.p.slice(),v:Flight.add(flight.pos.v,scale(dir,g.speed*power/100))}});
+  Equipment.launch(flight,selected,power,aim);
   flight.mask=Flight.rackAfterThrow(flight.mask,selected,flight.story);
   flight.throws++;
   if(!flight.story)selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;

@@ -328,6 +328,7 @@ h1 {
 }
 
 .tool canvas {
+  object-fit: contain;
   display: block;
 }
 
