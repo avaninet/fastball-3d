@@ -33,12 +33,22 @@ const scripts = [...page.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)];
 const styles = [...page.matchAll(/<style>([\s\S]*?)<\/style>/g)];
 page = page.replace('__SCRIPT_HASHES__', scripts.map(match => sourceHash(match[1])).join(' '))
            .replace('__STYLE_HASHES__', styles.map(match => sourceHash(match[1])).join(' '));
-if (process.argv.includes('--check')) {
-  if (!fs.readFileSync(path.join(root, 'index.html')).equals(Buffer.from(page))) {
-    throw new Error('index.html is out of date. Run node scripts/build.cjs and include the rebuilt game.');
-  }
+function stampGame(date) {
+  const label = new Intl.DateTimeFormat('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC'
+  }).format(new Date(date + 'T00:00:00Z'));
+  return page.replace('__UPDATE_DATE__', date).replace('__UPDATE_LABEL__', label);
+}
+
+const output = path.join(root, 'index.html');
+const previous = fs.existsSync(output) ? fs.readFileSync(output, 'utf8') : '';
+const previousDate = previous.match(/id="gameUpdated" datetime="(\d{4}-\d{2}-\d{2})"/)?.[1];
+// Keep the release date when the standalone game is byte-for-byte unchanged.
+if (previousDate && stampGame(previousDate) === previous) {
   console.log('index.html matches its sources.');
+} else if (process.argv.includes('--check')) {
+  throw new Error('index.html is out of date. Run node scripts/build.cjs and include the rebuilt game.');
 } else {
-  fs.writeFileSync(path.join(root, 'index.html'), page);
+  fs.writeFileSync(output, stampGame(new Date().toISOString().slice(0, 10)));
   console.log('Built index.html');
 }

@@ -25,6 +25,31 @@ function showRescueCall(opening, mode) {
   el('endCopy').replaceChildren('“' + line + '” ', credit);
 }
 
+const lossCalls = {
+  oxygen: {
+    opening: 'The oxygen reserve ticks down to zero as Commander Bern crackles over the radio.',
+    maneuver: 'The suit is already gently pushing her to intercept.',
+    call: "Looks like you'll be back on station with time to spare."
+  },
+  stranded: {
+    opening: 'Tommi watches the last tool tumble away. Commander Bern comes over the radio.',
+    maneuver: 'A short burst from the suit puts the grab bars back on her flight path.',
+    call: "Your new track takes you right to the bars. I'll meet you there."
+  },
+  overspeed: {
+    opening: 'The grab speed on Commander Bern’s display is still in the red when he keys the radio.',
+    maneuver: 'The suit is already decelerating her to a safe intercept speed.',
+    call: "Looks like you're heading for a successful capture after all."
+  }
+};
+
+function showLossCall(result) {
+  const {opening, maneuver, call} = lossCalls[result];
+  el('lossOpening').textContent = opening;
+  el('lossManeuver').textContent = maneuver;
+  el('lossCall').textContent = call;
+}
+
 const lessons=[
   {title:'First rescue',index:0,mode:'Straight-Line',soft:false},
   {title:'Trim an oblique miss',index:1,mode:'Straight-Line',soft:false},

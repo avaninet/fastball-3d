@@ -68,6 +68,7 @@ function finish(result) {
   const won=result==='capture',drill=!flight.skippedGuidance&&!flight.log.releases.some(r=>r.tool===4);
   el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
   el('upmassHero').hidden=!(won&&drill);
+  el('lossEpilogue').hidden=won;
   if(won){
     showRescueCall(flight.initial.name,flight.mode);
   }else if(result==='stranded'){
@@ -79,7 +80,7 @@ function finish(result) {
       'Projected speed at the bars is '+Readout.speed(flight.forecast.hits[0].speed);
     el('endCopy').textContent=approach+' m/s. With the rack empty, the remaining coast offers no grab at or below '+Flight.limit.toFixed(3)+' m/s before oxygen runs out.';
   }else{
-    el('endCopy').textContent='The reserve ran out before a successful grab. Retry to test a different pitch.';
+    el('endCopy').textContent='The reserve ran out before a successful grab.';
   }
   const {budget,speed}=FlightLog.resultReadout(flight);
   el('endBudget').textContent=budget;
@@ -88,7 +89,10 @@ function finish(result) {
   el('debriefShare').hidden=flight.index!==3;
   el('endSeed').textContent=flight.index===3?seedLabel(flight.seed):'';
   el('endShareStatus').textContent='';
-  if(!won)lossDebriefAt=performance.now()+1350;
+  if(!won){
+    showLossCall(result);
+    lossDebriefAt=performance.now()+1350;
+  }
   updateLessonEnd();instruments();updateRack();
   if(won)el('debrief').showModal();
 }

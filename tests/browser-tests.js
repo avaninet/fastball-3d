@@ -25,6 +25,14 @@
     eq(due-performance.now()<=2000,'fade uses at most two real seconds');
     updateLossDebrief(due-1);eq(!el('debrief').open,'debrief waits for the fade');
     updateLossDebrief(due);eq(el('debrief').open&&!el('pause').disabled,'debrief ready');
+    eq(!el('lossEpilogue').hidden&&el('lossEpilogue').querySelector('em').textContent==="Raspberry, I'm coming home.",'game over closes with Tommi’s thought');
+    let prior=el('endCopy').getBoundingClientRect().bottom;
+    for(const p of el('lossEpilogue').querySelectorAll('p')){
+      const text=document.createRange();
+      text.selectNodeContents(p);
+      eq(text.getBoundingClientRect().top-prior>=12,'visible gap before each debrief paragraph');
+      prior=p.getBoundingClientRect().bottom;
+    }
   }
   function configure(index,mode,soft=false,story=false){
     click('new');el('scenario').value=index;el('scenario').dispatchEvent(new Event('change'));
@@ -988,7 +996,12 @@
         flight.pos={p:[0,-8,0],v:[0,.12,0]};reseat();flight.mask=1<<6;
         choose(6);setView([0,-1,0]);set('power',10);click('throw');
       }else advance(600);
-      if(ending!=='capture')completeLossTransition();
+      if(ending!=='capture'){
+        completeLossTransition();
+        const detail={oxygen:'oxygen reserve',stranded:'last tool',overspeed:'grab speed'};
+        eq(el('lossOpening').textContent.includes(detail[ending]),'radio call reflects '+ending);
+        eq(el('lossEpilogue').textContent.includes('Raspberry softly nudging her leg'),'Raspberry memory');
+      }
       eq(flight.done===ending&&el('debrief').open&&!el('debriefShare').hidden,'share after '+ending);
       eq(el('endSeed').textContent==='00019919','debrief seed');
       const recovered=ending==='capture'?Flight.budgets[flight.mask]:0;
@@ -1237,6 +1250,7 @@
         configure(index,mode);
         finish('capture');
         const call=el('endCopy').textContent;
+        eq(el('lossEpilogue').hidden,'capture keeps its own ending');
         calls.add(call);
         const credit=el('endCopy').querySelector('.attribution');
         eq(credit.textContent.startsWith('— ')&&getComputedStyle(credit).whiteSpace==='nowrap','unbroken radio credit');

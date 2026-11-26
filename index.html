@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg">
     <meta name="twitter:image:alt" content="Fastball 3D mission patch and title beside a visor view of a yellow power drill floating toward the space station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gvsvgXESCCJVacV4e/Adv2aUiZ2qyr275yiBK+nORzg=' 'sha256-grtM02oHyVFY7JDTz3fvTYYKlNScI+lDCEcRxn9ific=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-aj4BrVoQ3YteBMSGrqTxv0t9HxYKRdbNdemD62CTyjk=' 'sha256-3Moy91SdtA+ckz1RrQDauJxCE/T81TRAmKH1V+UF+w8=' 'sha256-rIMw5G5rL/1OvvCBbVvkNzTHDyBjaZqSrO091s1Own8=' 'sha256-EKz3menBcDBC3pGCUiAt7s08ad6DVX2qkHXgLyn/MX0=' 'sha256-5FDcrwLiq44CBsnahqPgCCqZi7Bq0L0bSwJKN/dZnzo=' 'sha256-uUSUTAeuwUOaQxfGUoTAPwh/Wm/YD8DlFheuTPTdZX0='; style-src 'sha256-LSDuXdQOPX6xdx6fHOd/6sEMPWdDClqF2l4tYQ04Mjs='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gvsvgXESCCJVacV4e/Adv2aUiZ2qyr275yiBK+nORzg=' 'sha256-grtM02oHyVFY7JDTz3fvTYYKlNScI+lDCEcRxn9ific=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-aj4BrVoQ3YteBMSGrqTxv0t9HxYKRdbNdemD62CTyjk=' 'sha256-BqeXq6qOPxn6+5P+HjCsEM6h7EHu4IDYC0GFcXPg9Hs=' 'sha256-rIMw5G5rL/1OvvCBbVvkNzTHDyBjaZqSrO091s1Own8=' 'sha256-EKz3menBcDBC3pGCUiAt7s08ad6DVX2qkHXgLyn/MX0=' 'sha256-SUmhYg779YmcNZYXBkXWF/3nU92p2WDucnW6nGB0ikY=' 'sha256-uUSUTAeuwUOaQxfGUoTAPwh/Wm/YD8DlFheuTPTdZX0='; style-src 'sha256-jX5mDGUxcC7RIYdoiN8T0ncqrHeSQV5PmpsFZAhx8Tk='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.3 · EVA return simulator</title>
@@ -341,6 +341,10 @@ dialog::backdrop {
 .dialogBody p,.dialogBody li {
   font-size: 14px;
   color: #c3cbcd;
+}
+
+#lossEpilogue p {
+  padding-block-start: 1em;
 }
 
 .dialogBody h3 {
@@ -2314,6 +2318,7 @@ main {
         smaller and dimmer. A violet cross marks the first contact or nearest pass. Looking straight down the path,
         you’ll see a diamond. The sidebar gives the projected grab, fast entry or closest clearance. Check aft when
         recoil takes you behind the crosshair. The dashed mint line shows your actual coast.</p>
+        <p><em>Pro tip: Work the problem - let's not make things worse by guessing.</em></p>
         <h3>The night-side sky</h3>
         <p>Tommi is in Earth’s shadow. The Moon is new. On this pass, it lies below Tommi’s horizon along with the
         Sun. Look for the faint stars above Earth’s curved edge. They give you a reference as you turn the visor.</p>
@@ -2363,6 +2368,7 @@ main {
           <h3 id="creditsTitle">Credits</h3>
           <p>an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere</p>
           <p><a href="mailto:avani@avaninet.com">avani@avaninet.com</a></p>
+          <p>version 0.3 - last updated <time id="gameUpdated" datetime="2026-11-26">Nov 26, 2026</time></p>
         </section>
       </div>
       <div class="dialogFoot">
@@ -2382,6 +2388,15 @@ main {
           <p>“Supply, cross that replacement drill off the manifest. Think you could send us some board games instead?”</p>
           <p><em>Back on Earth, the drill gets a ticker-tape parade. Tommi has a game that Saturday.</em></p>
         </section>
+        <div id="lossEpilogue" hidden>
+          <p><span id="lossOpening"></span> “Captain Dylan, do you read?
+          We have an advisory from BOREX-Houston. Message as follows: ‘Have you tried turning it off and on again?’”</p>
+          <p>Tommi replies in the calm that lies beyond calm: “Copy, Station. Cycling thrusters now.”</p>
+          <p>The valves un-stick. The main oxygen supply flows freely. <span id="lossManeuver"></span>
+          It reminds her of her tortoiseshell cat Raspberry softly nudging her leg for attention.
+          The commander calls out: “Captain Dylan? I don't know what you did, but it worked. <span id="lossCall"></span>”</p>
+          <p><em>Raspberry, I'm coming home.</em></p>
+        </div>
         <div class="result">
           <strong id="endBudget"></strong>
           <div id="endStats"></div>
@@ -3694,6 +3709,7 @@ function finish(result) {
   const won=result==='capture',drill=!flight.skippedGuidance&&!flight.log.releases.some(r=>r.tool===4);
   el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
   el('upmassHero').hidden=!(won&&drill);
+  el('lossEpilogue').hidden=won;
   if(won){
     showRescueCall(flight.initial.name,flight.mode);
   }else if(result==='stranded'){
@@ -3705,7 +3721,7 @@ function finish(result) {
       'Projected speed at the bars is '+Readout.speed(flight.forecast.hits[0].speed);
     el('endCopy').textContent=approach+' m/s. With the rack empty, the remaining coast offers no grab at or below '+Flight.limit.toFixed(3)+' m/s before oxygen runs out.';
   }else{
-    el('endCopy').textContent='The reserve ran out before a successful grab. Retry to test a different pitch.';
+    el('endCopy').textContent='The reserve ran out before a successful grab.';
   }
   const {budget,speed}=FlightLog.resultReadout(flight);
   el('endBudget').textContent=budget;
@@ -3714,7 +3730,10 @@ function finish(result) {
   el('debriefShare').hidden=flight.index!==3;
   el('endSeed').textContent=flight.index===3?seedLabel(flight.seed):'';
   el('endShareStatus').textContent='';
-  if(!won)lossDebriefAt=performance.now()+1350;
+  if(!won){
+    showLossCall(result);
+    lossDebriefAt=performance.now()+1350;
+  }
   updateLessonEnd();instruments();updateRack();
   if(won)el('debrief').showModal();
 }
@@ -4478,6 +4497,31 @@ function showRescueCall(opening, mode) {
   credit.className = 'attribution';
   credit.textContent = '— ' + speaker;
   el('endCopy').replaceChildren('“' + line + '” ', credit);
+}
+
+const lossCalls = {
+  oxygen: {
+    opening: 'The oxygen reserve ticks down to zero as Commander Bern crackles over the radio.',
+    maneuver: 'The suit is already gently pushing her to intercept.',
+    call: "Looks like you'll be back on station with time to spare."
+  },
+  stranded: {
+    opening: 'Tommi watches the last tool tumble away. Commander Bern comes over the radio.',
+    maneuver: 'A short burst from the suit puts the grab bars back on her flight path.',
+    call: "Your new track takes you right to the bars. I'll meet you there."
+  },
+  overspeed: {
+    opening: 'The grab speed on Commander Bern’s display is still in the red when he keys the radio.',
+    maneuver: 'The suit is already decelerating her to a safe intercept speed.',
+    call: "Looks like you're heading for a successful capture after all."
+  }
+};
+
+function showLossCall(result) {
+  const {opening, maneuver, call} = lossCalls[result];
+  el('lossOpening').textContent = opening;
+  el('lossManeuver').textContent = maneuver;
+  el('lossCall').textContent = call;
 }
 
 const lessons=[

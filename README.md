@@ -98,6 +98,8 @@ After a random flight, win or lose, open **Share → View flight card** for the 
 
 Run these commands from `fastball-3d` with Node.js 18 or newer. The game and build have no package dependencies.
 
+The build takes the guide’s version from `package.json` and stamps the credits with the UTC date whenever the standalone game changes. Rebuilding the same game preserves its date.
+
 ```sh
 node scripts/build.cjs
 node scripts/build.cjs --check
