@@ -4,7 +4,7 @@ An AvaniNet game.
 
 Fastball is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. Do not try this on orbit.
 
-Capt. Tommi Dylan (she/they) was the first test pilot to break Mach 10 in the classified SR-73 reconnaissance craft. These days she spends Saturdays pitching with friends, sometimes against the next town over. Now her tether has snapped and the thrusters on her lightweight prototype suit are stuck closed. Eighteen metres from the handrail, the former high school star pitcher reaches for the wrench pouch.
+Capt. Tommi Dylan (she/they) is widely rumored to have been the test pilot of the classified “unmanned” X-99 orbital spaceplane. These days she spends Saturdays pitching with friends, sometimes against the next town over. Now her tether has snapped and the thrusters on her lightweight prototype suit are stuck closed. Eighteen metres from the handrail, the former high school star pitcher reaches for the wrench pouch.
 
 ![The navigation plot shows the power drill’s empty slot, the selected wrench pouch, and the flight clock beside the coast forecast.](preview-qa.png)
 

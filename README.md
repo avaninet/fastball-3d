@@ -4,6 +4,8 @@ You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan ba
 
 [Play Fastball 3D in your browser](https://avaninet.github.io/fastball-3d/)
 
+Fastball 3D is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. **Do not try this on orbit.**
+
 **To play offline**, download `index.html` and open it in your browser. The game, cameras and artwork are all in that file. The cockpit targets Chromium 108+, Safari 16+ and Firefox 121+ for dynamic viewport units, container units and the CSS `:has()` selector. [Game file](index.html)
 
 **The tool goes through the forward crosshair. You recoil the other way.** On **Tether separation**, face away from the station before you throw. The tool will leave the forward visor and you can watch for the station in the aft camera. In the flight instruments, **Current coast** tells you whether you’ll reach the bars. If it says “Aim up and right,” that’s where to throw the *tool*. The recoil nudges your suit down and left relative to the same view.
@@ -16,7 +18,9 @@ The tether parts. The thruster valves stick closed. An astronaut drifting away w
 
 It’s the night of the new moon. From here in Earth’s shadow, the planet hides both Sun and Moon. A few stars hang above the dark curve of Earth. Ten minutes of air. The station a little farther away with every second. Tommi looks down the throat of death and decides she’s going to pitch her way home.
 
-Tommi broke Mach 10 in the classified SR-73, but the habit that comes back to her now is older than that. She was a high-school star pitcher. She still plays Saturdays with her friends, sometimes against a team from the next town. She fits her fingers around the handle as if it had seams, loosens them, then takes her grip again. On a dusty field in the bright sun, that’s the moment the crowd goes quiet for her. Out here the silence gives her a little room to breathe. She’ll need it.
+Tommi is widely rumored to have been the test pilot of the classified “unmanned” X-99 orbital spaceplane. “Let’s just say she’s set records she can never brag about.” —&nbsp;Commander&nbsp;Julian&nbsp;Bern
+
+The habit that comes back to her now is older than that. She was a high-school star pitcher. She still plays Saturdays with her friends, sometimes against a team from the next town. She fits her fingers around the handle as if it had seams, loosens them, then takes her grip again. On a dusty field in the bright sun, that’s the moment the crowd goes quiet for her. Out here the silence gives her a little room to breathe. She’ll need it.
 
 The crew would like their drill back. It’s the only one aboard until resupply, and by now it’s practically Tommi’s pet. After the incident, NASA has a talk with BOREX about where to put its datacenters. Earth comes strongly recommended.
 
@@ -65,7 +69,20 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 
 First, get Tommi home. In Story, compare throw count or grab speed. In manual flight, compare **Δv brought home**. Delta-v is how much more you could change your velocity with the tools still aboard. The debrief shows the remaining budget out of the original **0.456 m/s** and the percentage you recovered. Keeping the battery leaves a different reserve from keeping the tether clip, even though each counts as one tool. A lost suit brings home zero, including when it runs out of oxygen with equipment aboard.
 
-For the gentlest return, compare **Grab speed**, the suit’s total speed relative to the station at the instant of capture. Lower is gentler. A loss shows **Final relative speed**. Bring the original drill home and Julian awards **Upmass Hero**.
+For the gentlest return, compare **Grab speed**, the suit’s total speed relative to the station at the instant of capture. Lower is gentler. A loss shows **Final relative speed**.
+
+Tommi and Julian have eight rescue calls between them, one for each opening and flight model. Bring the original drill home and Julian adds **Upmass Hero** after the call. A Story reload supplies a replacement drill. Choosing **Skip guidance** during a lesson makes that flight ineligible for the award.
+
+<details>
+<summary>Read the Upmass Hero epilogue</summary>
+
+### Upmass Hero
+
+“Supply, cross that replacement drill off the manifest. Think you could send us some board games instead?”
+
+_Back on Earth, the drill gets a ticker-tape parade. Tommi has a game that Saturday._
+
+</details>
 
 **View flight log** shows both projections of the same flight at the same scale. The V-bar/R-bar pane shows along-track and radial motion. Check the other pane for a pass above or below the station. Each release has a mark on the chart and a numbered entry with its time, tool, power, bearing, position and resulting velocity. On long flights the chart labels a selection of throws. [Example flight log](reference/orbital-flight-log.png)
 

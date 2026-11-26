@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg">
     <meta name="twitter:image:alt" content="Fastball 3D mission patch and title beside a visor view of a yellow power drill floating toward the space station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gvsvgXESCCJVacV4e/Adv2aUiZ2qyr275yiBK+nORzg=' 'sha256-grtM02oHyVFY7JDTz3fvTYYKlNScI+lDCEcRxn9ific=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-aj4BrVoQ3YteBMSGrqTxv0t9HxYKRdbNdemD62CTyjk=' 'sha256-8kLx1JN7f7/dy5jq9A9OWAGcmBL5y58NOm2uXg5jUrA=' 'sha256-rIMw5G5rL/1OvvCBbVvkNzTHDyBjaZqSrO091s1Own8=' 'sha256-EKz3menBcDBC3pGCUiAt7s08ad6DVX2qkHXgLyn/MX0=' 'sha256-mdbjejmRZl4AXPi94hJ7fZShK2OKIQqFYQp4MExp69o=' 'sha256-uUSUTAeuwUOaQxfGUoTAPwh/Wm/YD8DlFheuTPTdZX0='; style-src 'sha256-e2b/F74R/OWl39OasQGBZcp3uBs8A/pZ8oJD8SesMuQ='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gvsvgXESCCJVacV4e/Adv2aUiZ2qyr275yiBK+nORzg=' 'sha256-grtM02oHyVFY7JDTz3fvTYYKlNScI+lDCEcRxn9ific=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-aj4BrVoQ3YteBMSGrqTxv0t9HxYKRdbNdemD62CTyjk=' 'sha256-3Moy91SdtA+ckz1RrQDauJxCE/T81TRAmKH1V+UF+w8=' 'sha256-rIMw5G5rL/1OvvCBbVvkNzTHDyBjaZqSrO091s1Own8=' 'sha256-EKz3menBcDBC3pGCUiAt7s08ad6DVX2qkHXgLyn/MX0=' 'sha256-5FDcrwLiq44CBsnahqPgCCqZi7Bq0L0bSwJKN/dZnzo=' 'sha256-uUSUTAeuwUOaQxfGUoTAPwh/Wm/YD8DlFheuTPTdZX0='; style-src 'sha256-LSDuXdQOPX6xdx6fHOd/6sEMPWdDClqF2l4tYQ04Mjs='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.3 · EVA return simulator</title>
@@ -420,6 +420,10 @@ input[type=radio],input[type=checkbox] {
   border-top: 1px solid var(--line);
   padding: 13px 22px;
   background: #151b1f;
+}
+
+.attribution {
+  white-space: nowrap;
 }
 
 .result {
@@ -2276,8 +2280,7 @@ main {
           <h2 id="guideTitle">Flight guide</h2>
           <button class="x close" aria-label="Close">×</button>
         </div>
-        <p>No astronaut has faced this scenario in space before. This is not a rescue procedure - this is a last
-        resort. <strong>Do not try this on orbit.</strong></p>
+        <p>Fastball 3D is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. <strong>Do not try this on orbit.</strong></p>
         <h3>Your first pitch</h3>
         <p><strong>The tool goes through the crosshair. You recoil the other way.</strong> On Tether separation, face
         away from the station before you throw. Look aft to see where you’re going. In the flight instruments,
@@ -2285,9 +2288,11 @@ main {
         to aim the next tool in the forward visor.</p>
         <details>
           <summary>Tommi and the BOREX suit</summary>
-          <p>Mission specialist Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays, the
-          former high-school star pitcher still takes the mound with friends. Sometimes the next town comes over for
-          a game.</p>
+          <p>Mission specialist Capt. Tommi Dylan (she/they) is widely rumored to have been the test pilot of the
+          classified “unmanned” X-99 orbital spaceplane. “Let’s just say she’s set records she can never brag about.”
+          <span class="attribution">— Commander Julian Bern</span></p>
+          <p>On Saturdays, the former high-school star pitcher still takes the mound with friends. Sometimes the next
+          town comes over for a game.</p>
           <p>BOREX designed its first spacesuit for servicing fleets of commercial datacenter satellites. It gives a
           technician more room to maneuver and is supposed to bring them home automatically. Tommi is out to
           cold-reboot an inference server when her tether parts and the thruster valves stick closed. Without either,
@@ -2340,6 +2345,9 @@ main {
         <p>Δv (delta-v) is how much more you could change your speed or direction with the tools aboard. Manual
         flights score the remaining tool budget at rescue. A lost suit brings home zero. In Story, compare throw
         count and grab speed. Grab speed measures how gently you reached the bars, including sideways motion.</p>
+        <p>Each of the four openings has a different radio call for a Straight-Line and an Orbital rescue. Bring
+        the original drill home to hear the <strong>Upmass Hero</strong> epilogue after the call. A Story reload
+        gives you a replacement drill. Finishing a guided lesson after choosing Skip guidance also skips the award.</p>
         <h3>Share a random drift</h3>
         <p>In New flight, choose Random drift to generate a seed or load a friend’s code or replay link. Copy replay
         includes the flight model, capture rule and Story setting. In an offline copy, paste the shared replay into
@@ -2369,6 +2377,11 @@ main {
           <button class="x close" aria-label="Close">×</button>
         </div>
         <p id="endCopy"></p>
+        <section id="upmassHero" hidden aria-labelledby="upmassTitle">
+          <h3 id="upmassTitle">Upmass Hero</h3>
+          <p>“Supply, cross that replacement drill off the manifest. Think you could send us some board games instead?”</p>
+          <p><em>Back on Earth, the drill gets a ticker-tape parade. Tommi has a game that Saturday.</em></p>
+        </section>
         <div class="result">
           <strong id="endBudget"></strong>
           <div id="endStats"></div>
@@ -3663,7 +3676,9 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   };
   selected=5;power=95;el('power').value=power;setClockStop(0);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
-  el('name').textContent=initial.name;el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. On Saturdays she pitches with friends. Today her tether snaps and her suit thrusters jam.':initial.brief;el('modeTag').textContent=mode;
+  el('name').textContent=initial.name;
+  el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) pitches on Saturdays. Rumor has it she flew the classified “unmanned” X-99 orbital spaceplane. Today her tether snaps and her suit thrusters jam.':initial.brief;
+  el('modeTag').textContent=mode;
   el('captureTag').textContent=soft?'Soft capture ≤ '+Flight.limit.toFixed(3)+' m/s':'Any-speed capture';
   el('seedTag').hidden=index!==3;el('seedTag').textContent='Copy replay · '+seedLabel(seed);
   Replays.updateAddress(flight);
@@ -3678,8 +3693,10 @@ function finish(result) {
   el('retry').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
   const won=result==='capture',drill=!flight.skippedGuidance&&!flight.log.releases.some(r=>r.tool===4);
   el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
-  el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”')+' — Commander Julian Bern':'The reserve ran out before a successful grab. Retry to test a different pitch.';
-  if(result==='stranded'){
+  el('upmassHero').hidden=!(won&&drill);
+  if(won){
+    showRescueCall(flight.initial.name,flight.mode);
+  }else if(result==='stranded'){
     const distance=flight.forecast.near.d;
     const clearance=Readout.clearance(distance);
     el('endCopy').textContent='The rack is empty. The remaining coast misses the bars by '+clearance+' m before oxygen expiry.';
@@ -3687,6 +3704,8 @@ function finish(result) {
     const approach=Flight.inside(flight.pos.p)?'You are inside the bars at '+Readout.speed(norm(flight.pos.v)):
       'Projected speed at the bars is '+Readout.speed(flight.forecast.hits[0].speed);
     el('endCopy').textContent=approach+' m/s. With the rack empty, the remaining coast offers no grab at or below '+Flight.limit.toFixed(3)+' m/s before oxygen runs out.';
+  }else{
+    el('endCopy').textContent='The reserve ran out before a successful grab. Retry to test a different pitch.';
   }
   const {budget,speed}=FlightLog.resultReadout(flight);
   el('endBudget').textContent=budget;
@@ -4434,7 +4453,34 @@ el('saveCard').onclick=async()=>{
   finally{URL.revokeObjectURL(url);}
 };
 </script>
-    <script>const lessons=[
+    <script>const rescueCalls = {
+  'Tether separation': {
+    'Straight-Line': ['Commander Julian Bern', 'There. That’s my tether clipped to your suit. Take all the time you need to let go of that rail.'],
+    'Orbital': ['Capt. Tommi Dylan', 'I spend all spring trying to get that much break on a pitch. Up here I get it for free.']
+  },
+  'Lateral drift': {
+    'Straight-Line': ['Capt. Tommi Dylan', 'Safe at second. I’d get up and dust myself off, but I think I’ll hang on here a minute.'],
+    'Orbital': ['Commander Julian Bern', 'You slid right past my window. Then I heard your glove ring the rail through the hull. Best sound I’ve heard all day, Tommi.']
+  },
+  'Wide separation': {
+    'Straight-Line': ['Commander Julian Bern', 'Out there I could cover your suit with my thumb. It’s good to have to move over and make room for you again.'],
+    'Orbital': ['Capt. Tommi Dylan', 'For a while there I had the whole station in my visor and no idea where we’d meet. Now I can read the part number on this rail. Give me a minute, Julian.']
+  },
+  'Random drift': {
+    'Straight-Line': ['Commander Julian Bern', 'BOREX just called to ask if the server’s back up. I told them I got the technician back. They can hold.'],
+    'Orbital': ['Capt. Tommi Dylan', 'Save that plot for me, Julian. Next time the folks back home ask what I fly, I’ve finally got something I can show them.']
+  }
+};
+
+function showRescueCall(opening, mode) {
+  const [speaker, line] = rescueCalls[opening][mode];
+  const credit = document.createElement('span');
+  credit.className = 'attribution';
+  credit.textContent = '— ' + speaker;
+  el('endCopy').replaceChildren('“' + line + '” ', credit);
+}
+
+const lessons=[
   {title:'First rescue',index:0,mode:'Straight-Line',soft:false},
   {title:'Trim an oblique miss',index:1,mode:'Straight-Line',soft:false},
   {title:'Brake for the bars',index:1,mode:'Straight-Line',soft:true},

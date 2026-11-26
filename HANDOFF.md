@@ -42,11 +42,11 @@ Start with the existing committed coast and add sparse arrowheads at future time
 
 ### 4. Bring Tommi and the first rescue back
 
-**Character continuity.** Mission specialist Capt. Tommi Dylan (she/they) broke Mach 10 in the classified SR-73. The former high-school star pitcher still pitches with friends on Saturdays. A tether separates during a test of the lightweight prototype suit. The integrated thruster valves stick closed. Tools become Tommi’s remaining means of propulsion. Preserve the dry humor and the welcome for bringing the original drill home. Alpha v0.4 calls that achievement **Upmass Hero**.
+**Character continuity.** Mission specialist Capt. Tommi Dylan (she/they) is widely rumored to have been the test pilot of the classified “unmanned” X-99 orbital spaceplane. The former high-school star pitcher still pitches with friends on Saturdays. A tether separates during a test of the lightweight prototype suit. The integrated thruster valves stick closed. Tools become Tommi’s remaining means of propulsion. In the current 3D game, the opening and flight model determine the rescue call. Bringing home the original drill earns a separate **Upmass Hero** epilogue.
 
 **Teaching sequence.** Give Story a skippable, replayable **First rescue**. Establish what the visor aims at and let the player see the tool go one way and the suit recoil the other. Have them read the aft camera, take one halfway course check, make a light correction if needed and coast to a grab. Include an oblique miss and a short lesson on braking along the measured drift for soft capture. A fast grab must carry on through the station with a chance to return. Demonstrate orbital curvature after the player understands the straight-line case. The 2D tutorial uses a wrench pouch. Verify a suitable 3D pouch route or use the tested battery opening and explain the tool choice.
 
-**Reference.** The Alpha v0.4 manual from the original checkout is included as [alpha-v0.4-manual.txt](reference/alpha-v0.4-manual.txt). Its relative image links refer to the original game repository. The 3D tutorial must teach the new controls and full station envelope. Treat the 2D mode ladder, unlimited Story inventory and alternate timers as historical choices. Their adoption in 3D is open.
+**Reference.** The [Alpha v0.4 manual](reference/alpha-v0.4-manual.txt) preserves the 2D instructions. The pilot biography in this copy follows current 3D continuity. Its relative image links refer to the original game repository. The 3D tutorial must teach the new controls and full station envelope. Treat the 2D mode ladder, unlimited Story inventory and alternate timers as historical choices. Their adoption in 3D is open.
 
 ### 5. Give the debrief a screenshot-ready flight log
 

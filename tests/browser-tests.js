@@ -534,7 +534,7 @@
     for(let i=0;i<7;i++){click('throw');advance(.5);}
     const hit=flight.forecast.hits[0];eq(hit&&running,'the thirteenth throw leaves a return coast');
     tick(600,30);eq(flight.done==='capture'&&flight.throws===13,'captured after thirteen throws');
-    eq(!el('endCopy').textContent.includes('Upmass Hero'),'a reloaded drill is a replacement');
+    eq(el('upmassHero').hidden,'a reloaded drill is a replacement');
     click('viewLog');eq(el('logThrows').children.length===13,'full rescue logged');
   });
   test('Skipping First rescue hands the replenished rack to manual flight',()=>{
@@ -549,7 +549,7 @@
     beginLesson(0);click('away');click('throw');click('skipLesson');tick(600,30);
     eq(flight.done==='capture','the assisted coast still reaches the bars');
     eq(el('endBudget').textContent.includes('Assisted')&&!el('endBudget').textContent.includes('%'),'no manual score');
-    eq(!el('endCopy').textContent.includes('Upmass Hero'),'no manual award');
+    eq(el('upmassHero').hidden,'no manual award');
     click('viewLog');
     eq(el('logSummary').textContent.includes('Assisted')&&el('logSummary').textContent.includes('1 throw'),'log retains assisted release');
     el('flightLog').close();click('retry');
@@ -753,7 +753,7 @@
         if(i===2)eq(dot(Flight.direction(yaw,pitch),unit(flight.pos.v))>.999,'brake measured drift');
         click('throw');
       }
-      click('lessonAction');eq(flight.done==='capture'&&el('endCopy').textContent.includes('Upmass Hero'),'lesson '+i+' outcome '+flight.done+' / '+el('endCopy').textContent+' / '+el('lessonCue').textContent);
+      click('lessonAction');eq(flight.done==='capture'&&!el('upmassHero').hidden,'lesson '+i+' outcome '+flight.done+' / '+el('endCopy').textContent+' / '+el('lessonCue').textContent);
       if(i<3)click('nextLesson');
     }
     click('retry');click('skipLesson');eq(!flight.story&&running&&el('lesson').hidden,'manual handover');
@@ -1230,14 +1230,39 @@
       el('flightLog').close();el('debrief').close();
     }
   });
+  test('Each opening and model has its own rescue call, with a separate drill epilogue',()=>{
+    const calls=new Set();
+    for(let index=0;index<4;index++){
+      for(const mode of ['Straight-Line','Orbital']){
+        configure(index,mode);
+        finish('capture');
+        const call=el('endCopy').textContent;
+        calls.add(call);
+        const credit=el('endCopy').querySelector('.attribution');
+        eq(credit.textContent.startsWith('— ')&&getComputedStyle(credit).whiteSpace==='nowrap','unbroken radio credit');
+        eq(!el('upmassHero').hidden&&el('endCopy').nextElementSibling===el('upmassHero'),'original drill appends epilogue');
+        el('debrief').close();
+        configure(index,mode);
+        click('tool4');click('throw');
+        eq(flight.log.releases.some(r=>r.tool===4),'original drill released');
+        finish('capture');
+        eq(el('endCopy').textContent===call&&el('upmassHero').hidden,'same call without award');
+        el('debrief').close();
+      }
+    }
+    eq(calls.size===8,'eight distinct rescue calls');
+    configure(0,'Straight-Line');finish('capture');el('debrief').close();
+    configure(0,'Straight-Line');advance(flight.limit);completeLossTransition();
+    eq(el('upmassHero').hidden&&!el('endCopy').querySelector('.attribution'),'loss clears both parts of the welcome');
+  });
   test('Guide and tutorial introduce recoil and the original mission',()=>{
-    click('manual');const guide=el('guide').textContent;
-    eq(['presumed lost','Newton’s third law','wrench','SR-73','next town'].every(s=>guide.includes(s)),'guide premise and backstory');
+    click('manual');const guide=el('guide').textContent.replace(/\s+/g,' ');
+    eq(['presumed lost','Newton’s third law','wrench','widely rumored','“unmanned” X-99 orbital spaceplane','next town'].every(s=>guide.includes(s)),'guide premise and backstory');
     eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere','credit line');
     eq(el('guide').querySelector('.credits a').getAttribute('href')==='mailto:avani@avaninet.com','credit contact');
     enterLesson('replayLesson');
     eq(['presumed lost','Newton’s third law','wrench','pushes you back','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
-    eq(el('brief').textContent.includes('Saturdays'),'character in opening');
+    eq(['Saturdays','Rumor','X-99'].every(s=>el('brief').textContent.includes(s)),'character in opening');
   });
   const out=document.createElement('pre');out.id='qa-result';out.textContent=JSON.stringify({passed,errors,rects,viewport:[innerWidth,innerHeight]});document.body.append(out);
 })();

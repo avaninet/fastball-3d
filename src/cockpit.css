@@ -394,6 +394,10 @@ input[type=radio],input[type=checkbox] {
   background: #151b1f;
 }
 
+.attribution {
+  white-space: nowrap;
+}
+
 .result {
   padding: 14px;
   background: var(--bg);

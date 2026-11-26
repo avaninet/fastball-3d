@@ -1,3 +1,30 @@
+const rescueCalls = {
+  'Tether separation': {
+    'Straight-Line': ['Commander Julian Bern', 'There. That’s my tether clipped to your suit. Take all the time you need to let go of that rail.'],
+    'Orbital': ['Capt. Tommi Dylan', 'I spend all spring trying to get that much break on a pitch. Up here I get it for free.']
+  },
+  'Lateral drift': {
+    'Straight-Line': ['Capt. Tommi Dylan', 'Safe at second. I’d get up and dust myself off, but I think I’ll hang on here a minute.'],
+    'Orbital': ['Commander Julian Bern', 'You slid right past my window. Then I heard your glove ring the rail through the hull. Best sound I’ve heard all day, Tommi.']
+  },
+  'Wide separation': {
+    'Straight-Line': ['Commander Julian Bern', 'Out there I could cover your suit with my thumb. It’s good to have to move over and make room for you again.'],
+    'Orbital': ['Capt. Tommi Dylan', 'For a while there I had the whole station in my visor and no idea where we’d meet. Now I can read the part number on this rail. Give me a minute, Julian.']
+  },
+  'Random drift': {
+    'Straight-Line': ['Commander Julian Bern', 'BOREX just called to ask if the server’s back up. I told them I got the technician back. They can hold.'],
+    'Orbital': ['Capt. Tommi Dylan', 'Save that plot for me, Julian. Next time the folks back home ask what I fly, I’ve finally got something I can show them.']
+  }
+};
+
+function showRescueCall(opening, mode) {
+  const [speaker, line] = rescueCalls[opening][mode];
+  const credit = document.createElement('span');
+  credit.className = 'attribution';
+  credit.textContent = '— ' + speaker;
+  el('endCopy').replaceChildren('“' + line + '” ', credit);
+}
+
 const lessons=[
   {title:'First rescue',index:0,mode:'Straight-Line',soft:false},
   {title:'Trim an oblique miss',index:1,mode:'Straight-Line',soft:false},
