@@ -10,6 +10,8 @@ Work in this repository on the dedicated 3D game. Use `REVIEW.md` and `DIFFICULT
 | `src/cockpit.css` | Cockpit and dialog styling, including responsive layouts |
 | `src/game.js` | Flight state, clock, camera and keyboard inputs, throw controls, instruments and UI |
 | `src/physics.js` | Gear, momentum, coast propagation, volume entries, closest pass, random starts and feasibility checks |
+| `src/debris.js` | Dodgeball pieces, collision boxes, the DB1 generator and avoidance predictions. Dimensions are in [Debris assembly](reference/debris-assembly.md). |
+| `assets/dodgeball-seeds.json` | Qualified Random Dodgeball seed IDs. Regenerate with [the catalog study](reference/random-dodgeball-study.md). |
 | `src/earth.js` | Photographic Earth projection, GPU texture and software fallback shared by both cameras |
 | `src/station.js` | Station assembly, surface order and tool visibility. Dimensions and mating faces are in [Station assembly](reference/station-assembly.md). |
 | `src/equipment.js` | Rack artwork, released tool sprites and their visual lifetimes |

@@ -40,7 +40,9 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 | Tether separation | A slow outward drift. A good place to learn which camera to watch after a throw. |
 | Lateral drift | You’re sliding across the station face. Watch where you’ll pass even as the range shrinks. |
 | Wide separation | You start farther out. An early throw buys time to spot and correct a miss. |
+| Dodgeball Challenge | A failed work platform tears away Tommi’s tether anchor. A loose service cover and a bent equipment frame cross the return route. Both pieces follow the chosen flight model. |
 | Random drift | A seed fixes the starting position and velocity. Friends can fly the same opening. |
+| Random Dodgeball | A DB1 seed selects one of 4,096 qualified cover and frame trajectories. Use either flight model, capture rule or inventory mode. |
 | Straight-Line / Orbital | In Straight-Line, velocity stays constant between throws. In Orbital, the path can bend relative to the orbiting station. Watch the committed coast. |
 | Require a soft capture | Off by default. Turn it on to require **0.080 m/s or slower** within the bars. A fast entry carries you through. You can still brake inside the volume or come back around. |
 | Story flight | Unlimited auto-reloading tools and a closer opening with **Face station**, **Face away** and **Face drift**. Line up before the clock starts or while paused. **Throw** starts or resumes flight at 1×. |
@@ -71,7 +73,7 @@ First, get Tommi home. In Story, compare throw count or grab speed. In manual fl
 
 For the gentlest return, compare **Grab speed**, the suit’s total speed relative to the station at the instant of capture. Lower is gentler. A loss shows **Final relative speed**.
 
-Tommi and Julian have eight rescue calls between them, one for each opening and flight model. Bring the original drill home and Julian adds **Upmass Hero** after the call. A Story reload supplies a replacement drill. Choosing **Skip guidance** during a lesson makes that flight ineligible for the award.
+Tommi and Julian have ten rescue calls between them, one for each opening and flight model. Bring the original drill home and Julian adds **Upmass Hero** after the call. A Story reload supplies a replacement drill. Choosing **Skip guidance** during a lesson makes that flight ineligible for the award.
 
 <details>
 <summary>Read the Upmass Hero epilogue</summary>
@@ -88,7 +90,7 @@ _Back on Earth, the drill gets a ticker-tape parade. Tommi has a game that Satur
 
 ## Challenge a friend
 
-In **New flight**, choose **Random drift**. Paste a seed or replay link and press **Load seed** to preview the opening. A bare seed uses your current settings. A replay restores the sender’s flight model, capture rule and Story setting. You can change any of those settings after loading the link. New `E-` seeds include sideways crossings and require at least one throw to reach the bars within ten minutes in either flight model, in manual and Story flight. Existing `D-` and plain hexadecimal seeds replay their original openings.
+In **New flight**, choose **Random drift** or **Random Dodgeball**. **Generate seed** draws from the selected scenario. Pasting a code or replay link selects the matching scenario automatically. A bare seed uses your current settings. A replay restores the sender's flight model, capture rule and Story setting. You can change those settings after loading the link. Dodgeball codes such as `DB1-007C5282` restore both debris trajectories. New `E-` seeds include sideways crossings and require at least one throw to reach the bars within ten minutes in either flight model, in manual and Story flight. Existing `D-` and plain hexadecimal seeds replay their original openings.
 
 **Copy replay** works in setup, in the cockpit and in the debrief. The link uses Alpha’s fragment format, for example `#seed=D-00019919&level=Orbital&goal=soft&story=1`. An offline copy shares the fragment for a friend to paste into **Load seed**. A hosted copy includes the web address.
 

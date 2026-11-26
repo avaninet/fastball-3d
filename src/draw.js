@@ -15,9 +15,10 @@ const Visor = (() => {
     a[(axis+1)%3]=b[(axis+1)%3]=j*half[(axis+1)%3];a[(axis+2)%3]=b[(axis+2)%3]=k*half[(axis+2)%3];edges.push([a,b]);
   }
   const near=.09;
-  function camera(p,az,el,w,h,small) {
+  function camera(p,az,el,w,h,small,hasDebris=false) {
     const {forward,right,up,local}=orientation(az,el);
-    const f=Math.min(w*(small?.64:.75),h*(small?.87:1.05));
+    const wide=hasDebris&&!small&&w<600;
+    const f=Math.min(w*(small?.64:.75),h*(small?.87:1.05))*(wide?.76:1);
     const world=q=>local(sub(q,p));
     const screen=q=>[w/2+f*q[0]/q[2],h/2-f*q[1]/q[2]];
     return {p,az,el,forward,right,up,f,local,world,screen};
@@ -168,7 +169,9 @@ const Visor = (() => {
   function course(ctx,cam,state,small,w,h,label,preview=false) {
     if(!preview&&!state.time&&!state.throws)return;
     const m=state.forecast;
-    const hit=preview&&state.soft?m.hits.find(entry=>Flight.softEnough(entry.speed)):m.hits[state.hitIndex];
+    const stationHit=preview&&state.soft?m.hits.find(entry=>Flight.softEnough(entry.speed)):m.hits[state.hitIndex];
+    const impact=m.debris?.hit;
+    const hit=impact&&(!stationHit||impact.t<=stationHit.t)?impact:stationHit;
     coastPath(ctx,cam,state,hit,small,preview);
     const {heads,visible,behind}=courseGlyphs(cam,state,w,h,hit??null);
     for(const {at,angle,range} of heads){
@@ -183,7 +186,7 @@ const Visor = (() => {
       ctx.restore();
     }
     if(preview){
-      const pass=m.hits[0]||m.near,q=cam.world(pass.p);
+      const pass=impact||m.hits[0]||m.near,q=cam.world(pass.p);
       if(q[2]>=near){
         const [x,y]=cam.screen(q),r=3+3*depthWeight(norm(q));
         ctx.strokeStyle='#dfb3fd';ctx.lineWidth=1.7;ctx.beginPath();
@@ -219,6 +222,7 @@ const Visor = (() => {
       const direction=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
       label(w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');
     }
+    if(hit?.body)return; // The contact marker labels the encounter.
     const pass=hit||Flight.coastPass(m,state.age);
     if(pass.t<state.age-.01)return;
     if(!hit)line3(ctx,cam,pass.p,pass.bar,'#f3b76a',1);
@@ -227,6 +231,76 @@ const Visor = (() => {
     ctx.strokeStyle=hit && (!state.soft || Flight.softEnough(hit.speed))?'#97ecc6':'#ffc370';
     ctx.lineWidth=1.6;ctx.strokeRect(x-3.5,y-3.5,7,7);
     if(!small)label(x+9,y-6,hit?'CONTACT':'NEAREST PASS',ctx.strokeStyle);
+  }
+  function debrisMesh(ctx,cam,body,center){
+    const eye=sub(cam.p,center),mesh=body.mesh;
+    const faces=mesh.ordered?mesh.ordered(eye):mesh.faces;
+    for(const face of faces){
+      if(dot(sub(eye,face.vertices[0]),face.normal)<=0)continue;
+      const points=clip(face.vertices.map(v=>cam.world(add(center,v))));
+      if(points.length<3)continue;
+      polygon(ctx,points.map(cam.screen));
+      ctx.fillStyle=body.colors[face.tone];ctx.fill();
+      ctx.strokeStyle='#16212b';ctx.lineWidth=3.3;ctx.stroke();
+      ctx.strokeStyle='#e3ebdf';ctx.lineWidth=1;ctx.stroke();
+      if(face.marks && cam.f/points[0][2]>12){
+        for(const m of face.marks)line3(ctx,cam,add(center,m.a),add(center,m.b),m.color,m.width);
+      }
+    }
+  }
+  function debrisScene(ctx,cam,state,small){
+    const hazard=state.forecast.debris.hit;
+    const objects=state.debrisPieces.map(body=>({body,center:Flight.motion(body,state.time,state.mode).p}));
+    objects.sort((a,b)=>cam.world(b.center)[2]-cam.world(a.center)[2]);
+    ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+    for(const {body,center} of objects){
+      if(Station.crosses(cam.p,center))continue;
+      let previous=center;
+      for(const seconds of [12,24,36,48]){
+        const next=Flight.motion(body,state.time+seconds,state.mode).p;
+        line3(ctx,cam,previous,next,'#a9b8c98a',1);
+        const q=cam.world(next);
+        if(q[2]>near){
+          const [x,y]=cam.screen(q);ctx.fillStyle='#cddae3';ctx.fillRect(x-1,y-1,2,2);
+          const prev=cam.world(previous);
+          if(seconds===48 && prev[2]>near){
+            const [px,py]=cam.screen(prev),dx=x-px,dy=y-py,len=Math.hypot(dx,dy);
+            if(len>2){
+              const ux=dx/len,uy=dy/len;
+              for(const sign of [-1,1])stroke(ctx,[x-5*ux+sign*2.5*uy,y-5*uy-sign*2.5*ux],[x,y],'#cddae3',1);
+            }
+          }
+        }
+        previous=next;
+      }
+      debrisMesh(ctx,cam,body,center);
+      if(body===hazard?.body){
+        const {silhouette,creases}=body.box.visibleEdges(sub(cam.p,center));
+        // A convex box hides its rear edges. Only its near-face folds get
+        // a dotted stroke, beneath the continuous rim of its silhouette.
+        ctx.setLineDash(small?[2,3]:[3,4]);
+        for(const {a,b} of creases)line3(ctx,cam,add(center,a),add(center,b),'#ffcc7ba8',small?.8:1);
+        ctx.setLineDash([]);
+        for(const {a,b} of silhouette)line3(ctx,cam,add(center,a),add(center,b),'#38260fb3',small?2:2.7);
+        for(const {a,b} of silhouette)line3(ctx,cam,add(center,a),add(center,b),'#ffc260',small?1.05:1.45);
+      }
+    }
+    ctx.restore();
+  }
+  function encounterMarker(ctx,cam,hit,small,label,preview,age){
+    if(!hit)return;
+    const q=cam.world(hit.contact);
+    if(q[2]<near)return;
+    const [x,y]=cam.screen(q),color=preview?'#e8b6ff':'#a9d9f5',size=small?4:6;
+    ctx.save();
+    for(const sign of [-1,1]){
+      const a=[x-size,y-sign*size],b=[x+size,y+sign*size];
+      stroke(ctx,a,b,'#1d1520',3.3);stroke(ctx,a,b,color,1.6);
+    }
+    const remaining=clockText(Math.ceil(Math.max(0,hit.t-age)));
+    const title=preview?'THROW':small?'HIT':hit.body.short.toUpperCase()+' HIT';
+    label(x+10,y+(preview?17:-9),title+' +'+remaining,color);
+    ctx.restore();
   }
   function targetMarker(ctx,cam,canvas,w,h,small,label) {
     const q=cam.world([0,0,0]),xy=q[2]>near?cam.screen(q):null;
@@ -260,7 +334,7 @@ const Visor = (() => {
       ctx.fillRect(px-star.size/2,py-star.size/2,star.size,star.size);
     }
   }
-  function render(canvas,az,el,state,small=false,backdrop=null,preview=null) {
+  function render(canvas,az,el,state,small=false,backdrop=null,preview=null,coachAim=null) {
     const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
     const ratio=Math.min(window.devicePixelRatio||1,1.75);
     const width=Math.round(w*ratio),height=Math.round(h*ratio);
@@ -272,14 +346,28 @@ const Visor = (() => {
       surface.width=width;surface.height=Math.round(sceneHeight*ratio);
     }
     const ctx=surface.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
-    const cam=camera(state.pos.p,az,el,w,h,small);
+    const cam=camera(state.pos.p,az,el,w,h,small,!!state.forecast.debris);
     EarthSky.draw(ctx,w,sceneHeight,h/2,cam);
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const label=captions(ctx,canvas,w,small);
     station(ctx,cam);
+    if(state.forecast.debris)debrisScene(ctx,cam,state,small);
     Equipment.draw(ctx,cam,w,sceneHeight,state.objects,small);
     if(preview)course(ctx,cam,preview,small,w,h,label,true);
     course(ctx,cam,state,small,w,h,label);
+    if(state.forecast.debris){
+      encounterMarker(ctx,cam,preview?.forecast.debris?.hit,small,label,true,0);
+      encounterMarker(ctx,cam,state.forecast.debris.hit,small,label,false,state.age);
+      if(coachAim){
+        const q=cam.local(coachAim.dir);
+        if(q[2]>.15){
+          const [x,y]=cam.screen(q);
+          ctx.beginPath();ctx.arc(x,y,small?5:9,0,2*Math.PI);ctx.lineWidth=3;ctx.strokeStyle='#14232c';ctx.stroke();
+          ctx.lineWidth=1.4;ctx.strokeStyle='#f5e7c3';ctx.stroke();
+          if(!small)label(x+13,y+4,'AIM THROW','#f5e7c3');
+        }
+      }
+    }
     const cx=w/2,cy=h/2,r=Math.min(w,h)*(small?.28:.34);
     const drift=cam.local(unit(state.pos.v));
     if(drift[2]>.15 && norm(state.pos.v)>1e-6){

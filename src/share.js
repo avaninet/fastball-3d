@@ -24,6 +24,10 @@ const Replays=(()=>{
       if(!['Straight-Line','Orbital'].includes(mode)||!['none','soft'].includes(goal)||!['0','1'].includes(assisted))return null;
       soft=goal==='soft';story=assisted==='1';
     }
+    if(/^DB1-/i.test(code)){
+      if(!/^DB1-[\da-f]{8}$/i.test(code)||!approvedDodgeballSeeds.has(parseInt(code.slice(4),16)))return null;
+      return {seed:code.toUpperCase(),mode,soft,story};
+    }
     const match=/^([DE]-)?([\da-f]{1,8})$/i.exec(code);
     if(!match)return null;
     const number=parseInt(match[2],16);
@@ -45,7 +49,7 @@ const Replays=(()=>{
   }
   function updateAddress(active){
     if(!['file:','http:','https:'].includes(location.protocol))return;
-    const hash=active.index===3?fragment(active):'';
+    const hash=isSeeded(active.index)?fragment(active):'';
     if((!hash&&!hasSeed(location.hash))||location.hash===hash)return;
     const url=new URL(location.href);url.hash=hash;
     try{history.replaceState(history.state,'',url.href);}catch{/* Some local viewers isolate history. */}
@@ -56,11 +60,12 @@ const Replays=(()=>{
     const needsConfirmation=flight&&((started&&!flight.done)||el('setup').open);
     for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
     if(replay&&!needsConfirmation){
-      start(3,replay.mode,replay.soft,replay.seed,replay.story);
+      start(seedScenario(replay.seed),replay.mode,replay.soft,replay.seed,replay.story);
     }else{
       if(!flight)start(0,'Straight-Line',false);
       updateAddress(flight); // Cancel keeps the current flight and its address.
-      openSetup();el('scenario').value='3';el('seed').value=hash.length<=maxLength?hash:'';updateSetup();
+      openSetup();el('scenario').value=replay?String(seedScenario(replay.seed)):/#seed=DB1-/i.test(hash)?'5':'3';
+      el('seed').value=hash.length<=maxLength?hash:'';updateSetup();loadSetupSeed();
     }
     return true;
   }
@@ -89,13 +94,14 @@ el('openShareCard').onclick=()=>{
 };
 el('copyChallenge').onclick=()=>{
   const text=el('cardArt').querySelector('desc').textContent;
-  const challenge=flight.done!=='capture'?'Can you get Tommi home from this drift?':flight.story?'Can you make a gentler grab or get home in fewer throws?':'Can you bring home more Δv or make a gentler grab?';
+  if(flight.index===4)return Replays.copy(text,el('cardStatus'),'Flight summary copied.');
+  const challenge=flight.done!=='capture'?(flight.index===5?'Can you get Tommi past this debris and home?':'Can you get Tommi home from this drift?'):flight.story?'Can you make a gentler grab or get home in fewer throws?':'Can you bring home more Δv or make a gentler grab?';
   return Replays.copy(text+'\n'+challenge+'\n'+Replays.link(flight),el('cardStatus'),'Challenge copied.');
 };
 el('saveCard').onclick=async()=>{
   const image=new Image(),svg=el('cardArt').querySelector('svg');
   const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)],{type:'image/svg+xml;charset=utf-8'}));
-  const filename='Fastball-3D-'+seedLabel(flight.seed)+'.png';
+  const filename='Fastball-3D-'+(flight.index===4?'Dodgeball-Challenge':seedLabel(flight.seed))+'.png';
   try{
     image.src=url;await image.decode();
     const canvas=document.createElement('canvas');canvas.width=svg.viewBox.baseVal.width*2;canvas.height=svg.viewBox.baseVal.height*2;

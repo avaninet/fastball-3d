@@ -11,9 +11,17 @@ const rescueCalls = {
     'Straight-Line': ['Commander Julian Bern', 'Out there I could cover your suit with my thumb. It’s good to have to move over and make room for you again.'],
     'Orbital': ['Capt. Tommi Dylan', 'For a while there I had the whole station in my visor and no idea where we’d meet. Now I can read the part number on this rail. Give me a minute, Julian.']
   },
+  'Dodgeball Challenge': {
+    'Straight-Line': ['Commander Julian Bern', 'I saw the cover go by. Then the frame. Been waiting for the one thing out there I actually wanted to catch. Welcome back, Tommi.'],
+    'Orbital': ['Capt. Tommi Dylan', 'That frame broke across the plate just like I thought it would. Thanks for keeping a hand on home, Julian.']
+  },
   'Random drift': {
     'Straight-Line': ['Commander Julian Bern', 'BOREX just called to ask if the server’s back up. I told them I got the technician back. They can hold.'],
     'Orbital': ['Capt. Tommi Dylan', 'Save that plot for me, Julian. Next time the folks back home ask what I fly, I’ve finally got something I can show them.']
+  },
+  'Random Dodgeball': {
+    'Straight-Line': ['Capt. Tommi Dylan', 'I could hear you holding your breath when that cover went past, Julian. You can let it out now. I’ve got the rail.'],
+    'Orbital': ['Commander Julian Bern', 'From this window it looked like you and that frame were headed for the same spot. Then it sailed past, and there was your glove. Welcome home.']
   }
 };
 

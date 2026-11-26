@@ -1245,7 +1245,7 @@
   });
   test('Each opening and model has its own rescue call, with a separate drill epilogue',()=>{
     const calls=new Set();
-    for(let index=0;index<4;index++){
+    for(let index=0;index<6;index++){
       for(const mode of ['Straight-Line','Orbital']){
         configure(index,mode);
         finish('capture');
@@ -1264,7 +1264,7 @@
         el('debrief').close();
       }
     }
-    eq(calls.size===8,'eight distinct rescue calls');
+    eq(calls.size===12,'twelve distinct rescue calls');
     configure(0,'Straight-Line');finish('capture');el('debrief').close();
     configure(0,'Straight-Line');advance(flight.limit);completeLossTransition();
     eq(el('upmassHero').hidden&&!el('endCopy').querySelector('.attribution'),'loss clears both parts of the welcome');
@@ -1277,6 +1277,138 @@
     enterLesson('replayLesson');
     eq(['presumed lost','Newton’s third law','wrench','pushes you back','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
     eq(['Saturdays','Rumor','X-99'].every(s=>el('brief').textContent.includes(s)),'character in opening');
+  });
+  test('Dodgeball setup, prediction, coach, clock protection and collision ending',()=>{
+    click('new');
+    eq(Array.from(el('scenario').options,o=>o.value).join()==='0,1,2,4,3,5','fixed and seeded scenario ordering');
+    el('scenario').value='4';updateSetup();
+    eq(el('seedGroup').hidden && el('setupBrief').textContent.includes('bent equipment frame'),'incident briefing');
+    el('setup').close();
+    for(const mode of ['Straight-Line','Orbital']){
+      configure(4,mode,true,true);
+      eq(!el('coachControl').hidden && flight.soft && flight.story,'challenge rules');
+      click('showPreview');setView(flight.pos.p);changePower(95);choose(5);
+      const preview=predictThrow();
+      eq(preview.forecast.debris.hit?.body===Debris.pieces[0] && describePreview(preview).includes('Cover impact'),'preview identifies the cover');
+      click('throw');
+      const hit=flight.forecast.debris.hit;
+      close(hit.t,preview.forecast.debris.hit.t,.002);
+      eq(el('coast').textContent.includes('Cover impact'),'collision overrides station advice');
+      el('dodgeCoach').checked=true;el('dodgeCoach').onchange();
+      eq(coachCache.aim && el('advice').textContent.includes('100%'),'tested directional suggestion');
+      const suggestion=coachCache.aim;
+      const next=Flight.release(flight.pos,suggestion.tool,100,suggestion.dir,flight.mask);
+      eq(!Debris.forecast(next,flight.time,600-flight.time,mode).hit,'suggestion clears both');
+      paintVisors();
+      setClockStop(3);advance(Math.max(0,hit.t-Debris.warningLead)+1);
+      eq(rate===1&&!el('clockWarning').hidden && el('clockRate').closest('label').classList.contains('debrisBrake'),'1x and visible reason');
+      set('clockRate',3);eq(rate===1,'inside warning window protection persists');
+      advance(hit.t+1);
+      eq(flight.done==='collision' && Math.abs(flight.time-hit.t)<.015,'time of impact');
+      updateLossDebrief(lossDebriefAt);
+      eq(!el('collisionEpilogue').hidden && el('lossEpilogue').hidden && el('collisionEpilogue').textContent.includes('jiggled something loose'),'Bern collision ending');
+      click('viewLog');eq(el('logEvents').textContent.includes('Debris collision'),'log records collision');
+      eq(el('logPanes').querySelectorAll('.debrisTrack').length===4 && !el('logDebrisKey').hidden,'both pieces plotted on both axes');
+      el('flightLog').close();click('openShareCard');
+      const art=el('cardArt');
+      eq(art.querySelectorAll('.debrisTrack').length===2 && art.querySelector('.debrisArrow') && art.querySelector('.debrisKey'),'debris paths, direction and gap key on the flight card');
+      eq(art.textContent.includes('Dodgeball Challenge') && el('copyEndSeed').hidden,'fixed incident card');
+      el('shareCard').close();el('debrief').close();
+      el('showPreview').checked=false;el('dodgeCoach').checked=false;
+    }
+    configure(3,'Straight-Line');
+    eq(el('coachControl').hidden && !flight.forecast.debris && el('clockWarning').hidden,'random drift restored');
+  });
+  test('Dodgeball detour, frame snag and soft grab through flight controls',()=>{
+    for(const mode of ['Straight-Line','Orbital'])for(const turnBack of [false,true]){
+      configure(4,mode,true);advance(12);
+      function fire(c){
+        choose(c.tool);changePower(c.power);setView(Flight.direction(c.az,c.el));click('throw');
+      }
+      fire(Flight.command(Flight.transfer(flight.pos,[3,0,3],420,mode),5,flight.mask));
+      advance(24);fire({tool:7,az:0,el:-90,power:100});
+      eq(flight.forecast.debris.hit?.body.short==='Frame','second piece crosses detour');
+      if(turnBack){
+        advance(149);
+        fire(Flight.command(Flight.transfer(flight.pos,[3,0,3],275,mode),8,flight.mask));
+        eq(!flight.forecast.debris.hit && el('clockWarning').hidden,'safe return resets brake');
+        setClockStop(3);advance(415);
+        eq(flight.done==='capture' && flight.time<450 && flight.throws===3,'three-throw soft grab');
+      }else{
+        const at=flight.time+flight.forecast.debris.hit.t;
+        setClockStop(3);advance(at-flight.time);
+        eq(!flight.done&&rate===1 && !el('clockWarning').hidden,'large fast step stops before frame');
+        advance(600);
+        close(flight.time,at,.005);
+        updateLossDebrief(lossDebriefAt);
+        eq(flight.done==='collision' && el('endCopy').textContent.startsWith('Pack snagged.'),'actual frame snag');
+      }
+      eq(el('debrief').open,'appropriate ending');click('retry');
+      eq(flight.index===4 && flight.mode===mode && flight.soft && flight.mask===Flight.fullRack,'retry restores same challenge');
+    }
+  });
+  test('Dodgeball opening separates both hazards from the station in the forward visor',()=>{
+    start(4,'Orbital',true);
+    const width=visor.clientWidth,height=visor.clientHeight;
+    const camera=Visor.camera(flight.pos.p,yaw,pitch,width,height,false,true);
+    function bounds(points){
+      const projected=points.map(p=>camera.screen(camera.world(p)));
+      return [0,1].map(axis=>{
+        const values=projected.map(p=>p[axis]);
+        return {min:Math.min(...values),max:Math.max(...values)};
+      });
+    }
+    const station=bounds(Station.parts.flatMap(part=>part.faces.flatMap(face=>face.points)));
+    for(const body of Debris.pieces){
+      const debris=bounds(body.mesh.faces.flatMap(face=>face.vertices.map(v=>Flight.add(v,body.p))));
+      eq(debris.some((span,i)=>span.min>station[i].max+3 || span.max<station[i].min-3),body.short+' separated from station');
+      eq(debris.every((span,i)=>span.min>0 && span.max<[width,height][i]),body.short+' in view');
+    }
+  });
+  test('Random Dodgeball seed entry, scenario switching and rule-preserving replay',()=>{
+    const code='DB1-007C5282';
+    click('new');el('scenario').value='5';el('scenario').dispatchEvent(new Event('change'));
+    eq(seedScenario(el('seed').value)===5 && !!Replays.parse(el('seed').value),'switching the menu generates a catalog seed');
+    click('reroll');eq(approvedDodgeballSeeds.has(parseInt(el('seed').value.slice(4),16)),'rolled seed is qualified');
+    for(const drift of ['D-00019919','E-00019919','00019919']){
+      set('seed',drift);eq(el('scenario').value==='3','drift code changes the menu');
+      set('seed',code.toLowerCase());eq(el('scenario').value==='5' && el('seed').value===code,'Dodgeball code changes the menu');
+    }
+    el('seed').value='DB1-FFFFFFFF';el('setupForm').requestSubmit();
+    eq(el('setup').open && el('seed').getAttribute('aria-invalid')==='true','unknown DB1 code stays in setup');
+    el('scenario').value='3';el('seed').value='#seed='+code+'&level=Orbital&goal=soft&story=1';
+    el('setupForm').requestSubmit();
+    eq(flight.index===5 && flight.story && flight.soft && flight.mode==='Orbital','submit imports scenario and rules together');
+    eq(!el('seedTag').hidden && !el('coachControl').hidden,'seeded debris cockpit');
+    const original=flight.debrisPieces.map(b=>[b.p,b.v]),fragment=Replays.fragment(flight);
+    start(0,'Straight-Line',false);Replays.openHash(fragment);
+    eq(flight.seed===code && JSON.stringify(original)===JSON.stringify(flight.debrisPieces.map(b=>[b.p,b.v])),'shared replay restores both pieces');
+    eq(el('seedTag').textContent.includes(code) && flight.story && flight.soft,'shared replay retains rules');
+    for(const mode of ['Straight-Line','Orbital'])for(const soft of [false,true])for(const story of [false,true]){
+      const rules={mode,soft,story,seed:code},read=Replays.parse(Replays.fragment(rules));
+      eq(read.seed===code && read.mode===mode && read.soft===soft && read.story===story,'seed and flight rules round trip');
+    }
+  });
+  test('Seeded manual route, coach, log, card and retry use the selected debris',()=>{
+    for(const mode of ['Straight-Line','Orbital']){
+      const code='DB1-007C5282';
+      start(5,mode,true,code,false);click('pause');advance(12);
+      const fire=c=>{choose(c.tool);changePower(c.power);setView(Flight.direction(c.az,c.el));click('throw');};
+      fire(Flight.command(Flight.transfer(flight.pos,[3,0,3],420,mode),5,flight.mask));
+      eq(flight.forecast.debris.hit?.body===flight.debrisPieces[0],'forecast uses seeded cover');
+      el('dodgeCoach').checked=true;el('dodgeCoach').onchange();
+      const aim=coachCache.aim;
+      eq(aim && !Debris.forecast(Flight.release(flight.pos,aim.tool,100,aim.dir,flight.mask),flight.time,600-flight.time,mode,flight.debrisPieces).hit,'coach clears the two seeded objects');
+      advance(24);fire({tool:7,az:0,el:-90,power:100});
+      eq(flight.forecast.debris.hit?.body===flight.debrisPieces[1],'seeded frame crosses detour');paintVisors();
+      advance(149);fire(mode==='Orbital'?{tool:8,az:-31,el:81,power:99}:{tool:8,az:104,el:88,power:98});
+      advance(415);eq(flight.done==='capture','soft capture on the catalog route');
+      click('viewLog');eq(el('logSummary').textContent.includes(code) && el('logPanes').querySelectorAll('.debrisTrack').length===4,'seed and tracks in flight log');el('flightLog').close();
+      click('openShareCard');eq(el('cardArt').textContent.includes(code) && el('cardArt').querySelectorAll('.debrisTrack').length===2,'seed and tracks on card');el('shareCard').close();
+      const cover=flight.debrisPieces[0].p.join();
+      click('retry');eq(flight.index===5 && flight.seed===code && flight.debrisPieces[0].p.join()===cover,'retry restores incident');
+      el('dodgeCoach').checked=false;
+    }
   });
   const out=document.createElement('pre');out.id='qa-result';out.textContent=JSON.stringify({passed,errors,rects,viewport:[innerWidth,innerHeight]});document.body.append(out);
 })();

@@ -54,7 +54,7 @@ __COCKPIT_STYLE__</style>
           <span id="storyTag" class="tag" hidden>Story</span>
           <span id="modeTag" class="tag mode"></span>
           <span id="captureTag" class="tag"></span>
-          <button id="seedTag" class="tag" type="button" title="Copy this random drift replay" hidden></button>
+          <button id="seedTag" class="tag" type="button" title="Copy this flight replay" hidden></button>
         </div>
       </section>
       <section id="flightDeck" class="deck" aria-label="Flight cameras and navigation">
@@ -132,6 +132,7 @@ __COCKPIT_STYLE__</style>
               </div>
               <div class="readout" id="coast"></div>
               <p id="advice"></p>
+              <p id="clockWarning" role="status" hidden></p>
               <div class="driftData">
                 <span class="micro">Drift direction</span>
                 <span id="driftAngles"></span>
@@ -139,6 +140,7 @@ __COCKPIT_STYLE__</style>
             </article>
             <div class="previewControl">
               <label title="Show the suit’s predicted coast if you release the selected tool now"><input id="showPreview" type="checkbox" aria-describedby="previewResult">Preview throw</label>
+              <label id="coachControl" hidden><input id="dodgeCoach" type="checkbox">Dodgeball Coach</label>
               <output id="previewResult" for="showPreview power" aria-live="off" hidden></output>
             </div>
             <div class="velocity">
@@ -208,7 +210,9 @@ __COCKPIT_STYLE__</style>
             <option value="0">Tether separation</option>
             <option value="1">Lateral drift</option>
             <option value="2">Wide separation</option>
+            <option value="4">Dodgeball Challenge</option>
             <option value="3">Random drift</option>
+            <option value="5">Random Dodgeball</option>
           </select>
           <p id="setupBrief"></p>
           <div id="seedGroup" hidden>
@@ -319,11 +323,15 @@ __COCKPIT_STYLE__</style>
         <p>Δv (delta-v) is how much more you could change your speed or direction with the tools aboard. Manual
         flights score the remaining tool budget at rescue. A lost suit brings home zero. In Story, compare throw
         count and grab speed. Grab speed measures how gently you reached the bars, including sideways motion.</p>
-        <p>Each of the four openings has a different radio call for a Straight-Line and an Orbital rescue. Bring
+        <p>Each of the five openings has a different radio call for a Straight-Line and an Orbital rescue. Bring
         the original drill home to hear the <strong>Upmass Hero</strong> epilogue after the call. A Story reload
         gives you a replacement drill. Finishing a guided lesson after choosing Skip guidance also skips the award.</p>
-        <h3>Share a random drift</h3>
-        <p>In New flight, choose Random drift to generate a seed or load a friend’s code or replay link. Copy replay
+        <h3>Dodgeball Challenge</h3>
+        <p>A platform mount gives way and takes Tommi’s tether anchor with it. The loose cover and bent frame drift independently. Only contact with Tommi ends the challenge. Either flight model and grab rule work here.</p>
+        <p>Follow the short trails to see where each piece is heading. An amber box surrounds the piece your current coast would hit. The box moves with it and extends 4 cm past each side. Steer your whole suit outside the box, including around the frame’s open middle. The blue × marks where your suit would first touch the box, with a countdown. Violet shows the predicted contact for a previewed throw. You can also slow down and let a piece cross ahead.</p>
+        <p>Switch on Dodgeball Coach for a suggested tool and throw bearing during a collision warning. Your suit moves in the opposite direction. Fast-forward drops to 1× with up to 65 seconds to react. You can accelerate again once the coast clears.</p>
+        <h3>Share a seeded flight</h3>
+        <p>In New flight, choose Random drift or Random Dodgeball and generate a seed. Random Dodgeball draws from 4,096 openings. Paste a friend's code or replay link in either scenario and the matching scenario is selected. Copy replay
         includes the flight model, capture rule and Story setting. In an offline copy, paste the shared replay into
         Load seed. The debrief also has a flight card you can save as an image.</p>
         <h3>Story / guided rescue</h3>
@@ -366,13 +374,18 @@ __COCKPIT_STYLE__</style>
           The commander calls out: “Captain Dylan? I don't know what you did, but it worked. <span id="lossCall"></span>”</p>
           <p><em>Raspberry, I'm coming home.</em></p>
         </div>
+        <div id="collisionEpilogue" hidden>
+          <p>A few moments after the heavy hit, Tommi wakes to Commander Bern’s voice in her headset.</p>
+          <p>“Tommi? Tommi, are you there? If you can hear me, that hit must have jiggled something loose.”</p>
+          <p>She hears the hiss first. The main oxygen supply is flowing freely again. A tap on the controls brings the stuck thrusters back to life. Tommi eases clear of the wreckage and flies the last few meters straight into Bern’s waiting hands.</p>
+        </div>
         <div class="result">
           <strong id="endBudget"></strong>
           <div id="endStats"></div>
         </div>
         <section id="debriefShare" hidden aria-labelledby="shareHeading">
           <h3 id="shareHeading">Share</h3>
-          <p>Share this opening with a friend. Compare your approach charts, throw counts and grab speeds.</p>
+          <p id="shareIntro">Share this opening with a friend. Compare your approach charts, throw counts and grab speeds.</p>
           <div class="seedActions">
             <code id="endSeed"></code>
             <button id="copyEndSeed">Copy replay</button>
@@ -396,6 +409,7 @@ __COCKPIT_STYLE__</style>
         </div>
         <p id="logSummary"></p>
         <div id="logPanes" class="logPanes"></div>
+          <div id="logDebrisKey" hidden></div>
         <p class="logLegend"><span class="envelopeKey"></span> Grab envelope · □ Start · numbered circles mark
         releases · ▸ Travel · × Fast entry · ◆ Final position</p>
         <p id="logEvents"></p>
@@ -432,6 +446,8 @@ __COCKPIT_STYLE__</style>
     </dialog>
     <img id="earthArt" hidden src="__EARTH__" alt="">
     <script id="physics">__PHYSICS__</script>
+    <script id="debris">__DEBRIS__</script>
+    <script id="dodgeballCatalog" type="application/json">__DODGEBALL_CATALOG__</script>
     <script>__READOUT__</script>
     <script>__EARTH_SKY__</script>
     <script>__STATION__</script>
