@@ -13,13 +13,18 @@ let inputEpoch=0, inputSince=0, sliderPress=null;
 const hex=n=>(n>>>0).toString(16).toUpperCase().padStart(8,'0');
 const seedLabel=seed=>typeof seed==='number'?hex(seed):seed;
 const weightClass=g=>g.mass<1?'Light':g.mass<3?'Medium':'Heavy';
-const dodgeballSeeds=JSON.parse(el('dodgeballCatalog').textContent);
+const legacyDodgeballSeeds=new Set(JSON.parse(el('dodgeballCatalog').textContent));
+const dodgeballSeeds=JSON.parse(el('dodgeballLayoutCatalog').textContent);
 const approvedDodgeballSeeds=new Set(dodgeballSeeds);
 const isSeeded=index=>index===3||index===5;
-const seedScenario=seed=>String(seed).startsWith('DB1-')?5:3;
+const seedScenario=seed=>/^DB[12]-/.test(seed)?5:3;
 function randomSeed(index=3){
   const value=crypto.getRandomValues(new Uint32Array(1))[0];
-  return index===5?'DB1-'+hex(dodgeballSeeds[value%dodgeballSeeds.length]):'E-'+hex(value);
+  return index===5?'DB2-'+hex(dodgeballSeeds[value%dodgeballSeeds.length]):'E-'+hex(value);
+}
+function debrisForSeed(code){
+  const id=parseInt(code.slice(4),16);
+  return code.startsWith('DB2-')?Debris.layoutPieces(id):Debris.seededPieces(id);
 }
 function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector);dirty=true;}}
 function writeText(node,text){if(node.textContent!==text)node.textContent=text;}
@@ -74,7 +79,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   invalidateInput();
   flight={
     index,mode,soft,seed,story,initial,lesson,limit:Flight.oxygenReserve,
-    debrisPieces:index===5?Debris.seededPieces(parseInt(seed.slice(4),16)):index===4?Debris.pieces:null,
+    debrisPieces:index===5?debrisForSeed(seed):index===4?Debris.pieces:null,
     skippedGuidance:false,checkAt:null,checked:false,stagedPitch:null,
     log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},
     anchor:null,age:0,hitIndex:0,forecast:null,time:0,throws:0,mask:Flight.fullRack,
@@ -82,11 +87,6 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   };
   selected=5;power=95;el('power').value=power;setClockStop(0);
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
-  if(flight.debrisPieces && visor.clientWidth<600){
-    // Frame both pieces in the clear strip between the inset and the rack.
-    const {forward,right,up}=orientation(yaw,pitch);
-    setView(Flight.add(forward,Flight.add(scale(right,.38),scale(up,.085))));
-  }
   el('name').textContent=initial.name;
   el('coachControl').hidden=!flight.debrisPieces;
   el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) pitches on Saturdays. Rumor has it she flew the classified “unmanned” X-99 orbital spaceplane. Today her tether snaps and her suit thrusters jam.':initial.brief;
@@ -97,7 +97,16 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   el('assists').hidden=!story;el('storyTag').hidden=!story;
   el('lesson').hidden=lesson===null;
   setMsg(story?'Story flight. Every tool reloads. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
-  updateRack();instruments();dirty=true;
+  updateRack();instruments();
+  if(index===5 && seed.startsWith('DB2-')){
+    const view=Visor.layoutView(visor,flight);
+    yaw=view.look;pitch=view.tilt;flight.visorLens=view.lens;
+  }else if(flight.debrisPieces && visor.clientWidth<600){
+    // Frame both pieces in the clear strip between the inset and the rack.
+    const {forward,right,up}=orientation(yaw,pitch);
+    setView(Flight.add(forward,Flight.add(scale(right,.38),scale(up,.085))));
+  }
+  dirty=true;
 }
 const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools',overspeed:'Too fast to grab',collision:'Debris collision'};
 function finish(result) {
@@ -499,7 +508,7 @@ visor.addEventListener('pointermove',e=>{
 function endDrag(e,accept){
   if(!drag||e.pointerId!==drag.id)return;
   if(accept&&canPitch()&&!drag.moved){
-    const r=visor.getBoundingClientRect(),cam=Visor.camera(flight.pos.p,yaw,pitch,r.width,r.height,false,!!flight.forecast.debris);
+    const r=visor.getBoundingClientRect(),cam=Visor.camera(flight.pos.p,yaw,pitch,r.width,r.height,false,!!flight.forecast.debris,flight.visorLens);
     const dx=(e.clientX-r.left-r.width/2)/cam.f,dy=(r.height/2-e.clientY+r.top)/cam.f;
     setView(Flight.add(cam.forward,Flight.add(scale(cam.right,dx),scale(cam.up,dy))));
   }
@@ -567,9 +576,10 @@ function setupRules(){
 function previewSeed(replay){
   const index=seedScenario(replay.seed),initial=Flight.opening(index,replay.seed,replay.story);
   if(index===5){
-    const ranges=Debris.seededPieces(parseInt(replay.seed.slice(4),16))
+    const ranges=debrisForSeed(replay.seed)
       .map(b=>b.short+' '+norm(sub(b.p,initial.p)).toFixed(1)+' m');
-    el('seedPreview').textContent=replay.seed+' · '+ranges.join(' · ')+' from Tommi at separation';
+    const layout=replay.seed.startsWith('DB2-')?Debris.layouts[Math.floor(parseInt(replay.seed.slice(4),16)/Debris.layoutStride)].name:null;
+    el('seedPreview').textContent=[replay.seed,layout,...ranges].filter(Boolean).join(' · ')+' from Tommi at separation';
     return;
   }
   el('seedPreview').textContent=seedLabel(replay.seed)+' · '+Flight.clearance(initial.p).toFixed(1)+' m from the bars · '+norm(initial.v).toFixed(3)+' m/s';
@@ -577,9 +587,9 @@ function previewSeed(replay){
 function loadSetupSeed(){
   const input=el('seed'),replay=Replays.parse(input.value,setupRules());
   if(!replay){
-    el('seedPreview').textContent=/DB1-/i.test(input.value)
-      ?'Unknown Random Dodgeball seed. Paste a catalog code such as DB1-007C5282, or generate an opening.'
-      :'Enter a Fastball 3D seed (for example E-00019919 or DB1-007C5282) or a replay link.';
+    el('seedPreview').textContent=/DB[12]-/i.test(input.value)
+      ?'Unknown Random Dodgeball seed. Paste a catalog code such as DB2-00500007, or generate an opening.'
+      :'Enter a Fastball 3D seed (for example E-00019919 or DB2-00500007) or a replay link.';
     input.setAttribute('aria-invalid','true');input.focus();return null;
   }
   input.removeAttribute('aria-invalid');input.value=seedLabel(replay.seed);
@@ -617,7 +627,7 @@ el('seed').oninput=e=>{
   const input=e.target;
   input.removeAttribute('aria-invalid');
   const wholeInput=e.inputType!=='insertText' || (e.data?.length??0)>1;
-  if((wholeInput || /^(?:DB1-|[DE]-)?[\da-f]{8}$/i.test(input.value)) && Replays.parse(input.value,setupRules())){
+  if((wholeInput || /^(?:DB[12]-|[DE]-)?[\da-f]{8}$/i.test(input.value)) && Replays.parse(input.value,setupRules())){
     loadSetupSeed();
   }else{
     el('seedPreview').textContent='Choose Load seed to preview this opening.';

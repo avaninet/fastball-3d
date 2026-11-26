@@ -16,6 +16,26 @@ for(const seed of catalog.slice(0,1000)){
   earlier.update(JSON.stringify([code,cover.p,cover.v,frame.p,frame.v]));
 }
 assert.equal(earlier.digest('hex'),'50c7ac227131a48c34b0e2b0f17aff54e5d19696340b91b05aa22e2b3fcc88f2');
+const layoutCatalog=JSON.parse(html.match(/<script id="dodgeballLayoutCatalog" type="application\/json">([^<]+)<\/script>/)[1]);
+const {screen}=require('../studies/random-dodgeball.cjs');
+assert.equal(D.layouts.length,8);
+assert.equal(layoutCatalog.length,4096);
+assert.equal(new Set(layoutCatalog).size,4096);
+const distinctStates=new Set();
+const db2ReplayStates=require('node:crypto').createHash('sha256');
+for(const [layout,family] of D.layouts.entries()){
+  const seeds=layoutCatalog.filter(id=>Math.floor(id/D.layoutStride)===layout);
+  assert.equal(seeds.length,512,family.name);
+  for(const seed of seeds){
+    const bodies=D.layoutPieces(seed);
+    const states=bodies.map(b=>[b.p,b.v]);
+    distinctStates.add(JSON.stringify(states));
+    db2ReplayStates.update(JSON.stringify([seed,...states]));
+    assert.equal(screen(bodies,layout),'accepted',family.name+' / '+seed);
+  }
+}
+assert.equal(distinctStates.size,4096);
+assert.equal(db2ReplayStates.digest('hex'),'8cf0f6199af12b3f6848aa50b37c60b2d72ff9f2e73fef2f3e430f6f9cea3758');
 const initial = F.opening(4,0,false);
 assert.deepEqual(initial.p,F.opening(4,0,true).p);
 const frameMesh=D.pieces[1].mesh;

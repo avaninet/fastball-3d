@@ -111,6 +111,55 @@ const Debris = (() => {
       return {...base,p:add(base.p,displacement),v};
     });
   }
+  // DB2. Each layout fixes two reference states and their crossing times.
+  // Bits 20 and above select the layout. The low bits identify a candidate
+  // inside it. Only IDs qualified offline are offered to players.
+  const layoutStride = 0x100000;
+  const layouts = [
+    {name:'Left cover crossing', bodies:[
+      {p:[-3, -13, -1.1], v:[0.122489, -0.055525, 0.075467], crossing:113},
+      {p:[12, 0.8, 3.6], v:[-0.016827, -0.035327, 0.044144], crossing:286}
+    ]},
+    {name:'Right cover crossing', bodies:[
+      {p:[12.8, -4.3, 5.1], v:[-0.014624, -0.126476, 0.018194], crossing:117},
+      {p:[-4.8, -9.4, -4], v:[0.044953, -0.003823, -0.00055], crossing:266}
+    ]},
+    {name:'High cover crossing', bodies:[
+      {p:[-0.4, -5.7, 9.9], v:[0.083206, -0.093978, -0.019927], crossing:132},
+      {p:[11, -2.7, -1.6], v:[0.016733, -0.030407, 0.042652], crossing:281}
+    ]},
+    {name:'Low cover crossing', bodies:[
+      {p:[10.8, -2.7, -1.8], v:[-0.001548, -0.110238, 0.061473], crossing:138},
+      {p:[-5.6, -6.4, 9.5], v:[0.024644, -0.009961, -0.045605], crossing:286}
+    ]},
+    {name:'Far frame crossing', bodies:[
+      {p:[14.6, -4.6, 2.3], v:[-0.057116, -0.034268, 0.036079], crossing:247},
+      {p:[-14.9, 0.7, 1.7], v:[0.259677, -0.191207, 0.05623], crossing:106}
+    ]},
+    {name:'Near frame crossing', bodies:[
+      {p:[-5.3, -0.5, 9.7], v:[0.080857, -0.044694, -0.037511], crossing:267},
+      {p:[12.7, -10.6, 1.5], v:[-0.018001, -0.072503, 0.04599], crossing:117}
+    ]},
+    {name:'Upper frame crossing', bodies:[
+      {p:[-4.9, -12.1, 0.4], v:[0.048037, 0.004481, 0.046081], crossing:340},
+      {p:[9.7, 0.9, 5.6], v:[0.008073, -0.133247, 0.010366], crossing:140}
+    ]},
+    {name:'Lower frame crossing', bodies:[
+      {p:[11.9, 1.2, 6], v:[-0.039519, -0.024835, -0.033145], crossing:301},
+      {p:[-3.1, -6.4, -10], v:[0.093242, -0.076118, 0.117667], crossing:145}
+    ]}
+  ];
+  function layoutPieces(seed) {
+    const layout=layouts[Math.floor(seed/layoutStride)];
+    const rng=Flight.seedStream(seed), offset=width=>(2*rng()-1)*width;
+    return layout.bodies.map(({p,v,crossing},i)=>{
+      const displacement=[offset(2),offset(2.6),offset(1.5)];
+      const time=crossing*(1+offset(.065));
+      const jitter=[offset(.003),offset(.002),offset(.002)];
+      return {...pieces[i],p:add(p,displacement),
+        v:add(scale(sub(scale(v,crossing),displacement),1/time),jitter)};
+    });
+  }
   // Fit the collision box in the piece's own axes. The visor and all flight
   // predictions share this one cached box, including the frame's open centre.
   for(const body of pieces){
@@ -145,6 +194,11 @@ const Debris = (() => {
     const q=body.box.closest(p);
     return Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2])-suitRadius;
   }
+  function speedBound(state,mode){
+    const [vx,vy,vz]=state.v,n=Flight.n,x=state.p[0],z=state.p[2];
+    return mode==='Straight-Line'?norm(state.v):Math.hypot(
+      Math.hypot(3*n*x+2*vy,vx),Math.hypot(2*vx,4*vy+6*n*x)+Math.abs(3*vy+6*n*x),Math.hypot(n*z,vz));
+  }
   // Relative motion obeys the same linear equations as the two world states.
   // A bound on speed bounds how much the suit-to-box gap can change inside
   // an interval. Search early intervals first so accelerated clocks cannot
@@ -152,9 +206,7 @@ const Debris = (() => {
   function encounter(s,body,epoch,end,mode){
     const origin=motion(body,epoch,mode);
     const rel={p:sub(s.p,origin.p),v:sub(s.v,origin.v)};
-    const [vx,vy,vz]=rel.v,n=Flight.n,x=rel.p[0],z=rel.p[2];
-    const speed=mode==='Straight-Line'?norm(rel.v):Math.hypot(
-      Math.hypot(3*n*x+2*vy,vx),Math.hypot(2*vx,4*vy+6*n*x)+Math.abs(3*vy+6*n*x),Math.hypot(n*z,vz));
+    const speed=speedBound(rel,mode);
     const gap=t=>gapAt(motion(rel,t,mode).p,body);
     let tNear=0,nearest=gap(0),hit=nearest<=0?0:Infinity;
     function search(a,da,b,db){
@@ -204,5 +256,5 @@ const Debris = (() => {
     }
     return null;
   }
-  return {pieces,seededPieces,suitRadius,padding,warningLead,forecast,avoidance,gapAt};
+  return {pieces,seededPieces,layoutPieces,layouts,layoutStride,speedBound,suitRadius,padding,warningLead,forecast,avoidance,gapAt};
 })();

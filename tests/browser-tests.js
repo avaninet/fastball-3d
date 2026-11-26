@@ -1445,7 +1445,7 @@
     const code='DB1-007C5282';
     click('new');el('scenario').value='5';el('scenario').dispatchEvent(new Event('change'));
     eq(seedScenario(el('seed').value)===5 && !!Replays.parse(el('seed').value),'switching the menu generates a catalog seed');
-    click('reroll');eq(approvedDodgeballSeeds.has(parseInt(el('seed').value.slice(4),16)),'rolled seed is qualified');
+    click('reroll');eq(el('seed').value.startsWith('DB2-') && approvedDodgeballSeeds.has(parseInt(el('seed').value.slice(4),16)),'rolled seed is a qualified DB2 opening');
     for(const drift of ['D-00019919','E-00019919','00019919']){
       set('seed',drift);eq(el('scenario').value==='3','drift code changes the menu');
       set('seed',code.toLowerCase());eq(el('scenario').value==='5' && el('seed').value===code,'Dodgeball code changes the menu');
@@ -1464,6 +1464,44 @@
       const rules={mode,soft,story,seed:code},read=Replays.parse(Replays.fragment(rules));
       eq(read.seed===code && read.mode===mode && read.soft===soft && read.story===story,'seed and flight rules round trip');
     }
+  });
+  test('Eight Random Dodgeball layouts open, frame both pieces and restore their own replay',()=>{
+    for(const [i,layout] of Debris.layouts.entries()){
+      const id=dodgeballSeeds.find(seed=>Math.floor(seed/Debris.layoutStride)===i);
+      const code='DB2-'+hex(id),expected=Debris.layoutPieces(id);
+      click('new');set('seed',code.toLowerCase());
+      eq(el('scenario').value==='5' && el('seedPreview').textContent.includes(layout.name),'layout named in setup');
+      el('setupForm').requestSubmit();
+      eq(flight.seed===code && flight.index===5,'launched selected layout');
+      const w=visor.clientWidth,h=visor.clientHeight,cam=Visor.camera(flight.pos.p,yaw,pitch,w,h,false,true,flight.visorLens);
+      const view=visor.getBoundingClientRect();
+      const panels=Array.from(visor.closest('.deck').querySelectorAll('.metrics,.pitchPod,.aftPod'),p=>p.getBoundingClientRect());
+      for(const [j,body] of flight.debrisPieces.entries()){
+        eq(JSON.stringify([body.p,body.v])===JSON.stringify([expected[j].p,expected[j].v]),'selected debris state');
+        for(const p of body.mesh.faces.flatMap(f=>f.vertices)){
+          const [x,y]=cam.screen(cam.world(Flight.add(body.p,p)));
+          eq(x>0 && y>0 && x<w && y<h,'both complete pieces are in the visor');
+          eq(panels.every(r=>view.left+x<r.left || view.left+x>r.right || view.top+y<r.top || view.top+y>r.bottom),'debris is clear of the cockpit panels');
+        }
+      }
+      const fragment=Replays.fragment(flight);
+      start(0,'Straight-Line',false);Replays.openHash(fragment);
+      eq(flight.seed===code && flight.debrisPieces[1].v.join()===expected[1].v.join(),'shared DB2 replay');
+    }
+    eq(!Replays.parse('DB2-00FFFFFF') && !Replays.parse('DB1-00000000'),'validation uses the catalog for the supplied version');
+  });
+  test('Near frame crossing reverses the hazard order and permits a manual Orbital soft grab',()=>{
+    const code='DB2-00500007';
+    start(5,'Orbital',true,code);click('pause');advance(12);
+    const fire=c=>{choose(c.tool);changePower(c.power);setView(Flight.direction(c.az,c.el));click('throw');};
+    fire(Flight.command(Flight.transfer(flight.pos,[3,0,3],420,'Orbital'),5,flight.mask));
+    eq(flight.forecast.debris.hit?.body.short==='Frame','frame crosses the first pitch');
+    advance(24);fire({tool:7,az:165,el:38,power:100});
+    eq(flight.forecast.debris.hit?.body.short==='Cover','cover crosses the detour');
+    advance(144);fire({tool:8,az:-21,el:-36,power:100});advance(420);
+    eq(flight.done==='capture' && flight.throws===3,'captured with three manual throws');
+    click('openShareCard');eq(el('cardArt').textContent.includes(code),'new code on flight card');el('shareCard').close();
+    click('retry');eq(flight.seed===code && flight.time===0,'retry restores new opening');
   });
   test('Seeded manual route, coach, log, card and retry use the selected debris',()=>{
     for(const mode of ['Straight-Line','Orbital']){

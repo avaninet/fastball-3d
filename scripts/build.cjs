@@ -18,6 +18,7 @@ const parts = {
   PHYSICS: read('src/physics.js', 'utf8'),
   DEBRIS: read('src/debris.js', 'utf8'),
   DODGEBALL_CATALOG: JSON.stringify(JSON.parse(read('assets/dodgeball-seeds.json','utf8'))),
+  DODGEBALL_LAYOUT_CATALOG: JSON.stringify(JSON.parse(read('assets/dodgeball-layout-seeds.json','utf8'))),
   EARTH_SKY: read('src/earth.js', 'utf8'),
   STATION: read('src/station.js', 'utf8'),
   EQUIPMENT: read('src/equipment.js', 'utf8'),

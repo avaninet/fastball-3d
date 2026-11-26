@@ -24,8 +24,9 @@ const Replays=(()=>{
       if(!['Straight-Line','Orbital'].includes(mode)||!['none','soft'].includes(goal)||!['0','1'].includes(assisted))return null;
       soft=goal==='soft';story=assisted==='1';
     }
-    if(/^DB1-/i.test(code)){
-      if(!/^DB1-[\da-f]{8}$/i.test(code)||!approvedDodgeballSeeds.has(parseInt(code.slice(4),16)))return null;
+    if(/^DB[12]-/i.test(code)){
+      const approved=code[2]==='2'?approvedDodgeballSeeds:legacyDodgeballSeeds;
+      if(!/^DB[12]-[\da-f]{8}$/i.test(code)||!approved.has(parseInt(code.slice(4),16)))return null;
       return {seed:code.toUpperCase(),mode,soft,story};
     }
     const match=/^([DE]-)?([\da-f]{1,8})$/i.exec(code);
@@ -64,7 +65,7 @@ const Replays=(()=>{
     }else{
       if(!flight)start(0,'Straight-Line',false);
       updateAddress(flight); // Cancel keeps the current flight and its address.
-      openSetup();el('scenario').value=replay?String(seedScenario(replay.seed)):/#seed=DB1-/i.test(hash)?'5':'3';
+      openSetup();el('scenario').value=replay?String(seedScenario(replay.seed)):/#seed=DB[12]-/i.test(hash)?'5':'3';
       el('seed').value=hash.length<=maxLength?hash:'';updateSetup();loadSetupSeed();
     }
     return true;

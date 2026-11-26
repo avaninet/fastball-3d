@@ -1,13 +1,16 @@
 // Render an actual catalog flight through the game's flight-card code.
-// Usage: node studies/dodgeball-card.cjs catalog.json example.svg [DB1-...]
+// Usage: node studies/dodgeball-card.cjs catalog.json example.svg [code]
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {F,D,start,fly}=require('./random-dodgeball.cjs');
-const [input,output,code='DB1-007C5282']=process.argv.slice(2);
+const [input,output,requested]=process.argv.slice(2);
 if(!input||!output)throw Error('Supply the catalog and an output SVG');
-const entry=JSON.parse(fs.readFileSync(input,'utf8')).entries.find(e=>e.code===code);
+const {entries}=JSON.parse(fs.readFileSync(input,'utf8'));
+const code=requested??entries[0]?.code;
+const entry=entries.find(e=>e.code===code);
 if(!entry)throw Error('Unknown catalog code '+code);
 const bodies=D.pieces.map((base,i)=>({...base,...(i?entry.frame:entry.cover)}));
-const run=fly(bodies,'Orbital');
+const layout=code.startsWith('DB2-')?Math.floor(parseInt(code.slice(4),16)/D.layoutStride):null;
+const run=fly(bodies,'Orbital',null,layout);
 if(!run.win)throw Error('Expected soft capture');
 const flight={initial:{...start,name:'Random Dodgeball study'},pos:run.state,done:'capture',
   time:run.time,limit:600,mode:'Orbital',soft:true,seed:code,debrisPieces:bodies,

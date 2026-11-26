@@ -4,7 +4,7 @@ You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan ba
 
 [Play Fastball 3D v0.4 in your browser](https://avaninet.github.io/fastball-3d/) · [Download the standalone v0.4 game](https://raw.githubusercontent.com/avaninet/fastball-3d/v0.4/index.html)
 
-**New in v0.4.** Dodgeball Challenge puts a loose service cover and a bent frame across your route home. Random Dodgeball offers 4,096 replayable variations. High-speed Orbital approaches now register at the grab bars, and First rescue can guide you home after a wrong-way opening pitch.
+**New in v0.4.** Dodgeball Challenge puts a loose service cover and a bent frame across your route home. Random Dodgeball offers eight debris layouts with 512 replayable variations each. High-speed Orbital approaches now register at the grab bars, and First rescue can guide you home after a wrong-way opening pitch.
 
 Fastball 3D is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. **Do not try this on orbit.**
 
@@ -44,7 +44,7 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 | Wide separation | You start farther out. An early throw buys time to spot and correct a miss. |
 | Dodgeball Challenge | A failed work platform tears away Tommi’s tether anchor. A loose service cover and a bent equipment frame cross the return route. Both pieces follow the chosen flight model. |
 | Random drift | A seed fixes the starting position and velocity. Friends can fly the same opening. |
-| Random Dodgeball | A DB1 seed selects one of 4,096 qualified cover and frame trajectories. Use either flight model, capture rule or inventory mode. |
+| Random Dodgeball | A DB2 seed selects one of 4,096 qualified openings. Four layouts send the cover across the initial approach first, and four send the frame first. Use either flight model, capture rule or inventory mode. |
 | Straight-Line / Orbital | In Straight-Line, velocity stays constant between throws. In Orbital, the path can bend relative to the orbiting station. Watch the committed coast. |
 | Require a soft capture | Off by default. Turn it on to require **0.080 m/s or slower** within the bars. A fast entry carries you through. You can still brake inside the volume or come back around. |
 | Story flight | Unlimited auto-reloading tools with **Face station**, **Face away** and **Face drift**. Drift scenarios start closer to the bars. Both Dodgeball modes keep the same starting geometry in Story and manual flight. Line up before the clock starts or while paused. **Throw** starts or resumes flight at 1×. |
@@ -94,7 +94,7 @@ _Back on Earth, the drill gets a ticker-tape parade. Tommi has a game that Satur
 
 ## Challenge a friend
 
-In **New flight**, choose **Random drift** or **Random Dodgeball**. **Generate seed** draws from the selected scenario. Pasting a code or replay link selects the matching scenario automatically. A bare seed uses your current settings. A replay restores the sender's flight model, capture rule and Story setting. You can change those settings after loading the link. Dodgeball codes such as `DB1-007C5282` restore both debris trajectories. New `E-` seeds include sideways crossings and require at least one throw to reach the bars within ten minutes in either flight model, in manual and Story flight. Existing `D-` and plain hexadecimal seeds replay their original openings.
+In **New flight**, choose **Random drift** or **Random Dodgeball**. **Generate seed** draws from the selected scenario. Pasting a code or replay link selects the matching scenario automatically. A bare seed uses your current settings. A replay restores the sender's flight model, capture rule and Story setting. You can change those settings after loading the link. Dodgeball codes such as `DB2-00500007` restore both debris trajectories. Earlier DB1 codes still replay their original openings. The [catalog study](reference/random-dodgeball-study.md) gives one playable code for each layout. New `E-` seeds include sideways crossings and require at least one throw to reach the bars within ten minutes in either flight model, in manual and Story flight. Existing `D-` and plain hexadecimal seeds replay their original openings.
 
 **Copy replay** works in setup, in the cockpit and in the debrief. The link uses Alpha’s fragment format, for example `#seed=E-00019919&level=Orbital&goal=soft&story=1`. An offline copy shares the fragment for a friend to paste into **Load seed**. A hosted copy includes the web address.
 

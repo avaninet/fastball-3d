@@ -15,10 +15,10 @@ const Visor = (() => {
     a[(axis+1)%3]=b[(axis+1)%3]=j*half[(axis+1)%3];a[(axis+2)%3]=b[(axis+2)%3]=k*half[(axis+2)%3];edges.push([a,b]);
   }
   const near=.09;
-  function camera(p,az,el,w,h,small,hasDebris=false) {
+  function camera(p,az,el,w,h,small,hasDebris=false,lens=1) {
     const {forward,right,up,local}=orientation(az,el);
     const wide=hasDebris&&!small&&w<600;
-    const f=Math.min(w*(small?.64:.75),h*(small?.87:1.05))*(wide?.76:1);
+    const f=Math.min(w*(small?.64:.75),h*(small?.87:1.05))*(wide?.76:1)*lens;
     const world=q=>local(sub(q,p));
     const screen=q=>[w/2+f*q[0]/q[2],h/2-f*q[1]/q[2]];
     return {p,az,el,forward,right,up,f,local,world,screen};
@@ -99,22 +99,55 @@ const Visor = (() => {
       line3(ctx,cam,add(a,scale(sub(b,a),k)),add(a,scale(sub(b,a),k+.06)),'#b6f4c5',1.35);
   }
   const cockpitPanels=new WeakMap();
+  function panelBounds(canvas,panels){
+    const view=canvas.getBoundingClientRect();
+    return Array.from(panels,panel=>{
+      const r=panel.getBoundingClientRect();
+      return {left:r.left-view.left,right:r.right-view.left,top:r.top-view.top,bottom:r.bottom-view.top,
+        clipsCaption:panel.matches('.metrics,.pitchPod,.aftPod')};
+    });
+  }
+  const panelSelector='.metrics,.pitchPod,.aftPod,.lesson,.bearingReadout';
   function observeCockpit(canvas,onChange){
-    const deck=canvas.closest('.deck');
-    const panels=[...deck.querySelectorAll('.metrics,.pitchPod,.aftPod,.lesson,.bearingReadout')];
+    const deck=canvas.closest('.deck'),panels=[...deck.querySelectorAll(panelSelector)];
     function measure(){
-      const view=canvas.getBoundingClientRect();
-      const boxes=panels.map(panel=>{
-        const r=panel.getBoundingClientRect();
-        return {left:r.left-view.left,right:r.right-view.left,top:r.top-view.top,bottom:r.bottom-view.top,
-          clipsCaption:panel.matches('.metrics,.pitchPod,.aftPod')};
-      });
-      cockpitPanels.set(canvas,boxes);
+      cockpitPanels.set(canvas,panelBounds(canvas,panels));
       onChange();
     }
     const observer=new ResizeObserver(measure);
     for(const node of [deck,canvas,...panels])observer.observe(node);
     measure();
+  }
+  // At separation only, frame both pieces and the station centre in the
+  // uncovered visor. Search small changes in bearing before widening the lens.
+  function layoutView(canvas,state){
+    const w=canvas.clientWidth,h=canvas.clientHeight,eye=state.pos.p;
+    const [az,el]=Flight.angles(scale(eye,-1));
+    const panels=panelBounds(canvas,canvas.closest('.deck').querySelectorAll(panelSelector))
+      .filter(b=>b.right>0 && b.bottom>0 && b.left<w && b.top<h && b.right>b.left && b.bottom>b.top);
+    const targets=[{p:[0,0,0],radius:1},...state.debrisPieces.map(body=>({
+      p:body.p,radius:norm(body.box.half)+norm(body.box.center)
+    }))];
+    function fits(cam){
+      return targets.every(({p,radius})=>{
+        const q=cam.world(p);
+        if(q[2]<=radius)return false;
+        const [x,y]=cam.screen(q);
+        const pad=3+cam.f*radius*(1+Math.max(Math.abs(q[0]),Math.abs(q[1]))/q[2])/(q[2]-radius);
+        return x>=pad && x<=w-pad && y>=pad && y<=h-pad &&
+          panels.every(b=>x+pad<b.left || x-pad>b.right || y+pad<b.top || y-pad>b.bottom);
+      });
+    }
+    for(const lens of [1,.84,.70,.56]){
+      for(let ring=0;ring<=5;ring++){
+        for(let x=-ring;x<=ring;x++)for(let y=-ring;y<=ring;y++){
+          if(Math.max(Math.abs(x),Math.abs(y))!==ring)continue;
+          const look=az+x*6,tilt=el+y*6;
+          if(fits(camera(eye,look,tilt,w,h,false,true,lens)))return {look,tilt,lens};
+        }
+      }
+    }
+    return {look:az,tilt:el,lens:.70};
   }
   function captions(ctx,covers,w) {
     return (x,y,text,color,align='left')=>{
@@ -360,7 +393,7 @@ const Visor = (() => {
       surface.width=width;surface.height=Math.round(sceneHeight*ratio);
     }
     const ctx=surface.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
-    const cam=camera(state.pos.p,az,el,w,h,small,!!state.forecast.debris);
+    const cam=camera(state.pos.p,az,el,w,h,small,!!state.forecast.debris,small?1:state.visorLens);
     EarthSky.draw(ctx,w,sceneHeight,h/2,cam);
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const covers=small?[]:cockpitPanels.get(canvas)??[];
@@ -410,5 +443,5 @@ const Visor = (() => {
       view.drawImage(surface,0,0,width,height,0,0,width,height);view.restore();
     }
   }
-  return {render,camera,courseGlyphs,observeCockpit};
+  return {render,camera,courseGlyphs,observeCockpit,layoutView};
 })();

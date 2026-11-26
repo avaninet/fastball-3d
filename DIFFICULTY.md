@@ -1,6 +1,6 @@
 # Difficulty assessment for the ten-minute reserve
 
-This study covers Random drift. The debris routes and trial results for Random Dodgeball are documented in the [DB1 catalog study](reference/random-dodgeball-study.md).
+This study covers Random drift. The debris routes and trial results for Random Dodgeball are documented in the [debris catalog study](reference/random-dodgeball-study.md).
 
 **Playtest recommendation.** Keep the ten-minute clock and the directional hints. Trial a longer, faster opening specifically for **Random drift · Orbital · Manual · Require a soft capture**. On the current settings, the hint-following pilot rescued Tommi on 115 of 128 openings, usually with four tools and over four minutes of oxygen remaining. On a second set it won 121 of 128. A single straight-back battery throw is already a poor shortcut on these seeds. The forgiving part is how much room remains to read the miss and correct it.
 
