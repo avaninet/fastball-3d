@@ -17,10 +17,11 @@ const FlightLog = (() => {
 
   // Both panels share their along-track origin, vertical origin and metres per pixel.
   function layout(segments){
-    const points=segments.flat().map(k=>k.p);
-    const extent=(values,minimum)=>[Math.min(-minimum,...values),Math.max(minimum,...values)];
-    const [left,right]=extent(points.map(p=>-p[1]),Flight.half[1]);
-    const [bottom,top]=extent(points.flatMap(p=>[p[0],p[2]]),Flight.half[0]);
+    let left=-Flight.half[1],right=Flight.half[1],bottom=-Flight.half[0],top=Flight.half[0];
+    for(const segment of segments)for(const {p} of segment){
+      left=Math.min(left,-p[1]);right=Math.max(right,-p[1]);
+      bottom=Math.min(bottom,p[0],p[2]);top=Math.max(top,p[0],p[2]);
+    }
     const scale=Math.min(344/Math.max(15,right-left),186/Math.max(15,top-bottom));
     const cx=222-(left+right)*scale/2,cy=126+(top+bottom)*scale/2;
     return {scale,cx,cy,project:(p,axis)=>[cx-p[1]*scale,cy-p[axis]*scale]};
@@ -61,7 +62,7 @@ const FlightLog = (() => {
     }
     return placed;
   }
-  function plot(flight,segments,grid,axis){
+  function plot(flight,segments,grid,axis,compact=false){
     const {scale,cx,cy,project}=grid;
     const point=p=>project(p,axis), color=flight.done==='capture'?'#acdcb6':'#ffaa95';
     const svg=[];
@@ -77,7 +78,12 @@ const FlightLog = (() => {
     const half=Flight.half;
     svg.push('<rect x="'+num(cx-half[1]*scale)+'" y="'+num(cy-half[axis]*scale)+'" width="'+num(2*half[1]*scale)+'" height="'+num(2*half[axis]*scale)+'" fill="#29493d" stroke="#91c4a4"/>');
     const projected=segments.map(seg=>seg.map(k=>point(k.p)));
-    const callouts=releaseLabels(flight.log.releases.map(r=>point(r.p)),projected.flat());
+    const anchors=flight.log.releases.map(r=>point(r.p));
+    // Card numbers match its first nine records. In a long full log, spread
+    // numbered callouts over the flight and mark every other release with a dot.
+    const count=Math.min(anchors.length,compact?9:16);
+    const indices=Array.from({length:count},(_,i)=>compact||count===anchors.length?i:Math.round(i*(anchors.length-1)/(count-1)));
+    const callouts=releaseLabels(indices.map(i=>anchors[i]),projected.flat());
     for(const {anchor:[x,y],center:[lx,ly]} of callouts)svg.push(line(x,y,lx,ly,'#b3976c',.8));
     for(const xy of projected){
       svg.push('<polyline fill="none" stroke="#99e1cc" stroke-width="2" points="'+xy.map(p=>p.map(num).join(',')).join(' ')+'"/>');
@@ -94,10 +100,14 @@ const FlightLog = (() => {
     }
     const [startX,startY]=point(flight.initial.p);
     svg.push('<rect x="'+num(startX-4)+'" y="'+num(startY-4)+'" width="8" height="8" fill="#0b141b" stroke="#e9eada" stroke-width="2"/>');
+    const numbered=new Set(indices);
+    for(const [i,[x,y]] of anchors.entries()){
+      if(!numbered.has(i))svg.push('<circle class="releaseDot" cx="'+num(x)+'" cy="'+num(y)+'" r="1.6" fill="#f2cc8e"><title>Throw '+(i+1)+'</title></circle>');
+    }
     for(const [i,{anchor:[x,y],center:[lx,ly]}] of callouts.entries()){
       svg.push('<g class="releaseMark"><circle cx="'+num(x)+'" cy="'+num(y)+'" r="1.6" fill="#f2cc8e"/>',
         '<circle cx="'+num(lx)+'" cy="'+num(ly)+'" r="6" fill="#eac383"/>',
-        label(lx,ly+3.2,i+1,'middle','#112027',9.5),'</g>');
+        label(lx,ly+3.2,indices[i]+1,'middle','#112027',9.5),'</g>');
     }
     for(const pass of flight.log.fast){
       const [x,y]=point(pass.p);svg.push(line(x-5,y-5,x+5,y+5,'#ffae74',2),line(x-5,y+5,x+5,y-5,'#ffae74',2));
@@ -120,7 +130,7 @@ const FlightLog = (() => {
     const original=Flight.budgets[Flight.fullRack];
     const recovered=rescued?Flight.budgets[flight.mask]:0;
     return {
-      budget:'Δv brought home '+recovered.toFixed(3)+' / '+original.toFixed(3)+' m/s ('+(100*recovered/original).toFixed(1)+'%)',
+      budget:flight.story?'Unlimited tools · auto-reload':'Δv brought home '+recovered.toFixed(3)+' / '+original.toFixed(3)+' m/s ('+(100*recovered/original).toFixed(1)+'%)',
       speed:(rescued?'Grab speed ':'Final relative speed ')+Readout.speed(Flight.norm(flight.pos.v))+' m/s'
     };
   }
@@ -135,7 +145,9 @@ const FlightLog = (() => {
     const passCount=flight.misses?Readout.count(flight.misses,'fast pass','fast passes'):'';
     const passDetails=[clearance,passCount].filter(Boolean).join('   ·   ');
     const recordY=509+(passDetails?20:0);
-    const rows=Math.max(1,Math.ceil(releases.length/2)),height=recordY+10+rows*17;
+    const records=releases.slice(0,9).map((r,i)=>(i+1)+'.  '+Visor.clockText(r.time)+'  '+Flight.gear[r.tool].name+'  '+r.power+'%');
+    if(releases.length>9)records.push('10. ...and then some');
+    const rows=Math.max(1,Math.min(5,records.length)),height=recordY+10+rows*17;
     const label=(x,y,text,size,color,attrs='')=>'<text x="'+x+'" y="'+y+'" font-size="'+size+'" fill="'+color+'" '+attrs+'>'+escape(text)+'</text>';
     const description='Fastball 3D · '+date+' · Random drift '+seed+' · '+rules+'\n'+
       [result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',budget,speed,clearance,passCount].filter(Boolean).join(' · ');
@@ -146,13 +158,13 @@ const FlightLog = (() => {
       label(20,62,result,28,'#f4f1e8','font-weight="bold"'),label(20,84,'Random drift  /  '+seed,15,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
       label(20,104,rules,13,'#c5d1d0'),'<rect x="12" y="115" width="446" height="309" rx="5" fill="#0b141b" stroke="#354046"/>',
       label(22,136,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),
-      '<g transform="translate(20 143)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments),0)+'</g>',
+      '<g transform="translate(20 143)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments),0,true)+'</g>',
       label(20,446,budget,15,'#a8e4d0','font-weight="bold"'),label(20,466,speed,14,'#a8e4d0'),
-      label(20,486,elapsed+' elapsed   ·   '+oxygen+' oxygen   ·   '+releases.length+'/'+Flight.gear.length+' tools used',14,'#f4f1e8')];
+      label(20,486,elapsed+' elapsed   ·   '+oxygen+' oxygen   ·   '+(flight.story?Readout.count(releases.length,'throw'):releases.length+'/'+Flight.gear.length+' tools used'),14,'#f4f1e8')];
     if(passDetails)parts.push(label(20,506,passDetails,14,'#c5d1d0'));
     parts.push(label(20,recordY,'Release record',13,'#f7bc62','font-weight="bold"'));
     if(!releases.length)parts.push(label(20,recordY+19,'No tools released',12,'#c5d1d0'));
-    releases.forEach((r,i)=>parts.push(label(20+225*(i%2),recordY+19+17*Math.floor(i/2),(i+1)+'.  '+Visor.clockText(r.time)+'  '+Flight.gear[r.tool].name+'  '+r.power+'%',12,'#d7dfe1')));
+    records.forEach((text,i)=>parts.push(label(i<5?20:245,recordY+19+17*(i%5),text,12,'#d7dfe1')));
     return parts.join('')+'</svg>';
   }
   function show(flight){
@@ -163,7 +175,7 @@ const FlightLog = (() => {
     el('logTitle').textContent=flight.initial.name+' · Flight log';
     el('logSummary').textContent=[result,flight.mode,flight.soft?'Soft ≤ '+Flight.limit.toFixed(3)+' m/s':'Any-speed capture',
       flight.index===3?'Seed '+seedLabel(flight.seed):'',precise(flight.time)+' elapsed',
-      Visor.clockText(Math.ceil(flight.limit-flight.time))+' oxygen',tools+'/'+Flight.gear.length+' tools aboard',
+      Visor.clockText(Math.ceil(flight.limit-flight.time))+' oxygen',flight.story?Readout.count(flight.throws,'throw'):tools+'/'+Flight.gear.length+' tools aboard',
       budget,speed,flight.done==='capture'?'':'Closest clearance '+Readout.clearance(closest,2)+' m'].filter(Boolean).join('  ·  ');
     el('logPanes').innerHTML=[0,2].map(axis=>pane(flight,segments,grid,axis)).join('');
     el('logEvents').textContent=['Start 0:00',...flight.log.fast.map(h=>'Fast entry '+precise(h.time)+' at '+Readout.speed(h.speed)+' m/s'),result+' '+precise(flight.time)].join('  ·  ');

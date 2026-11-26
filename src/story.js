@@ -10,22 +10,17 @@ function beginLesson(i){
   start(lesson.index,lesson.mode,lesson.soft,0,true,i);
   visor.focus({preventScroll:true});
 }
-function scheduleLessonCheck(){
-  if(flight.lesson===null || flight.checked)return;
-  const nearest=flight.forecast.near.t;
-  let delay=nearest/2;
-  if(flight.lesson===0 && flight.forecast.hits.length){
-    // Stop when half the original clearance remains, including on a fast clock.
-    const target=Flight.clearance(flight.initial.p)/2;
-    let lo=0,hi=nearest;
-    for(let i=0;i<32;i++){
-      const mid=(lo+hi)/2;
-      if(Flight.clearance(Flight.motion(flight.anchor,mid,flight.mode).p)>target)lo=mid;else hi=mid;
-    }
-    delay=hi;
+function scheduleHalfwayCheck(){
+  const target=Flight.clearance(flight.initial.p)/2,nearest=flight.forecast.near;
+  flight.checkAt=null;
+  if(nearest.d>target || Flight.clearance(flight.pos.p)<=target)return;
+  // First rescue flies Straight-Line. Clearance decreases up to the nearest pass.
+  let lo=0,hi=nearest.t;
+  for(let i=0;i<32;i++){
+    const mid=(lo+hi)/2;
+    if(Flight.clearance(Flight.motion(flight.anchor,mid,flight.mode).p)>target)lo=mid;else hi=mid;
   }
-  if(flight.lesson===2 && flight.forecast.hits.length)delay=Math.max(0,nearest-18);
-  flight.checkAt=flight.time+delay;
+  flight.checkAt=flight.time+hi;
 }
 function updateLessonEnd(){
   const next=el('nextLesson'),i=flight.lesson;
@@ -41,20 +36,18 @@ function updateLessonCue(){
   if(!flight.throws){
     const cues=[
       'Without a tether or thrusters, a drifting astronaut is presumed lost. Newton’s third law gives Tommi one last pitch. Fling a wrench away from the station as hard as you can and it pushes you back. For this gap, choose Face away and throw the heavier battery at 95%.',
-      'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss before the course check.',
+      'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss, then line up a correction.',
       'This approach crosses the bars above the soft limit. Line up the practice pitch, then press Throw. Compare range rate with relative speed.',
       'Repeat the first rescue’s Face away battery pitch at 95%. Watch the coast bend in the rotating frame and compare its nearest pass with the straight return.'
     ];
     cue=cues[i];if(i===2){label='Line up practice pitch';if(flight.linedUp)cue='The 95% battery is lined up. Press Throw, then read the predicted entry speed.';}
-  }else if(!flight.mask){
-    cue='The rack is empty. Watch Current coast as you drift toward the grab bars.';
-  }else if(!flight.checked){
+  }else if(flight.checkAt!==null){
     cue='Find the station in the aft camera. Read Current coast to see where your recoil leads. The clock pauses for one course check.';
-    label='Coast to check';
+    label='Coast to halfway';
   }else if(h && (!flight.soft || Flight.softEnough(h.speed))){
-    cue='The coast enters the full grab-bar envelope. Check the entry speed and keep the remaining tools aboard.';label='Coast to grab';
+    cue='The coast enters the full grab-bar envelope. Check the entry speed and coast to the grab.';label='Coast to grab';
   }else if(h){
-    cue='The grab will be too fast. A pitch along the measured drift slows the suit. Line up the brake, then throw. To experience a fast pass, resume without braking and coast clear for another entry.';
+    cue='The grab will be too fast. A pitch along the measured drift slows the suit. Line up the brake, then throw. To experience a fast pass, let the clock run and coast clear for another entry.';
     label='Line up brake';
   }else if(Flight.inside(flight.pos.p)&&flight.misses){
     cue='You are within reach. Throw along the measured drift to slow down for a grab, or coast through and return.';
@@ -65,7 +58,7 @@ function updateLessonCue(){
     label='Line up correction';
   }
   if(!running && flight.prepared===flight.throws && flight.throws){cue='Correction staged. Read the selected tool, bearing and recoil, then press Throw to resume at 1×.';label='';}
-  if(!running && flight.noTrimAt===flight.time){cue='No single remaining tool reaches a tested return from here. Aim a heavier pitch to reduce the miss, then check again.';label='';}
+  if(!running && flight.noTrimAt===flight.time){cue='No single throw reaches a tested return from here. Aim a heavier pitch to reduce the miss, then check again.';label='';}
   if(flight.done)label='';
   if(el('lessonCue').textContent!==cue)el('lessonCue').textContent=cue;
   action.textContent=label;action.hidden=!label;
@@ -129,5 +122,5 @@ el('skipLesson').onclick=()=>{
   flight.lesson=null;flight.checkAt=null;flight.story=false;flight.skippedGuidance=true;
   el('assists').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
   invalidateInput();if(!running)pause();
-  setMsg('Manual flight. Aim and release on the live clock. Retry will start the standard manual opening.');updateRack();instruments();
+  setMsg('Manual flight. The nine tools aboard now have one release each. Retry starts the standard manual opening.');updateRack();instruments();
 };

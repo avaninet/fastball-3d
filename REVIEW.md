@@ -2,7 +2,7 @@
 
 [Play the standalone build](index.html) · [Example Orbital flight log](reference/orbital-flight-log.png)
 
-Every flight gives Tommi ten minutes of oxygen and nine throws. The extra tools raise the full-rack velocity-change budget from 0.329 to 0.456 m/s. A player can spend a light tool to trim a miss or keep a second substantial impulse for a return. Story uses the shorter teaching separations.
+Every flight gives Tommi ten minutes of oxygen. Manual flights allow nine throws. Story tools reload immediately at constant suit and gear mass. The extra tools raise the full-rack velocity-change budget from 0.329 to 0.456 m/s. A player can spend a light tool to trim a miss or keep a second substantial impulse for a return. Story uses the shorter teaching separations.
 
 ## Three first-play priorities
 

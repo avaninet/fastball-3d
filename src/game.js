@@ -50,14 +50,14 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   Replays.updateAddress(flight);
   el('assists').hidden=!story;el('storyTag').hidden=!story;
   el('lesson').hidden=lesson===null;
-  setMsg(story?'Story flight. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
+  setMsg(story?'Story flight. Every tool reloads. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
   updateRack();instruments();dirty=true;
 }
 const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools',overspeed:'Too fast to grab'};
 function finish(result) {
   running=false;flight.done=result;flight.finishedAt=new Date();invalidateInput();dirty=true;
   el('retry').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
-  const won=result==='capture',drill=!!(flight.mask&(1<<4));
+  const won=result==='capture',drill=!flight.log.releases.some(r=>r.tool===4);
   el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
   el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”')+' — Commander Julian Bern':'The reserve ran out before a successful grab. Retry to test a different pitch.';
   if(result==='stranded'){
@@ -128,7 +128,9 @@ function updateRack() {
     b.setAttribute('aria-label',g.name+', '+detail);
     b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=detail;
   }
-  el('budget').textContent=Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
+  const budget=el('budget');
+  budget.title=flight.story?'Each tool reloads immediately. Suit and gear mass stays constant.':'Total speed change available if you throw every remaining tool at full power';
+  budget.textContent=flight.story?'Unlimited · auto-reload':Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
   el('throw').disabled=selected<0||!canPitch();el('power').disabled=selected<0||!canPitch();
   el('powerValue').textContent=power+'%';
   el('impulseInfo').textContent=selected<0?'No equipment remaining':weightClass(Flight.gear[selected])+' · '+(Flight.impulse(selected,flight.mask)*power/100).toFixed(3)+' m/s recoil';
@@ -142,9 +144,10 @@ function throwTool() {
   flight.pos=Flight.release(old,selected,power,dir,flight.mask);
   flight.log.releases.push({time:flight.time,tool:selected,power,dir:dir.slice(),p:old.p.slice(),v:flight.pos.v.slice()});
   flight.objects.push({time:flight.time,start:{p:old.p.slice(),v:Flight.add(flight.pos.v,scale(dir,g.speed*power/100))}});
-  flight.mask^=1<<selected;flight.throws++;
-  setMsg(g.name+' released at '+power+'%. Read the committed coast before spending another tool.');
-  selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
+  flight.mask=Flight.rackAfterThrow(flight.mask,selected,flight.story);
+  flight.throws++;
+  if(!flight.story)selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
+  setMsg(g.name+' released at '+power+'%. '+(flight.story?'Reloaded and ready.':'Read the committed coast before spending another tool.'));
   reseat(Flight.inside(old.p)&&flight.misses>0);
   setClockStop(0);
   // The forecast includes later entries and Orbital slowdowns inside the bars.
@@ -157,7 +160,7 @@ function throwTool() {
   }
   if(!running)invalidateInput();
   flight.noTrimAt=null;started=true;running=true;
-  if(flight.mask)scheduleLessonCheck();else flight.checkAt=null;
+  if(flight.lesson===0&&!flight.checked)scheduleHalfwayCheck();
   lastTime=performance.now();dirty=true;updateRack();instruments();
 }
 function describeSide(point,bar) {

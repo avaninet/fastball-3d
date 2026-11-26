@@ -80,7 +80,7 @@ el('openShareCard').onclick=()=>{
 };
 el('copyChallenge').onclick=()=>{
   const text=el('cardArt').querySelector('desc').textContent;
-  const challenge=flight.done==='capture'?'Can you bring home more Δv or make a gentler grab?':'Can you get Tommi home from this drift?';
+  const challenge=flight.done!=='capture'?'Can you get Tommi home from this drift?':flight.story?'Can you make a gentler grab or get home in fewer throws?':'Can you bring home more Δv or make a gentler grab?';
   return Replays.copy(text+'\n'+challenge+'\n'+Replays.link(flight),el('cardStatus'),'Challenge copied.');
 };
 el('saveCard').onclick=async()=>{

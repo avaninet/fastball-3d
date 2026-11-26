@@ -336,6 +336,76 @@
       else{close(flight.forecast.near.d,4.51749,.001);click('throw');eq(running&&flight.throws===2,'paused release resumes');}
     }
   });
+  test('Story reloads every tool at full-rack mass and records the entire flight',()=>{
+    for(const mode of ['Straight-Line','Orbital']){
+      configure(3,mode,true,true);click('toStation');set('power',65);
+      const mass=el('suitMass').textContent;
+      for(const tool of rackOrder){
+        click('tool'+tool);
+        for(let j=0;j<3;j++){
+          const before=flight.anchor,coastStart=flight.time-flight.age;
+          click('throw');
+          const r=flight.log.releases.at(-1),v=Flight.motion(before,r.time-coastStart,mode).v;
+          close(norm(sub(v,r.v)),Flight.impulse(tool,Flight.fullRack)*.65,1e-8);
+          eq(r.tool===tool&&selected===tool&&flight.mask===Flight.fullRack,'same tool ready');
+          eq(el('suitMass').textContent===mass&&el('budget').textContent.includes('Unlimited'),'fixed mass and reload readout');
+          eq(rackOrder.every(i=>!el('tool'+i).disabled)&&flight.checkAt===null&&running,'all nine slots live');
+          advance(.5);
+        }
+        keys('ArrowLeft');
+      }
+      eq(flight.throws===27&&flight.objects.length===27,'all actual pitches launched');
+      tick(600,30);eq(flight.done==='oxygen','clock ran through to oxygen expiry');
+      completeLossTransition();click('viewLog');
+      eq(el('logThrows').children.length===27&&el('logSummary').textContent.includes('27 throws'),'full release record');
+      for(const svg of el('logPanes').querySelectorAll('svg')){
+        eq(svg.querySelectorAll('polyline').length===28,'all coasts plotted');
+        eq(svg.querySelectorAll('.releaseDot,.releaseMark').length===27,'every release marked');
+      }
+      el('flightLog').close();click('openShareCard');
+      const art=el('cardArt');
+      eq(art.textContent.includes('27 throws')&&art.textContent.includes('10. ...and then some'),'compact overflow line and actual count');
+      eq(art.querySelectorAll('.releaseMark').length===9&&art.querySelectorAll('polyline').length===28,'first nine callouts on the full chart');
+      eq(![...art.querySelectorAll('text')].some(t=>t.textContent.startsWith('11.  ')),'no eleventh record');
+      const cardHeight=art.querySelector('svg').getAttribute('height');
+      for(const length of [0,1,5,6,9,10,27]){
+        const short={...flight,log:{...flight.log,releases:flight.log.releases.slice(0,length)}};
+        const svg=new DOMParser().parseFromString(FlightLog.card(short),'image/svg+xml').documentElement;
+        const rows=[...svg.querySelectorAll('text')].filter(t=>/^\d+\. /.test(t.textContent));
+        eq(rows.length===Math.min(length,10),'only the first nine details and one overflow row');
+        eq(svg.textContent.includes('10. ...and then some')===(length>9),'overflow starts on throw ten');
+        for(const [i,row] of rows.entries()){
+          eq(row.textContent.startsWith((i+1)+'. '),'reading order');
+          eq(+row.getAttribute('x')===(i<5?20:245),'throws 1–5 left and 6–10 right');
+          eq(+row.getAttribute('y')===+rows[0].getAttribute('y')+17*(i%5),'records run down each column');
+        }
+        if(length>=5)eq(svg.getAttribute('height')===cardHeight,'at most five rows high');
+      }
+      el('shareCard').close();click('retry');
+      eq(flight.story&&flight.throws===0&&el('budget').textContent.includes('Unlimited'),'retry resets history and keeps Story rules');
+    }
+  });
+  test('Story can turn a long outward flight into a rescue with the same tool',()=>{
+    configure(0,'Straight-Line',false,true);
+    const originalGap=Flight.clearance(flight.pos.p);
+    click('toStation');click('tool4');set('power',30);
+    for(let i=0;i<6;i++){click('throw');advance(2);}
+    eq(Flight.clearance(flight.pos.p)>originalGap&&!flight.forecast.hits.length,'six outward throws open the gap');
+    click('away');set('power',60);
+    for(let i=0;i<7;i++){click('throw');advance(.5);}
+    const hit=flight.forecast.hits[0];eq(hit&&running,'the thirteenth throw leaves a return coast');
+    tick(600,30);eq(flight.done==='capture'&&flight.throws===13,'captured after thirteen throws');
+    eq(!el('endCopy').textContent.includes('Upmass Hero'),'a reloaded drill is a replacement');
+    click('viewLog');eq(el('logThrows').children.length===13,'full rescue logged');
+  });
+  test('Skipping First rescue hands the replenished rack to manual flight',()=>{
+    beginLesson(0);click('toStation');click('throw');
+    eq(flight.checkAt===null,'opening away from the bars never crosses halfway');click('throw');
+    click('skipLesson');eq(!flight.story&&running&&flight.checkAt===null&&flight.throws===2,'manual handover keeps history');
+    eq(flight.mask===Flight.fullRack&&selected===5,'fresh battery aboard');
+    click('throw');eq(!(flight.mask&(1<<5))&&el('tool5').disabled&&selected!==5,'manual battery is single-use');
+    eq(el('suitMass').textContent===Flight.mass(flight.mask).toFixed(1)+' kg','manual mass falls');
+  });
   test('Tablet rack, landscape oxygen and narrow headers display complete labels',()=>{
     configure(0,'Straight-Line');
     const frame=window.frameElement,original=frame.style.cssText;
@@ -427,10 +497,10 @@
     eq(Number(el('rate').textContent)<0 && el('coast').textContent==='Miss by 4.6 m','closing on the second pass');
   });
   test('Pause status and the lesson correction follow the current coast',()=>{
-    beginLesson(3);click('away');click('throw');click('lessonAction');
-    flight.mask=1<<6;flight.pos={p:[200,200,200],v:[.2,.2,.2]};reseat();
+    beginLesson(3);click('away');click('throw');
+    flight.pos={p:[200,200,200],v:[.2,.2,.2]};reseat();
     click('lessonAction');
-    eq(!running&&el('lessonCue').textContent.startsWith('No single remaining tool')&&el('lessonAction').hidden,'failed correction staged');
+    eq(!running&&el('lessonCue').textContent.startsWith('No single throw')&&el('lessonAction').hidden,'failed correction staged');
     click('pause');advance(2);click('pause');
     eq(el('message').textContent.includes('paused')&&!el('lessonAction').hidden,'new coast time permits another correction');
   });
@@ -465,7 +535,7 @@
     configure(3,'Straight-Line');eq(flight.pos.p.join(',')===p,'same model-independent start');
   });
   function fixture(mode,soft,p,v){
-    configure(0,mode,soft,true);
+    start(0,mode,soft);
     flight.initial={...flight.initial,p:p.slice(),v:v.slice()};flight.pos={p:p.slice(),v:v.slice()};reseat();click('pause');
   }
   test('Read a cross-track miss in the log and both visor directions',()=>{
@@ -489,11 +559,16 @@
       click(i===2?'lessonAction':'away');click('throw');
       if(i===1||i===3)eq(!flight.forecast.hits.length&&flight.forecast.near.d>1,'oblique/curved miss');
       if(i===2)eq(flight.forecast.hits[0].speed>Flight.limit,'approach too fast');
-      click('lessonAction');eq(flight.checked&&!running,'course check');
-      if(i===0){const r=el('lessonAction').getBoundingClientRect();eq(r.top>=0&&r.bottom<=innerHeight,'halfway action visible');}
-      if(i===0)close(Flight.clearance(flight.pos.p),Flight.clearance(flight.initial.p)/2,.0001);
-      if(i>0){
-        click('lessonAction');eq(flight.prepared===flight.throws,'staged correction '+i);
+      if(i===0){
+        const r=el('lessonAction').getBoundingClientRect();eq(r.top>=0&&r.bottom<=innerHeight,'halfway action visible');
+        const at=flight.checkAt;eq(at>0&&el('lessonAction').textContent==='Coast to halfway','First rescue scheduled');
+        tick(at+1,30);eq(flight.checked&&!running,'automatic course check');close(flight.time,at);
+        close(Flight.clearance(flight.pos.p),Flight.clearance(flight.initial.p)/2,.0001);
+      }else{
+        eq(flight.checkAt===null&&!el('lessonAction').textContent.includes('Coast to'),'no scheduled check');
+        const coast=flight.forecast.near.t*.60;
+        tick(coast,30);eq(running&&!flight.checked,'clock continues past halfway');
+        click('lessonAction');eq(!running&&flight.prepared===flight.throws,'requested correction staged '+i);
         if(i===1)eq(Flight.gear[selected].mass<=1.2,'light correction');
         if(i===2)eq(dot(Flight.direction(yaw,pitch),unit(flight.pos.v))>.999,'brake measured drift');
         click('throw');
@@ -548,10 +623,11 @@
   });
   test('The last tool leaves Orbital live when a safe grab is ahead or inside the bars',()=>{
     for(const speed of [1,30])for(const [y,fast] of [[-1.61,true],[-1.85,false]]){
-      configure(0,'Orbital',true,true);
       const tool=6,mask=1<<tool;
-      flight.pos={p:[0,y,1],v:[Flight.impulse(tool,mask)*.1,.005,.08]};
-      flight.mask=mask;choose(tool);setView([1,0,0]);set('power',10);click('throw');
+      fixture('Orbital',true,[0,y,1],[Flight.impulse(tool,mask)*.1,.005,.08]);
+      flight.mask=mask;choose(tool);setView([1,0,0]);set('power',10);
+      lastTime=performance.now()+1000; // Release at the fixture’s exact simulated t=0.
+      click('throw');
       eq(!flight.mask&&!flight.done&&running&&!Flight.softEnough(norm(flight.pos.v)),'empty rack, initially above limit');
       const grab=flight.forecast.hits.at(-1);
       eq(Flight.softEnough(grab.speed)&&grab.t>40,'forecast sees a safe grab');
@@ -617,8 +693,8 @@
           fixture('Straight-Line',true,[0,-6,0],[0,.116,0]);
           flight.mask=Flight.fullRack^(1<<5)^(1<<3);updateRack();
           tick(74,speed);eq(flight.misses===1&&!Flight.inside(flight.pos.p),'fast entry and exit');
-          click('prograde');click('tool4');set('power',100);click('throw');tick(4,speed);
-          click('prograde');click('tool2');set('power',100);click('throw');tick(3,speed);
+          setView(flight.pos.v);click('tool4');set('power',100);click('throw');tick(4,speed);
+          setView(flight.pos.v);click('tool2');set('power',100);click('throw');tick(3,speed);
           setView([0,1,0]);click('tool1');set('power',90);click('throw');
         }else if(scenario==='orbital return'){
           configure(0,'Orbital',true,true);setView(Flight.direction(-43,13));set('power',99);click('throw');
@@ -721,16 +797,16 @@
   });
   test('Every random outcome offers a dated single-chart flight card',()=>{
     for(const ending of ['capture','oxygen','stranded','overspeed']){
-      configure(3,'Straight-Line',true,true);
+      configure(3,'Straight-Line',true);
       if(ending==='capture'){
         const c=storyCorrection();eq(!!c,'test route available');
         setView(Flight.direction(c.az,c.el));choose(c.tool);changePower(c.power);click('throw');advance(600);
       }else if(ending==='stranded'){
-        click('toStation');for(const tool of rackOrder){choose(tool);click('throw');}
+        setView(stationDirection());for(const tool of rackOrder){choose(tool);click('throw');}
       }else if(ending==='overspeed'){
-        flight.pos={p:[0,-8,0],v:[0,.12,0]};flight.mask=1<<6;
+        flight.pos={p:[0,-8,0],v:[0,.12,0]};reseat();flight.mask=1<<6;
         choose(6);setView([0,-1,0]);set('power',10);click('throw');
-      }else{click('pause');advance(600);}
+      }else advance(600);
       if(ending!=='capture')completeLossTransition();
       eq(flight.done===ending&&el('debrief').open&&!el('debriefShare').hidden,'share after '+ending);
       eq(el('endSeed').textContent==='00019919','debrief seed');
@@ -823,7 +899,7 @@
 
   test('Empty rack ends a missed flight at the last actual release',()=>{
     for(const mode of ['Straight-Line','Orbital'])for(const soft of [false,true]){
-      configure(0,mode,soft,true);click('toStation');set('power',55);
+      configure(0,mode,soft);set('power',55);
       const sorted=[6,0,1,2,7,3,8,4,5];
       eq([...el('tools').children].map(b=>b.id).join()===sorted.map(i=>'tool'+i).join(),'ascending visible rack');
       for(const [slot,i] of sorted.entries()){
@@ -946,7 +1022,7 @@
   });
   test('Nine closely spaced release labels clear the trace in both panes',()=>{
     for(const coincident of [false,true]){
-      configure(2,'Orbital',true,true);click('toStation');set('power',30);
+      configure(2,'Orbital',true);set('power',30);
       for(const [n,tool] of rackOrder.entries()){
         if(n&&!coincident)advance(n<=3?30:1);
         choose(tool);click('throw');
@@ -976,7 +1052,7 @@
   test('Guide and tutorial introduce recoil and the original mission',()=>{
     click('manual');const guide=el('guide').textContent;
     eq(['presumed lost','Newton’s third law','wrench','SR-73','next town'].every(s=>guide.includes(s)),'guide premise and backstory');
-    eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // in honor of the legends of tgirl baseball','credit line');
+    eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere','credit line');
     enterLesson('replayLesson');
     eq(['presumed lost','Newton’s third law','wrench','pushes you back','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
     eq(el('brief').textContent.includes('Saturdays'),'character in opening');

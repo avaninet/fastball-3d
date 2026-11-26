@@ -2051,7 +2051,7 @@ main {
 <div class="velocity"><h2>Station-relative velocity <small>m/s</small></h2><dl><div><dt>Radial · X</dt><dd id="velX"></dd></div><div><dt>Along-track · Y</dt><dd id="velY"></dd></div><div><dt>Cross-track · Z</dt><dd id="velZ"></dd></div><div><dt>Suit + gear</dt><dd id="suitMass"></dd></div></dl></div>
 </section>
 <div class="pitchPod">
-<article class="panel rack"><div class="heading"><h2>Equipment rack</h2><span id="budget" title="Total speed change available if you throw every remaining tool at full power"></span></div><div id="tools" class="tools"></div></article>
+<article class="panel rack"><div class="heading"><h2>Equipment rack</h2><span id="budget"></span></div><div id="tools" class="tools"></div></article>
 <article class="panel throwPanel"><div class="heading"><h2><label for="power">Throw power</label></h2><span class="powerDisplay" id="powerValue"></span></div><div class="impulseInfo" id="impulseInfo"></div><input id="power" type="range" min="10" max="100" step="1" value="95"><button id="throw" class="primary">Throw</button></article>
 </div>
 <section class="panel lesson" id="lesson" hidden><div class="heading"><h2 id="lessonTitle">First rescue</h2><button id="skipLesson">Skip guidance</button></div><p id="lessonCue" aria-live="polite" aria-atomic="true"></p><button id="lessonAction" hidden></button></section>
@@ -2059,7 +2059,7 @@ main {
 <div class="statusLine" role="status"><span aria-hidden="true">●</span><span id="message"></span></div>
 </section>
 </main>
-<dialog id="setup" aria-labelledby="setupTitle"><form id="setupForm"><div class="dialogBody"><div class="dialogHead"><h2 id="setupTitle">New flight</h2><button class="x close" type="button" aria-label="Close">×</button></div><label class="rowLabel" for="scenario">Separation scenario</label><select id="scenario"><option value="0">Tether separation</option><option value="1">Lateral drift</option><option value="2">Wide separation</option><option value="3">Random drift</option></select><p id="setupBrief" style="margin-top:7px"></p><div id="seedGroup" hidden><label class="rowLabel" for="seed">Scenario seed or replay link</label><input class="seedInput" id="seed" spellcheck="false" autocomplete="off" aria-describedby="seedPreview"><div class="seedActions"><button type="button" id="loadSeed">Load seed</button><button type="button" id="reroll">Generate seed</button><button type="button" id="copySetupSeed">Copy replay</button></div><p id="seedPreview" role="status"></p></div><span id="modelLabel" class="rowLabel">Flight model</span><div class="modePick" role="radiogroup" aria-labelledby="modelLabel"><label><input type="radio" name="model" value="Straight-Line" checked> Straight-Line</label><label><input type="radio" name="model" value="Orbital"> Orbital</label></div><label class="challenge"><input type="checkbox" id="soft"><span>Require a soft capture<small>Maximum grab speed <span data-soft-limit></span> m/s. A fast pass leaves you drifting.</small></span></label><label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small>Assisted bearings and paused aiming on a closer opening.</small></span></label></div><div class="dialogFoot"><button type="button" class="close">Cancel</button><button type="submit" class="primary">Begin flight</button></div></form></dialog>
+<dialog id="setup" aria-labelledby="setupTitle"><form id="setupForm"><div class="dialogBody"><div class="dialogHead"><h2 id="setupTitle">New flight</h2><button class="x close" type="button" aria-label="Close">×</button></div><label class="rowLabel" for="scenario">Separation scenario</label><select id="scenario"><option value="0">Tether separation</option><option value="1">Lateral drift</option><option value="2">Wide separation</option><option value="3">Random drift</option></select><p id="setupBrief" style="margin-top:7px"></p><div id="seedGroup" hidden><label class="rowLabel" for="seed">Scenario seed or replay link</label><input class="seedInput" id="seed" spellcheck="false" autocomplete="off" aria-describedby="seedPreview"><div class="seedActions"><button type="button" id="loadSeed">Load seed</button><button type="button" id="reroll">Generate seed</button><button type="button" id="copySetupSeed">Copy replay</button></div><p id="seedPreview" role="status"></p></div><span id="modelLabel" class="rowLabel">Flight model</span><div class="modePick" role="radiogroup" aria-labelledby="modelLabel"><label><input type="radio" name="model" value="Straight-Line" checked> Straight-Line</label><label><input type="radio" name="model" value="Orbital"> Orbital</label></div><label class="challenge"><input type="checkbox" id="soft"><span>Require a soft capture<small>Maximum grab speed <span data-soft-limit></span> m/s. A fast pass leaves you drifting.</small></span></label><label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small>Unlimited auto-reloading tools, assisted bearings and paused aiming on a closer opening.</small></span></label></div><div class="dialogFoot"><button type="button" class="close">Cancel</button><button type="submit" class="primary">Begin flight</button></div></form></dialog>
 <dialog id="confirmRescue" aria-labelledby="confirmRescueTitle"><div class="dialogBody"><div class="dialogHead"><h2 id="confirmRescueTitle">Start First rescue?</h2></div><p>Starting the lesson replaces your current flight and its release record.</p></div><div class="dialogFoot"><button class="close" autofocus>Keep current flight</button><button id="replaceFlight">Start First rescue</button></div></dialog>
 <dialog id="guide" aria-labelledby="guideTitle"><div class="dialogBody"><div class="dialogHead"><h2 id="guideTitle">Flight guide</h2><button class="x close" aria-label="Close">×</button></div>
 <h3>Your first pitch</h3><p><strong>The tool goes through the crosshair. You recoil the other way.</strong> On Tether separation, face away from the station before you throw. Look aft to see where you’re going. In the flight instruments, <strong>Current coast</strong> tells you whether you’ll reach the bars. Its directional hint tells you where to aim the next tool in the forward visor.</p>
@@ -2071,14 +2071,14 @@ main {
 <h3>Preview a throw</h3><p>Switch on Preview throw under Current coast to see where your suit would go if you released the selected tool now. The solid violet line and filled arrows update with your aim, tool and power. Farther arrows are smaller and dimmer. A violet cross marks the first contact or nearest pass. Looking straight down the path, you’ll see a diamond. The sidebar gives the projected grab, fast entry or closest clearance. Check aft when recoil takes you behind the crosshair. The dashed mint line shows your actual coast.</p>
 <h3>The night-side sky</h3><p>Tommi is in Earth’s shadow. The Moon is new. On this pass, it lies below Tommi’s horizon along with the Sun. Look for the faint stars above Earth’s curved edge. They give you a reference as you turn the visor.</p>
 <h3>Read both cameras</h3><p>STN points toward the station when it leaves the frame. The aft view looks straight behind you. Mint arrows point along your committed coast. Nearby dashes are brighter and thicker. Farther arrows look smaller. Looking straight down a Straight-Line coast, you’ll see a ring and the distance from your suit to contact or to your position at oxygen expiry. If the path looks end-on, read the time, side and clearance under Current coast. A negative range rate means the gap to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the <span data-soft-limit></span> m/s soft limit, shown as a reference during any-speed flights. Positive X points away from Earth, +Y along the orbit and +Z above its plane. The whole <span id="envelopeSize"></span> m outline is within reach, including the gaps between panels.</p>
-<h3>Trim and brake</h3><p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you which way to aim in the forward visor. If it says to aim up and right, a light pitch that way nudges the suit down and left. The hint follows you as you turn. Pitch along measured drift to brake. Soft capture takes effect anywhere inside the bars at <span data-soft-limit></span> m/s or slower. After a fast entry, brake while still within reach or coast through and return. After the last throw, the flight ends if the coast misses the bars or every remaining chance to grab is too fast. If Orbital drift will slow you enough within reach, keep coasting.</p>
+<h3>Trim and brake</h3><p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you which way to aim in the forward visor. If it says to aim up and right, a light pitch that way nudges the suit down and left. The hint follows you as you turn. Pitch along measured drift to brake. Soft capture takes effect anywhere inside the bars at <span data-soft-limit></span> m/s or slower. After a fast entry, brake while still within reach or coast through and return. In manual flight, after the last throw the flight ends if the coast misses the bars or every remaining chance to grab is too fast. If Orbital drift will slow you enough within reach, keep coasting.</p>
 <h3>Time and controls</h3><p>Straight-Line holds velocity between releases. Orbital bends the coast in a rotating frame. Every flight starts with 10:00 of oxygen, including First rescue. Play speed stops at 1×, 10×, 20× and 30×. Throwing resets it to 1×. Pause to read instruments, then resume to aim. Arrow keys turn 2°, or 0.25° with Shift. Keys 1–9 select a tool, [ and ] change power, Enter throws from the visor, and P controls the clock.</p>
-<h3>Compare rescues</h3><p>Δv (delta-v) is how much more you could change your speed or direction with the tools aboard. The debrief shows how much of the original budget you brought home. A loss brings home zero. Grab speed measures how gently you reached the bars, including sideways motion.</p>
+<h3>Compare rescues</h3><p>Δv (delta-v) is how much more you could change your speed or direction with the tools aboard. Manual flights score the remaining tool budget at rescue. A lost suit brings home zero. In Story, compare throw count and grab speed. Grab speed measures how gently you reached the bars, including sideways motion.</p>
 <h3>Share a random drift</h3><p>In New flight, choose Random drift to generate a seed or load a friend’s code or replay link. Copy replay includes the flight model, capture rule and Story setting. In an offline copy, paste the shared replay into Load seed. The debrief also has a flight card you can save as an image.</p>
-<h3>Story / guided rescue</h3><p>First rescue starts a fresh Straight-Line lesson. Story also lets you stage an opening, line up while paused and snap to measured bearings. Throw starts or resumes the clock at 1×. Choose Story flight in setup to use these assists on another opening.</p>
-<section class="credits" aria-labelledby="creditsTitle"><h3 id="creditsTitle">Credits</h3><p>an AvaniNet game © 2026 // in honor of the legends of tgirl baseball</p></section>
+<h3>Story / guided rescue</h3><p>First rescue starts a fresh Straight-Line lesson. Every Story throw reloads the selected tool. Suit mass stays constant, so repeating a pitch at the same power gives the same recoil. You can line up while paused and snap to measured bearings. First rescue pauses for one halfway check. In later lessons, choose when to line up a correction. Throw starts or resumes the clock at 1×. Choose Story flight in setup to use these assists on another opening.</p>
+<section class="credits" aria-labelledby="creditsTitle"><h3 id="creditsTitle">Credits</h3><p>an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere</p></section>
 </div><div class="dialogFoot"><button id="replayLesson">Restart first rescue</button><button class="primary close">Back to cockpit</button></div></dialog>
-<dialog id="debrief" aria-labelledby="endTitle"><div class="dialogBody"><div class="dialogHead"><h2 id="endTitle"></h2><button class="x close" aria-label="Close">×</button></div><p id="endCopy"></p><div class="result"><strong id="endBudget"></strong><div id="endStats"></div></div><section id="debriefShare" hidden aria-labelledby="shareHeading"><h3 id="shareHeading">Share</h3><p>Share this opening with a friend. Compare how much Δv you brought home and how gently you reached the bars.</p><div class="seedActions"><code id="endSeed"></code><button id="copyEndSeed">Copy replay</button><button id="openShareCard">View flight card</button></div><p id="endShareStatus" role="status"></p></section></div><div class="dialogFoot"><button id="viewLog">View flight log</button><button id="retry">Retry</button><button id="nextLesson" hidden></button><button id="again">New flight</button></div></dialog>
+<dialog id="debrief" aria-labelledby="endTitle"><div class="dialogBody"><div class="dialogHead"><h2 id="endTitle"></h2><button class="x close" aria-label="Close">×</button></div><p id="endCopy"></p><div class="result"><strong id="endBudget"></strong><div id="endStats"></div></div><section id="debriefShare" hidden aria-labelledby="shareHeading"><h3 id="shareHeading">Share</h3><p>Share this opening with a friend. Compare your approach charts, throw counts and grab speeds.</p><div class="seedActions"><code id="endSeed"></code><button id="copyEndSeed">Copy replay</button><button id="openShareCard">View flight card</button></div><p id="endShareStatus" role="status"></p></section></div><div class="dialogFoot"><button id="viewLog">View flight log</button><button id="retry">Retry</button><button id="nextLesson" hidden></button><button id="again">New flight</button></div></dialog>
 <dialog id="flightLog" aria-labelledby="logTitle"><div class="dialogBody"><div class="dialogHead"><h2 id="logTitle">Flight log</h2><button class="x close" aria-label="Close flight log">×</button></div><p id="logSummary"></p><div id="logPanes" class="logPanes"></div><p class="logLegend"><span class="envelopeKey"></span> Grab envelope · □ Start · numbered circles mark releases · ▸ Travel · × Fast entry · ◆ Final position</p><p id="logEvents"></p><h3>Release record</h3><ol class="logThrows" id="logThrows"></ol></div><div class="dialogFoot"><button class="close">Back to debrief</button></div></dialog>
 <dialog id="shareCard" aria-labelledby="cardTitle"><div class="dialogBody"><div class="dialogHead"><h2 id="cardTitle">Share flight card</h2><button class="x close" aria-label="Back to debrief">×</button></div><div id="cardArt"></div><p id="cardStatus" role="status"></p></div><div class="dialogFoot"><button id="saveCard">Save image</button><button id="copyChallenge" class="primary">Copy challenge</button></div></dialog>
 <dialog id="copyDialog" aria-labelledby="copyTitle"><div class="dialogBody"><div class="dialogHead"><h2 id="copyTitle">Copy replay</h2><button class="x close" aria-label="Close">×</button></div><label for="copyText">Select and copy the text below.</label><textarea id="copyText" rows="4" readonly></textarea></div></dialog>
@@ -2116,6 +2116,7 @@ main {
   }
   function angles(d) {return [Math.atan2(d[1],d[0])/rad,Math.atan2(d[2],Math.hypot(d[0],d[1]))/rad];}
   const mass = mask => gear.reduce((m,g,i)=>m+((mask & (1<<i)) ? g.mass : 0),dryMass);
+  const rackAfterThrow = (mask,tool,story) => story ? mask : mask & ~(1<<tool);
   const impulse = (tool,mask) => gear[tool].mass*gear[tool].speed/mass(mask);
   const budgets = [0];
   for (let mask=1;mask<=fullRack;mask++) {
@@ -2339,7 +2340,7 @@ main {
     const base=index===3?randomStart(seed):named[index];
     return story?base:manualOpening(base);
   }
-  return {gear,fullRack,named,opening,half,limit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,impulse,budgets,
+  return {gear,fullRack,named,opening,half,limit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,rackAfterThrow,impulse,budgets,
     release,motion,nearest,clearance,inside,softEnough,entries,forecast,coastPass,seedStream,transfer,command,applyCommand,randomStart};
 })();
 </script><script>const Readout={
@@ -3046,14 +3047,14 @@ function start(index,mode,soft,seed=0,story=false,lesson=null) {
   Replays.updateAddress(flight);
   el('assists').hidden=!story;el('storyTag').hidden=!story;
   el('lesson').hidden=lesson===null;
-  setMsg(story?'Story flight. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
+  setMsg(story?'Story flight. Every tool reloads. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
   updateRack();instruments();dirty=true;
 }
 const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools',overspeed:'Too fast to grab'};
 function finish(result) {
   running=false;flight.done=result;flight.finishedAt=new Date();invalidateInput();dirty=true;
   el('retry').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
-  const won=result==='capture',drill=!!(flight.mask&(1<<4));
+  const won=result==='capture',drill=!flight.log.releases.some(r=>r.tool===4);
   el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
   el('endCopy').textContent=won?(drill?'Upmass Hero · “Welcome home, Captain. I see you brought the drill.”':'“I have your tether, Captain. Welcome back.”')+' — Commander Julian Bern':'The reserve ran out before a successful grab. Retry to test a different pitch.';
   if(result==='stranded'){
@@ -3124,7 +3125,9 @@ function updateRack() {
     b.setAttribute('aria-label',g.name+', '+detail);
     b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=detail;
   }
-  el('budget').textContent=Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
+  const budget=el('budget');
+  budget.title=flight.story?'Each tool reloads immediately. Suit and gear mass stays constant.':'Total speed change available if you throw every remaining tool at full power';
+  budget.textContent=flight.story?'Unlimited · auto-reload':Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
   el('throw').disabled=selected<0||!canPitch();el('power').disabled=selected<0||!canPitch();
   el('powerValue').textContent=power+'%';
   el('impulseInfo').textContent=selected<0?'No equipment remaining':weightClass(Flight.gear[selected])+' · '+(Flight.impulse(selected,flight.mask)*power/100).toFixed(3)+' m/s recoil';
@@ -3138,9 +3141,10 @@ function throwTool() {
   flight.pos=Flight.release(old,selected,power,dir,flight.mask);
   flight.log.releases.push({time:flight.time,tool:selected,power,dir:dir.slice(),p:old.p.slice(),v:flight.pos.v.slice()});
   flight.objects.push({time:flight.time,start:{p:old.p.slice(),v:Flight.add(flight.pos.v,scale(dir,g.speed*power/100))}});
-  flight.mask^=1<<selected;flight.throws++;
-  setMsg(g.name+' released at '+power+'%. Read the committed coast before spending another tool.');
-  selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
+  flight.mask=Flight.rackAfterThrow(flight.mask,selected,flight.story);
+  flight.throws++;
+  if(!flight.story)selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
+  setMsg(g.name+' released at '+power+'%. '+(flight.story?'Reloaded and ready.':'Read the committed coast before spending another tool.'));
   reseat(Flight.inside(old.p)&&flight.misses>0);
   setClockStop(0);
   // The forecast includes later entries and Orbital slowdowns inside the bars.
@@ -3153,7 +3157,7 @@ function throwTool() {
   }
   if(!running)invalidateInput();
   flight.noTrimAt=null;started=true;running=true;
-  if(flight.mask)scheduleLessonCheck();else flight.checkAt=null;
+  if(flight.lesson===0&&!flight.checked)scheduleHalfwayCheck();
   lastTime=performance.now();dirty=true;updateRack();instruments();
 }
 function describeSide(point,bar) {
@@ -3504,10 +3508,11 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
 
   // Both panels share their along-track origin, vertical origin and metres per pixel.
   function layout(segments){
-    const points=segments.flat().map(k=>k.p);
-    const extent=(values,minimum)=>[Math.min(-minimum,...values),Math.max(minimum,...values)];
-    const [left,right]=extent(points.map(p=>-p[1]),Flight.half[1]);
-    const [bottom,top]=extent(points.flatMap(p=>[p[0],p[2]]),Flight.half[0]);
+    let left=-Flight.half[1],right=Flight.half[1],bottom=-Flight.half[0],top=Flight.half[0];
+    for(const segment of segments)for(const {p} of segment){
+      left=Math.min(left,-p[1]);right=Math.max(right,-p[1]);
+      bottom=Math.min(bottom,p[0],p[2]);top=Math.max(top,p[0],p[2]);
+    }
     const scale=Math.min(344/Math.max(15,right-left),186/Math.max(15,top-bottom));
     const cx=222-(left+right)*scale/2,cy=126+(top+bottom)*scale/2;
     return {scale,cx,cy,project:(p,axis)=>[cx-p[1]*scale,cy-p[axis]*scale]};
@@ -3548,7 +3553,7 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
     }
     return placed;
   }
-  function plot(flight,segments,grid,axis){
+  function plot(flight,segments,grid,axis,compact=false){
     const {scale,cx,cy,project}=grid;
     const point=p=>project(p,axis), color=flight.done==='capture'?'#acdcb6':'#ffaa95';
     const svg=[];
@@ -3564,7 +3569,12 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
     const half=Flight.half;
     svg.push('<rect x="'+num(cx-half[1]*scale)+'" y="'+num(cy-half[axis]*scale)+'" width="'+num(2*half[1]*scale)+'" height="'+num(2*half[axis]*scale)+'" fill="#29493d" stroke="#91c4a4"/>');
     const projected=segments.map(seg=>seg.map(k=>point(k.p)));
-    const callouts=releaseLabels(flight.log.releases.map(r=>point(r.p)),projected.flat());
+    const anchors=flight.log.releases.map(r=>point(r.p));
+    // Card numbers match its first nine records. In a long full log, spread
+    // numbered callouts over the flight and mark every other release with a dot.
+    const count=Math.min(anchors.length,compact?9:16);
+    const indices=Array.from({length:count},(_,i)=>compact||count===anchors.length?i:Math.round(i*(anchors.length-1)/(count-1)));
+    const callouts=releaseLabels(indices.map(i=>anchors[i]),projected.flat());
     for(const {anchor:[x,y],center:[lx,ly]} of callouts)svg.push(line(x,y,lx,ly,'#b3976c',.8));
     for(const xy of projected){
       svg.push('<polyline fill="none" stroke="#99e1cc" stroke-width="2" points="'+xy.map(p=>p.map(num).join(',')).join(' ')+'"/>');
@@ -3581,10 +3591,14 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
     }
     const [startX,startY]=point(flight.initial.p);
     svg.push('<rect x="'+num(startX-4)+'" y="'+num(startY-4)+'" width="8" height="8" fill="#0b141b" stroke="#e9eada" stroke-width="2"/>');
+    const numbered=new Set(indices);
+    for(const [i,[x,y]] of anchors.entries()){
+      if(!numbered.has(i))svg.push('<circle class="releaseDot" cx="'+num(x)+'" cy="'+num(y)+'" r="1.6" fill="#f2cc8e"><title>Throw '+(i+1)+'</title></circle>');
+    }
     for(const [i,{anchor:[x,y],center:[lx,ly]}] of callouts.entries()){
       svg.push('<g class="releaseMark"><circle cx="'+num(x)+'" cy="'+num(y)+'" r="1.6" fill="#f2cc8e"/>',
         '<circle cx="'+num(lx)+'" cy="'+num(ly)+'" r="6" fill="#eac383"/>',
-        label(lx,ly+3.2,i+1,'middle','#112027',9.5),'</g>');
+        label(lx,ly+3.2,indices[i]+1,'middle','#112027',9.5),'</g>');
     }
     for(const pass of flight.log.fast){
       const [x,y]=point(pass.p);svg.push(line(x-5,y-5,x+5,y+5,'#ffae74',2),line(x-5,y+5,x+5,y-5,'#ffae74',2));
@@ -3607,7 +3621,7 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
     const original=Flight.budgets[Flight.fullRack];
     const recovered=rescued?Flight.budgets[flight.mask]:0;
     return {
-      budget:'Δv brought home '+recovered.toFixed(3)+' / '+original.toFixed(3)+' m/s ('+(100*recovered/original).toFixed(1)+'%)',
+      budget:flight.story?'Unlimited tools · auto-reload':'Δv brought home '+recovered.toFixed(3)+' / '+original.toFixed(3)+' m/s ('+(100*recovered/original).toFixed(1)+'%)',
       speed:(rescued?'Grab speed ':'Final relative speed ')+Readout.speed(Flight.norm(flight.pos.v))+' m/s'
     };
   }
@@ -3622,7 +3636,9 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
     const passCount=flight.misses?Readout.count(flight.misses,'fast pass','fast passes'):'';
     const passDetails=[clearance,passCount].filter(Boolean).join('   ·   ');
     const recordY=509+(passDetails?20:0);
-    const rows=Math.max(1,Math.ceil(releases.length/2)),height=recordY+10+rows*17;
+    const records=releases.slice(0,9).map((r,i)=>(i+1)+'.  '+Visor.clockText(r.time)+'  '+Flight.gear[r.tool].name+'  '+r.power+'%');
+    if(releases.length>9)records.push('10. ...and then some');
+    const rows=Math.max(1,Math.min(5,records.length)),height=recordY+10+rows*17;
     const label=(x,y,text,size,color,attrs='')=>'<text x="'+x+'" y="'+y+'" font-size="'+size+'" fill="'+color+'" '+attrs+'>'+escape(text)+'</text>';
     const description='Fastball 3D · '+date+' · Random drift '+seed+' · '+rules+'\n'+
       [result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',budget,speed,clearance,passCount].filter(Boolean).join(' · ');
@@ -3633,13 +3649,13 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
       label(20,62,result,28,'#f4f1e8','font-weight="bold"'),label(20,84,'Random drift  /  '+seed,15,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
       label(20,104,rules,13,'#c5d1d0'),'<rect x="12" y="115" width="446" height="309" rx="5" fill="#0b141b" stroke="#354046"/>',
       label(22,136,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),
-      '<g transform="translate(20 143)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments),0)+'</g>',
+      '<g transform="translate(20 143)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments),0,true)+'</g>',
       label(20,446,budget,15,'#a8e4d0','font-weight="bold"'),label(20,466,speed,14,'#a8e4d0'),
-      label(20,486,elapsed+' elapsed   ·   '+oxygen+' oxygen   ·   '+releases.length+'/'+Flight.gear.length+' tools used',14,'#f4f1e8')];
+      label(20,486,elapsed+' elapsed   ·   '+oxygen+' oxygen   ·   '+(flight.story?Readout.count(releases.length,'throw'):releases.length+'/'+Flight.gear.length+' tools used'),14,'#f4f1e8')];
     if(passDetails)parts.push(label(20,506,passDetails,14,'#c5d1d0'));
     parts.push(label(20,recordY,'Release record',13,'#f7bc62','font-weight="bold"'));
     if(!releases.length)parts.push(label(20,recordY+19,'No tools released',12,'#c5d1d0'));
-    releases.forEach((r,i)=>parts.push(label(20+225*(i%2),recordY+19+17*Math.floor(i/2),(i+1)+'.  '+Visor.clockText(r.time)+'  '+Flight.gear[r.tool].name+'  '+r.power+'%',12,'#d7dfe1')));
+    records.forEach((text,i)=>parts.push(label(i<5?20:245,recordY+19+17*(i%5),text,12,'#d7dfe1')));
     return parts.join('')+'</svg>';
   }
   function show(flight){
@@ -3650,7 +3666,7 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
     el('logTitle').textContent=flight.initial.name+' · Flight log';
     el('logSummary').textContent=[result,flight.mode,flight.soft?'Soft ≤ '+Flight.limit.toFixed(3)+' m/s':'Any-speed capture',
       flight.index===3?'Seed '+seedLabel(flight.seed):'',precise(flight.time)+' elapsed',
-      Visor.clockText(Math.ceil(flight.limit-flight.time))+' oxygen',tools+'/'+Flight.gear.length+' tools aboard',
+      Visor.clockText(Math.ceil(flight.limit-flight.time))+' oxygen',flight.story?Readout.count(flight.throws,'throw'):tools+'/'+Flight.gear.length+' tools aboard',
       budget,speed,flight.done==='capture'?'':'Closest clearance '+Readout.clearance(closest,2)+' m'].filter(Boolean).join('  ·  ');
     el('logPanes').innerHTML=[0,2].map(axis=>pane(flight,segments,grid,axis)).join('');
     el('logEvents').textContent=['Start 0:00',...flight.log.fast.map(h=>'Fast entry '+precise(h.time)+' at '+Readout.speed(h.speed)+' m/s'),result+' '+precise(flight.time)].join('  ·  ');
@@ -3748,7 +3764,7 @@ el('openShareCard').onclick=()=>{
 };
 el('copyChallenge').onclick=()=>{
   const text=el('cardArt').querySelector('desc').textContent;
-  const challenge=flight.done==='capture'?'Can you bring home more Δv or make a gentler grab?':'Can you get Tommi home from this drift?';
+  const challenge=flight.done!=='capture'?'Can you get Tommi home from this drift?':flight.story?'Can you make a gentler grab or get home in fewer throws?':'Can you bring home more Δv or make a gentler grab?';
   return Replays.copy(text+'\n'+challenge+'\n'+Replays.link(flight),el('cardStatus'),'Challenge copied.');
 };
 el('saveCard').onclick=async()=>{
@@ -3776,22 +3792,17 @@ function beginLesson(i){
   start(lesson.index,lesson.mode,lesson.soft,0,true,i);
   visor.focus({preventScroll:true});
 }
-function scheduleLessonCheck(){
-  if(flight.lesson===null || flight.checked)return;
-  const nearest=flight.forecast.near.t;
-  let delay=nearest/2;
-  if(flight.lesson===0 && flight.forecast.hits.length){
-    // Stop when half the original clearance remains, including on a fast clock.
-    const target=Flight.clearance(flight.initial.p)/2;
-    let lo=0,hi=nearest;
-    for(let i=0;i<32;i++){
-      const mid=(lo+hi)/2;
-      if(Flight.clearance(Flight.motion(flight.anchor,mid,flight.mode).p)>target)lo=mid;else hi=mid;
-    }
-    delay=hi;
+function scheduleHalfwayCheck(){
+  const target=Flight.clearance(flight.initial.p)/2,nearest=flight.forecast.near;
+  flight.checkAt=null;
+  if(nearest.d>target || Flight.clearance(flight.pos.p)<=target)return;
+  // First rescue flies Straight-Line. Clearance decreases up to the nearest pass.
+  let lo=0,hi=nearest.t;
+  for(let i=0;i<32;i++){
+    const mid=(lo+hi)/2;
+    if(Flight.clearance(Flight.motion(flight.anchor,mid,flight.mode).p)>target)lo=mid;else hi=mid;
   }
-  if(flight.lesson===2 && flight.forecast.hits.length)delay=Math.max(0,nearest-18);
-  flight.checkAt=flight.time+delay;
+  flight.checkAt=flight.time+hi;
 }
 function updateLessonEnd(){
   const next=el('nextLesson'),i=flight.lesson;
@@ -3807,20 +3818,18 @@ function updateLessonCue(){
   if(!flight.throws){
     const cues=[
       'Without a tether or thrusters, a drifting astronaut is presumed lost. Newton’s third law gives Tommi one last pitch. Fling a wrench away from the station as hard as you can and it pushes you back. For this gap, choose Face away and throw the heavier battery at 95%.',
-      'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss before the course check.',
+      'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss, then line up a correction.',
       'This approach crosses the bars above the soft limit. Line up the practice pitch, then press Throw. Compare range rate with relative speed.',
       'Repeat the first rescue’s Face away battery pitch at 95%. Watch the coast bend in the rotating frame and compare its nearest pass with the straight return.'
     ];
     cue=cues[i];if(i===2){label='Line up practice pitch';if(flight.linedUp)cue='The 95% battery is lined up. Press Throw, then read the predicted entry speed.';}
-  }else if(!flight.mask){
-    cue='The rack is empty. Watch Current coast as you drift toward the grab bars.';
-  }else if(!flight.checked){
+  }else if(flight.checkAt!==null){
     cue='Find the station in the aft camera. Read Current coast to see where your recoil leads. The clock pauses for one course check.';
-    label='Coast to check';
+    label='Coast to halfway';
   }else if(h && (!flight.soft || Flight.softEnough(h.speed))){
-    cue='The coast enters the full grab-bar envelope. Check the entry speed and keep the remaining tools aboard.';label='Coast to grab';
+    cue='The coast enters the full grab-bar envelope. Check the entry speed and coast to the grab.';label='Coast to grab';
   }else if(h){
-    cue='The grab will be too fast. A pitch along the measured drift slows the suit. Line up the brake, then throw. To experience a fast pass, resume without braking and coast clear for another entry.';
+    cue='The grab will be too fast. A pitch along the measured drift slows the suit. Line up the brake, then throw. To experience a fast pass, let the clock run and coast clear for another entry.';
     label='Line up brake';
   }else if(Flight.inside(flight.pos.p)&&flight.misses){
     cue='You are within reach. Throw along the measured drift to slow down for a grab, or coast through and return.';
@@ -3831,7 +3840,7 @@ function updateLessonCue(){
     label='Line up correction';
   }
   if(!running && flight.prepared===flight.throws && flight.throws){cue='Correction staged. Read the selected tool, bearing and recoil, then press Throw to resume at 1×.';label='';}
-  if(!running && flight.noTrimAt===flight.time){cue='No single remaining tool reaches a tested return from here. Aim a heavier pitch to reduce the miss, then check again.';label='';}
+  if(!running && flight.noTrimAt===flight.time){cue='No single throw reaches a tested return from here. Aim a heavier pitch to reduce the miss, then check again.';label='';}
   if(flight.done)label='';
   if(el('lessonCue').textContent!==cue)el('lessonCue').textContent=cue;
   action.textContent=label;action.hidden=!label;
@@ -3895,7 +3904,7 @@ el('skipLesson').onclick=()=>{
   flight.lesson=null;flight.checkAt=null;flight.story=false;flight.skippedGuidance=true;
   el('assists').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
   invalidateInput();if(!running)pause();
-  setMsg('Manual flight. Aim and release on the live clock. Retry will start the standard manual opening.');updateRack();instruments();
+  setMsg('Manual flight. The nine tools aboard now have one release each. Retry starts the standard manual opening.');updateRack();instruments();
 };
 </script><script>document.querySelector('link[rel="icon"]').href=document.querySelector('.brand img').src;
 for(const node of document.querySelectorAll('[data-soft-limit]'))node.textContent=Flight.limit.toFixed(3);

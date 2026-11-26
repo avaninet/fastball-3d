@@ -31,6 +31,7 @@ const Flight = (() => {
   }
   function angles(d) {return [Math.atan2(d[1],d[0])/rad,Math.atan2(d[2],Math.hypot(d[0],d[1]))/rad];}
   const mass = mask => gear.reduce((m,g,i)=>m+((mask & (1<<i)) ? g.mass : 0),dryMass);
+  const rackAfterThrow = (mask,tool,story) => story ? mask : mask & ~(1<<tool);
   const impulse = (tool,mask) => gear[tool].mass*gear[tool].speed/mass(mask);
   const budgets = [0];
   for (let mask=1;mask<=fullRack;mask++) {
@@ -254,6 +255,6 @@ const Flight = (() => {
     const base=index===3?randomStart(seed):named[index];
     return story?base:manualOpening(base);
   }
-  return {gear,fullRack,named,opening,half,limit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,impulse,budgets,
+  return {gear,fullRack,named,opening,half,limit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,rackAfterThrow,impulse,budgets,
     release,motion,nearest,clearance,inside,softEnough,entries,forecast,coastPass,seedStream,transfer,command,applyCommand,randomStart};
 })();

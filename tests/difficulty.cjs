@@ -14,7 +14,7 @@ function choosePitch(wanted,mask){
   const tool=available.find(i=>F.impulse(i,mask)>=wanted)??available.at(-1);
   return {tool,power:clamp(Math.round(100*wanted/F.impulse(tool,mask)),10,100)};
 }
-function newPilot(initial,mode,soft,deadline,record=false,rack=F.fullRack){
+function newPilot(initial,mode,soft,deadline,record=false,rack=F.fullRack,story=false){
   const actions=[];
   let state=initial,time=0,mask=rack,throws=0,result;
   function wait(seconds){
@@ -25,7 +25,7 @@ function newPilot(initial,mode,soft,deadline,record=false,rack=F.fullRack){
   }
   function pitch(tool,power,dir){
     if(record)actions.push({time,tool,power,dir});
-    state=F.release(state,tool,power,dir,mask);mask^=1<<tool;throws++;
+    state=F.release(state,tool,power,dir,mask);mask=F.rackAfterThrow(mask,tool,story);throws++;
   }
   return {wait,pitch,get s(){return state;},get time(){return time;},get left(){return deadline-time;},get mask(){return mask;},get result(){return result;}};
 }
@@ -40,7 +40,7 @@ function suggestedBearing(text,bearing){
   return unit(add(add(scale(right,x),scale(up,y)),scale(bearing,text.includes('behind')?-1:0)));
 }
 function hintPilot(initial,mode,soft,deadline,story,useHint=true){
-  const p=newPilot(initial,mode,soft,deadline);
+  const p=newPilot(initial,mode,soft,deadline,false,F.fullRack,story);
   p.wait(story?0:12);
   let bearing=unit(p.s.p);
   p.pitch(5,95,bearing);
@@ -75,22 +75,22 @@ function flyImperfect(p,route,draw){
       add(scale(action.dir,Math.cos(error)),scale(tangent,Math.sin(error))));
   }
 }
-function executionCheck(initial,mode,soft,deadline,route,seed){
+function executionCheck(initial,mode,soft,deadline,route,seed,story){
   if(!route)return 0;
-  const p=newPilot(initial,mode,soft,deadline),draw=F.seedStream(seed);
+  const p=newPilot(initial,mode,soft,deadline,false,F.fullRack,story),draw=F.seedStream(seed);
   flyImperfect(p,route,draw);
   if(p.result||coast(p.s,p.left,mode,soft).some(h=>!soft||F.softEnough(h.speed)))return 2;
   if(!p.mask||p.left<=12)return 0;
-  const recovery=plannedRoutes(p.s,mode,soft,p.left,false,p.mask).economical;
+  const recovery=plannedRoutes(p.s,mode,soft,p.left,story,p.mask,12).economical;
   if(!recovery)return 0;
-  const retry=newPilot(p.s,mode,soft,p.left,false,p.mask);
+  const retry=newPilot(p.s,mode,soft,p.left,false,p.mask,story);
   flyImperfect(retry,recovery,draw);
   return retry.result||retry.wait(retry.left)?1:0;
 }
 // Search several arrival times and aim points. Between releases the pilot
 // spends 12 live seconds looking and choosing gear. On a fast approach it can
 // release a brake before contact. These are feasible routes, never lower bounds.
-function plannedRoutes(initial,mode,soft,deadline,story,mask=F.fullRack){
+function plannedRoutes(initial,mode,soft,deadline,story,mask=F.fullRack,setupDelay=story?0:12){
   let economical,quickest;
   function record(r){
     if(!r)return;
@@ -102,7 +102,7 @@ function plannedRoutes(initial,mode,soft,deadline,story,mask=F.fullRack){
   for(const arrival of arrivals){
     if(arrival>deadline)continue;
     for(const fraction of [.55,.87]){
-      const p=newPilot(initial,mode,soft,deadline,true,mask);p.wait(story?0:12);
+      const p=newPilot(initial,mode,soft,deadline,true,mask,story);p.wait(setupDelay);
       const target=scale(F.nearest(initial.p),fraction);
       while(p.mask&&p.left>0&&!p.result){
         const leftToTarget=arrival-(deadline-p.left);if(leftToTarget<8)break;
@@ -131,7 +131,7 @@ function stats(states,mode,soft,deadline,story){
   const options=states.map(s=>plannedRoutes(s,mode,soft,deadline,story)),plans=options.filter(r=>r.economical);
   const aided=states.map(s=>hintPilot(s,mode,soft,deadline,story)).filter(Boolean);
   const noDirection=states.filter(s=>hintPilot(s,mode,soft,deadline,story,false)).length;
-  const execution=states.map((s,i)=>executionCheck(s,mode,soft,deadline,options[i].economical,4817+i));
+  const execution=states.map((s,i)=>executionCheck(s,mode,soft,deadline,options[i].economical,4817+i,story));
   return {n:states.length,hints:aided.length,withoutTrimDirection:noDirection,
     imperfect:execution.filter(result=>result===2).length,withRecovery:execution.filter(Boolean).length,planned:plans.length,
     medianFewest:percentile(plans.map(r=>r.economical.throws)),fivePlus:plans.filter(r=>r.economical.throws>=5).length,

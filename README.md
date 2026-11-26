@@ -23,7 +23,7 @@ The crew would like their drill back. It’s the only one aboard until resupply,
 1. For a manual flight, leave **Tether separation**, **Straight-Line** and the default any-speed grab selected. **Begin flight** starts the clock and unlocks aiming. For a guided pitch with time to line up, choose **First rescue** in the header instead.
 2. Turn the forward visor, choose a tool from the rack, set the power and press **Throw**. Turning your head only changes where the next tool will go. Your existing drift carries on.
 3. Read **Current coast** after each throw. **Contact in** means your present path reaches the bars. You can keep the tools you have left and advance the clock. **Miss by** gives the clearance at the nearest pass and a direction for a correction. Try a light tool while the pass is still ahead.
-4. Reach any part of the outlined **14 × 14 × 3.2 m** volume, including the gaps between panels. The grab happens automatically. You have **10:00** in every mode. After your last throw, a miss or an unavoidable overspeed ends the flight at release. Both visors fade to **GAME OVER**, then the debrief explains why. In Orbital, even a fast entry can still lead to a soft grab if you slow enough inside the bars. Let that coast play out.
+4. Reach any part of the outlined **14 × 14 × 3.2 m** volume, including the gaps between panels. The grab happens automatically. You have **10:00** in every mode. In manual flight, after your last throw a miss or an unavoidable overspeed ends the flight at release. Both visors fade to **GAME OVER**, then the debrief explains why. In Orbital, even a fast entry can still lead to a soft grab if you slow enough inside the bars. Let that coast play out.
 
 ## Choose the challenge
 
@@ -37,17 +37,17 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 | Random drift | A seed fixes the starting position and velocity. Friends can fly the same opening. |
 | Straight-Line / Orbital | In Straight-Line, velocity stays constant between throws. In Orbital, the path can bend relative to the orbiting station. Watch the committed coast. |
 | Require a soft capture | Off by default. Turn it on to require **0.080 m/s or slower** within the bars. A fast entry carries you through. You can still brake inside the volume or come back around. |
-| Story flight | A closer opening with **Face station**, **Face away** and **Face drift**. Line up before the clock starts or while paused. **Throw** starts or resumes flight at 1×. |
+| Story flight | Unlimited auto-reloading tools and a closer opening with **Face station**, **Face away** and **Face drift**. Line up before the clock starts or while paused. **Throw** starts or resumes flight at 1×. |
 
-**First rescue** is the optional walkthrough with exact pitches. It stages a first throw, pauses for a halfway course check, then offers an oblique miss, a braking lesson and an Orbital comparison. **Skip guidance** hands you manual control of the current flight. **Retry** after skipping starts the standard manual opening with a full rack and a fresh clock. Replay the lesson anytime from **Guide**.
+**First rescue** is the optional walkthrough with exact pitches. It stages a first throw, pauses for a halfway course check, then offers an oblique miss, a braking lesson and an Orbital comparison. Only **First rescue** pauses automatically for a course check. In later lessons you can choose when to stage a correction. **Skip guidance** gives you manual control with the nine tools currently aboard. Each can then be thrown once. **Retry** after skipping starts the standard manual opening with a full rack and a fresh clock. Replay the lesson anytime from **Guide**.
 
 ## Cockpit controls
 
 | Action | Mouse, touch or keyboard |
 | --- | --- |
 | Look / aim | Drag the forward visor or tap a point to center it. Arrow keys turn 2°. Hold **Shift** for 0.25° steps. Use the **STN** cue to find the station when it’s off-screen. |
-| Select equipment | Click or tap the rack, or press **1–9** in ascending weight order. After a release the lightest remaining tool is selected. |
-| Set power and release | Drag **Throw power**, or use **[** and **]** for one percentage point at a time. Press **Throw**, or **Enter** with the forward visor focused. Each tool gets one release. |
+| Select equipment | Click or tap the rack, or press **1–9** in ascending weight order. Manual flight selects the lightest remaining tool after a release. Story keeps the reloaded tool selected. |
+| Set power and release | Drag **Throw power**, or use **[** and **]** for one percentage point at a time. Press **Throw**, or **Enter** with the forward visor focused. In Story, every tool reloads immediately. Suit and gear mass stays constant, so a repeat throw at the same power gives the same recoil. |
 | Preview the next throw | Tick **Preview throw** under **Current coast** in either flight model. The solid violet path shows where the suit would coast with this aim, tool and power. The dashed mint path shows where it’s already going. Turn the preview off at any time. |
 | Pause / resume | Use the clock button or **P**. In manual flight you can read instruments while paused and resume to aim. Opening **Guide** or **New flight** pauses a running flight. Close the dialog and press **Resume** when ready. |
 | Speed up a coast | Drag **Play speed** to **1×**, **10×**, **20×** or **30×**. Every throw resets it to 1×. A clock interruption longer than one real second pauses the simulation. |
@@ -61,11 +61,11 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 
 ## What makes a better rescue?
 
-First, get Tommi home. Then compare **Δv brought home**. Delta-v is how much more you could change your velocity with the tools still aboard. The debrief shows the remaining budget out of the original **0.456 m/s** and the percentage you recovered. Keeping the battery leaves a different reserve from keeping the tether clip, even though each counts as one tool. A lost suit brings home zero, including when it runs out of oxygen with equipment aboard.
+First, get Tommi home. In Story, compare throw count or grab speed. In manual flight, compare **Δv brought home**. Delta-v is how much more you could change your velocity with the tools still aboard. The debrief shows the remaining budget out of the original **0.456 m/s** and the percentage you recovered. Keeping the battery leaves a different reserve from keeping the tether clip, even though each counts as one tool. A lost suit brings home zero, including when it runs out of oxygen with equipment aboard.
 
 For the gentlest return, compare **Grab speed**, the suit’s total speed relative to the station at the instant of capture. Lower is gentler. A loss shows **Final relative speed**. Bring the original drill home and Julian awards **Upmass Hero**.
 
-**View flight log** shows both projections of the same flight at the same scale. The V-bar/R-bar pane shows along-track and radial motion. Check the other pane for a pass above or below the station. The numbered marks match a text record of each throw’s time, tool, power, bearing, position and resulting velocity. [Example flight log](reference/orbital-flight-log.png)
+**View flight log** shows both projections of the same flight at the same scale. The V-bar/R-bar pane shows along-track and radial motion. Check the other pane for a pass above or below the station. Each release has a mark on the chart and a numbered entry with its time, tool, power, bearing, position and resulting velocity. On long flights the chart labels a selection of throws. [Example flight log](reference/orbital-flight-log.png)
 
 ## Challenge a friend
 
@@ -73,7 +73,7 @@ In **New flight**, choose **Random drift**. Paste a seed or replay link and pres
 
 **Copy replay** works in setup, in the cockpit and in the debrief. The link uses Alpha’s fragment format, for example `#seed=D-00019919&level=Orbital&goal=soft&story=1`. An offline copy shares the fragment for a friend to paste into **Load seed**. A hosted copy includes the web address.
 
-After a random flight, win or lose, open **Share → View flight card** for the seed, local finish date, V-bar/R-bar chart and abbreviated flight log. **Save image** exports a PNG. **Copy challenge** shares the result and the replay together. [Example flight card](reference/random-drift-card.png)
+After a random flight, win or lose, open **Share → View flight card** for the seed, local finish date, V-bar/R-bar chart and abbreviated flight log. The card lists throws 1–5 down the left and 6–9 down the right. Longer flights get a tenth line reading “...and then some” and the chart traces the entire approach. **Save image** exports a PNG. **Copy challenge** shares the result and the replay together. [Example flight card](reference/random-drift-card.png)
 
 ## Build and check
 
@@ -91,4 +91,4 @@ Open the generated `qa-runner.html` for browser results, or pass a Chromium exec
 
 [Local test results and playtest questions](REVIEW.md) · [Difficulty study](DIFFICULTY.md) · [Project workflow](AGENTS.md) · [Historical prototype handoff](HANDOFF.md) · [Fastball Alpha v0.4 manual](reference/alpha-v0.4-manual.txt)
 
-an AvaniNet game © 2026 // in honor of the legends of tgirl baseball
+an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere
