@@ -1,9 +1,9 @@
 'use strict';
 
-// Project the night-side photograph onto camera rays. The curve and fades
-// were calibrated in a 327-row reference image; the texture stays native size.
+// Both lenses sample the same baked 360° night horizon. Longitude wraps
+// once around the local vertical. The camera rays supply the limb curvature.
 const EarthSky = (() => {
-  const limbAngle = 66, referenceHeight = 327;
+  const limbAngle=66, horizonV=.494, rowsPerDegree=.021, azimuthOrigin=.28;
   const sky = [5, 12, 18], night = [3, 9, 14];
   const packedColor = rgb => new Uint32Array(new Uint8Array([...rgb, 255]).buffer)[0];
   const skyPixel = packedColor(sky), nightPixel = packedColor(night);
@@ -62,13 +62,9 @@ const EarthSky = (() => {
         if (-ray.x <= .07) return;
         float polar = degrees(acos(clamp(-ray.x, -1., 1.)));
         if (polar < 30.) { gl_FragColor = vec4(dark, 1.); return; }
-        float u = 1. - abs(atan(ray.z, ray.y)) / radians(180.);
-        float arc = 2. * u - 1.;
-        float row = 104. + 65. * arc * arc + (${limbAngle.toFixed(1)} - polar) * 6.3;
-        float v = row / ${referenceHeight.toFixed(1)};
-        vec3 art = texture2D(photograph, vec2(u, v)).rgb;
-        float fade = clamp((${referenceHeight.toFixed(1)} - row) / 52., 0., 1.);
-        gl_FragColor = vec4(mix(space, dark + art * fade, clamp(row / 36., 0., 1.)), 1.);
+        float u = ${azimuthOrigin} + atan(ray.z, ray.y) / radians(360.);
+        float v = ${horizonV} + (${limbAngle.toFixed(1)} - polar) * ${rowsPerDegree};
+        gl_FragColor = texture2D(photograph, vec2(u, v));
       }`;
     for (const [type, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]]) {
       const shader = gl.createShader(type);
@@ -89,9 +85,8 @@ const EarthSky = (() => {
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
     gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-    for (const side of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) {
-      gl.texParameteri(gl.TEXTURE_2D, side, gl.CLAMP_TO_EDGE);
-    }
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     for (const filter of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) {
       gl.texParameteri(gl.TEXTURE_2D, filter, gl.LINEAR);
     }
@@ -133,8 +128,8 @@ const EarthSky = (() => {
     views = new WeakMap();
   });
 
-  // Both fades depend only on the source row. Bake them once and extend the
-  // last column and row so bilinear sampling needs no edge cases per pixel.
+  // Pad each row with its first column to filter across the longitude seam.
+  // WebGL repeats the horizontal axis and clamps the vertical edges.
   function prepareAtlas() {
     const source = document.createElement('canvas');
     const width = photo.naturalWidth, height = photo.naturalHeight;
@@ -145,15 +140,8 @@ const EarthSky = (() => {
     const pixels = ctx.getImageData(0, 0, source.width, source.height).data;
     const stride = source.width * 4;
     for (let y = 0; y < height; y++) {
-      const row = (y + 0.5) * referenceHeight / height;
-      const blend = Math.min(1, row/36), fade = Flight.clamp((referenceHeight-row)/52, 0, 1);
       const start = y*stride, end = start+width*4;
-      for (let i = start; i < end; i += 4) {
-        for (let k = 0; k < 3; k++) {
-          pixels[i+k] = sky[k] + blend*(night[k] + fade*pixels[i+k] - sky[k]);
-        }
-      }
-      pixels.copyWithin(end, end-4, end);
+      pixels.copyWithin(end, start, start+4);
     }
     pixels.copyWithin(height*stride, (height-1)*stride, height*stride);
     return {pixels, width, height, stride};
@@ -169,7 +157,7 @@ const EarthSky = (() => {
     const {pixels, stride} = atlas, {f, forward, right, up} = camera;
     const pixelStep = w / (width * f);
     // Interpolate texture coordinates over at most one degree of a scanline.
-    // Reproject individual rays at the mirrored seam and solid-color edges.
+    // Reproject individual rays at the longitude seam and solid-color edges.
     const span = Math.max(1, Math.min(16, Math.floor(Flight.rad / pixelStep)));
     let y, rx, ry, rz;
     function locate(i, point) {
@@ -178,13 +166,12 @@ const EarthSky = (() => {
       if (cosine <= 0.07) { point.fill = skyPixel; return; }
       if (cosine >= Math.cos(30*Flight.rad)) { point.fill = nightPixel; return; }
       const z = rz + x*right[2];
-      const u = 1 - Math.abs(Math.atan2(z, ry+x*right[1]))/Math.PI;
-      const arc = 2*u-1, polar = Math.acos(cosine)/Flight.rad;
-      const row = 104 + 65*arc*arc + (limbAngle-polar)*6.3;
-      point.fill = row <= 0 ? skyPixel : row >= referenceHeight ? nightPixel : null;
-      point.side = z < 0;
-      point.u = Flight.clamp(u*atlas.width-0.5, 0, atlas.width-1);
-      point.v = Flight.clamp(row/referenceHeight*atlas.height-0.5, 0, atlas.height-1);
+      const u = azimuthOrigin + Math.atan2(z, ry+x*right[1])/(2*Math.PI);
+      const v = horizonV + (limbAngle-Math.acos(cosine)/Flight.rad)*rowsPerDegree;
+      point.fill = v<=0 ? skyPixel : v>=1 ? nightPixel : null;
+      const column=u*atlas.width-.5;
+      point.u=column-Math.floor(column/atlas.width)*atlas.width;
+      point.v=Flight.clamp(v*atlas.height-.5, 0, atlas.height-1);
     }
     function sample(index, u, v) {
       const ix = Math.floor(u), iy = Math.floor(v), fx = u-ix, fy = v-iy;
@@ -208,7 +195,7 @@ const EarthSky = (() => {
         locate(i+count, rightEdge);
         if (left.fill !== null && left.fill === rightEdge.fill) {
           if (left.fill !== skyPixel) packed.fill(left.fill, index, index+count);
-        } else if (left.fill === null && rightEdge.fill === null && left.side === rightEdge.side) {
+        } else if (left.fill === null && rightEdge.fill === null && Math.abs(rightEdge.u-left.u)<atlas.width/2) {
           const du = (rightEdge.u-left.u)/count, dv = (rightEdge.v-left.v)/count;
           for (let k = 0; k < count; k++) sample(index+k, left.u+k*du, left.v+k*dv);
         } else {

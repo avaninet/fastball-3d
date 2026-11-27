@@ -18,6 +18,21 @@ const compactInstruments=matchMedia('(max-height: 800px), (max-width: 740px)');
 function sizeVelocityDetails(){el('velocityDetails').open=!compactInstruments.matches;}
 sizeVelocityDetails();
 compactInstruments.addEventListener('change',sizeVelocityDetails);
+
+// Keep live guidance in one place. A short cockpit can open the same text at full width.
+const hintViewport=el('hintViewport'),hintText=el('hintText'),fullGuidance=el('fullGuidance');
+function fitGuidance(){
+  if(fullGuidance.matches(':popover-open'))return;
+  const panel=hintViewport.parentElement;
+  const available=panel.getBoundingClientRect().bottom-parseFloat(getComputedStyle(panel).paddingBottom)
+    -hintViewport.getBoundingClientRect().top;
+  el('moreGuidance').hidden=hintText.getBoundingClientRect().height<=available+1;
+}
+const guidanceSize=new ResizeObserver(fitGuidance);
+for(const node of [hintText,hintViewport,hintViewport.parentElement])guidanceSize.observe(node);
+fullGuidance.addEventListener('beforetoggle',event=>{
+  (event.newState==='open'?fullGuidance:hintViewport).append(hintText);
+});
 const isSeeded=index=>index===3||index===5;
 function debrisForSeed(row){return Debris.layoutPieces(Catalog.debrisKey(row));}
 function randomInt(n){
@@ -411,10 +426,8 @@ function nav(status) {
       cues.push(trimHint(n.t>s.age?sub(n.p,n.bar):sub(s.pos.p,Flight.nearest(s.pos.p,s.pose)),yaw,pitch));
     }
   }
-  if(s.soft){
-    const speed=norm(s.pos.v);
-    cues.push('Suit now '+Readout.speed(speed,s.soft)+' m/s.');
-    if(!Flight.softEnough(speed,s.soft))cues.push(!s.throws&&!s.debrisPieces?'Consider slowing along drift first.':'Save braking power.');
+  if(s.soft && !Flight.softEnough(norm(s.pos.v),s.soft)){
+    cues.push(!s.throws&&!s.debrisPieces?'Consider slowing along drift first.':'Save braking power.');
   }
   writeText(a,cues.filter(Boolean).join(' '));
   c.classList.add('warn');
@@ -477,7 +490,7 @@ function paintVisors(){
   if(!flight.throws)updateRecoilReadout();
   const preview=predictThrow(),result=el('previewResult');
   result.hidden=!preview;
-  const description=preview?describePreview(preview):'';
+  const description=preview?'Throw preview · '+describePreview(preview):'';
   if(result.textContent!==description)result.textContent=description;
   const aim=el('dodgeCoach').checked&&!flight.done?coachCache?.aim:null;
   Visor.render(visor,yaw,pitch,flight,false,visorBackdrop,preview,aim);

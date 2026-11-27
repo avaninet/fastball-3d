@@ -133,43 +133,53 @@ __COCKPIT_STYLE__</style>
                 <label id="coachControl" title="Suggest an avoidance throw during a collision warning" hidden><input id="dodgeCoach" type="checkbox" aria-label="Dodgeball Coach"><span><span class="toggleQualifier">Dodgeball </span>Coach</span></label>
                 <label id="manualNavControl" title="Fly using the two cameras and suit status"><input id="manualNav" type="checkbox" aria-label="Manual (no guidance)"><span>Manual<span class="toggleQualifier"> (no guidance)</span></span></label>
               </div>
-              <output id="previewResult" for="showPreview power" aria-live="off" hidden></output>
             </div>
             <article class="panel coastPanel">
-              <div class="coastTitle">
-                <span class="trace"></span>
-                <h2>Current coast</h2>
+              <div id="hintViewport">
+                <div id="hintText">
+                  <div class="coastTitle">
+                    <span class="trace"></span>
+                    <h2>Current coast</h2>
+                  </div>
+                  <div class="readout" id="coast"></div>
+                  <p id="debrisClearance" hidden></p>
+                  <p id="clockWarning" role="status" hidden></p>
+                  <p id="advice"></p>
+                  <output id="previewResult" for="showPreview power" aria-live="off" hidden></output>
+                </div>
               </div>
-              <div class="readout" id="coast"></div>
-              <p id="advice"></p>
-              <p id="debrisClearance" hidden></p>
-              <p id="clockWarning" role="status" hidden></p>
-              <div class="driftData">
-                <span class="micro">Drift direction</span>
-                <span id="driftAngles"></span>
+              <button id="moreGuidance" popovertarget="fullGuidance" hidden>Full guidance</button>
+              <div id="fullGuidance" popover role="region" aria-labelledby="fullGuidanceTitle">
+                <div class="heading"><h2 id="fullGuidanceTitle">Flight guidance</h2><button popovertarget="fullGuidance" popovertargetaction="hide" aria-label="Close flight guidance">Close</button></div>
               </div>
             </article>
-            <details class="velocity" id="velocityDetails" open>
-              <summary>Station-relative velocity <small>m/s</small></summary>
-              <dl>
-                <div>
-                  <dt>Radial · X</dt>
-                  <dd id="velX"></dd>
-                </div>
-                <div>
-                  <dt>Along-track · Y</dt>
-                  <dd id="velY"></dd>
-                </div>
-                <div>
-                  <dt>Cross-track · Z</dt>
-                  <dd id="velZ"></dd>
-                </div>
-                <div>
-                  <dt>Suit + gear</dt>
-                  <dd id="suitMass"></dd>
-                </div>
-              </dl>
-            </details>
+            <div class="telemetry">
+              <div class="driftData">
+                <span class="micro">Drift</span>
+                <span id="driftAngles"></span>
+              </div>
+              <details class="velocity" id="velocityDetails" open>
+                <summary>Station-relative velocity <small>m/s</small></summary>
+                <dl>
+                  <div>
+                    <dt title="Radial velocity" aria-label="X, radial velocity">X</dt>
+                    <dd id="velX"></dd>
+                  </div>
+                  <div>
+                    <dt title="Along-track velocity" aria-label="Y, along-track velocity">Y</dt>
+                    <dd id="velY"></dd>
+                  </div>
+                  <div>
+                    <dt title="Cross-track velocity" aria-label="Z, cross-track velocity">Z</dt>
+                    <dd id="velZ"></dd>
+                  </div>
+                  <div>
+                    <dt title="Suit and remaining equipment" aria-label="Suit and equipment mass">Mass</dt>
+                    <dd id="suitMass"></dd>
+                  </div>
+                </dl>
+              </details>
+            </div>
           </section>
           <div class="pitchPod">
             <article class="panel rack">

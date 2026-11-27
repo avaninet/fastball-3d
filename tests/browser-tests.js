@@ -257,29 +257,36 @@
   test('Both lenses sample the native city lights and aurora at the correct bearings',()=>{
     const image=el('earthArt'),source=document.createElement('canvas');
     source.width=image.naturalWidth;source.height=image.naturalHeight;
-    eq(source.width===2172&&source.height===724,'original Earth photograph loaded');
+    eq(source.width===2048&&source.height===512,'embedded wraparound Earth panorama loaded');
     const reference=source.getContext('2d',{willReadFrequently:true});reference.drawImage(image,0,0);
     const target=document.createElement('canvas');target.width=451;target.height=261;
     const ctx=target.getContext('2d',{willReadFrequently:true});
-    for(const [sx,sy,hemisphere] of [[376.25,477.5,1],[246.5,274.5,-1],[2039.25,332.5,1],[728.5,400.25,-1]]){
-      const u=(sx+.5)/source.width,row=(sy+.5)*327/source.height;
-      const polar=(66-(row-104-65*(2*u-1)**2)/6.3)*Flight.rad,longitude=hemisphere*(1-u)*Math.PI;
+    const colors=[];
+    // The first pair looks at opposite sides of the former mirror axis. Only
+    // one direction contains a bright curtain. The last two straddle the wrap.
+    for(const [sx,sy] of [[489,215],[2*(.28*2048-.5)-489,215],[429.25,345],[1442,318],[2047.25,252],[-.25,252]]){
+      const u=(sx+.5)/source.width,v=(sy+.5)/source.height;
+      const polar=(66-(v-.494)/.021)*Flight.rad,longitude=(u-.28)*2*Math.PI;
       const ray=[-Math.cos(polar),Math.sin(polar)*Math.cos(longitude),Math.sin(polar)*Math.sin(longitude)];
       const [az,elevation]=Flight.angles(ray),ix=Math.floor(sx),iy=Math.floor(sy);
-      const texels=reference.getImageData(ix,iy,2,2).data,fx=sx-ix,fy=sy-iy;
+      const column=x=>reference.getImageData((x+source.width)%source.width,iy,1,2).data;
+      const left=column(ix),right=column(ix+1),fx=sx-ix,fy=sy-iy;
       for(const small of [false,true]){
         // The forward lens on a phone can end part-way down the background.
         const lensHeight=small?261:181,centerY=lensHeight/2;
         const camera=Visor.camera([0,0,0],az,elevation,451,lensHeight,small);
         EarthSky.draw(ctx,451,261,centerY,camera);
         const actual=ctx.getImageData(225,Math.floor(centerY),1,1).data;
+        if(!small)colors.push(actual);
         for(let k=0;k<3;k++){
-          const top=(1-fx)*texels[k]+fx*texels[4+k],bottom=(1-fx)*texels[8+k]+fx*texels[12+k];
-          const expected=Math.min(255,[3,9,14][k]+(1-fy)*top+fy*bottom);
+          const top=(1-fx)*left[k]+fx*right[k],bottom=(1-fx)*left[4+k]+fx*right[4+k];
+          const expected=(1-fy)*top+fy*bottom;
           close(actual[k],expected,6);
         }
       }
     }
+    eq(colors[1][1]-colors[0][1]>80,'opposite azimuths resolve different landmarks');
+    close(colors.at(-1)[1],colors.at(-2)[1],2);
   });
   test('Pressing, dragging and releasing keep Earth detail at a matching bearing',()=>{
     configure(0,'Straight-Line',false,true);
@@ -336,7 +343,7 @@
         keys('ArrowLeft');eq(norm(sub(predictThrow().pos.v,low.pos.v))>1e-6,'reticle heading');
         click('tool5');changePower(96);click('away');
         const preview=predictThrow();
-        paintVisors();eq(!el('previewResult').hidden&&el('previewResult').textContent===describePreview(preview),'visible readout');
+        paintVisors();eq(!el('previewResult').hidden&&el('previewResult').textContent==='Throw preview · '+describePreview(preview),'labeled throw forecast');
         eq(flight.forecast===committed&&flight.mask===rack&&!flight.throws&&!flight.log.releases.length,'no simulated release committed');
         click('throw');
         eq(JSON.stringify(flight.forecast)===JSON.stringify(preview.forecast),'full sampled coast, entries and nearest pass match');
@@ -679,11 +686,11 @@
           for(const n of document.querySelectorAll('.tool b,.tool small')){
             eq(n.scrollWidth<=n.clientWidth+1&&textRect(n).right<=n.closest('button').getBoundingClientRect().right,'complete '+n.textContent+' at '+w);
           }
-          const values=[...document.querySelectorAll('.velocity dd')].map(n=>n.getBoundingClientRect());
-          for(const [i,value] of values.entries()){
-            close(value.right,values[0].right,1);
-            if(i)eq(value.top>=values[i-1].bottom,'separate velocity rows');
-          }
+          el('velocityDetails').open=true;
+          const [x,y,z,mass]=[...document.querySelectorAll('.velocity dd')].map(n=>n.getBoundingClientRect());
+          close(x.top,y.top,1);close(z.top,mass.top,1);
+          close(x.right,z.right,1);close(y.right,mass.right,1);
+          eq(y.left>x.right && z.top>=x.bottom,'two velocity columns and two visible rows');
           click('tool0');click('throw');const released=el('tool0').querySelector('small');
           eq(released.textContent==='Released'&&released.scrollWidth<=released.clientWidth,'released label');
         }
@@ -1893,6 +1900,43 @@
     eq(!flight.mask && flight.forecast.debris.hit,'empty rack on a collision course');
     click('manualNav');eq(!flight.done && el('advice').textContent.includes('Brace for contact'),'coast to real impact');
     advance(600);eq(flight.done==='collision','debris contact ends the attempt');
+  });
+  test('Drift and velocity stay docked while coast advice, clearance and preview change',()=>{
+    const frame=window.frameElement,original=frame.style.cssText;
+    const seed=Challenge.decode('F1B-6PGSG6'),telemetry=el('velocityDetails').parentElement;
+    const sidebar=telemetry.closest('.metrics'),stage=sidebar.closest('.hudStage');
+    const bounds=node=>node.getBoundingClientRect();
+    try{
+      for(const [w,h] of [[1920,1023],[1536,818],[1024,650],[390,844],[320,568],[667,375]]){
+        frame.style.width=w+'px';frame.style.height=h+'px';scrollTo(0,0);
+        start(seed.index,seed.mode,seed.soft,seed.seed,false,null,{},seed.poseId);
+        el('velocityDetails').open=true;
+        const dock=bounds(telemetry);
+        el('coast').textContent='Miss by 1.1 m';
+        el('advice').textContent='Nearest pass above the orbital plane in 2:33. Aim up in the forward visor. Trim ≈ 0.007 m/s recoil. Save braking power.';
+        el('debrisClearance').hidden=false;el('debrisClearance').textContent='Frame clears by 0.6 m in 0:10.';
+        el('previewResult').hidden=false;el('previewResult').textContent='Throw preview · Nearest pass in 2:40. The frame clears the suit.';
+        fitGuidance();
+        close(bounds(telemetry).top,dock.top,1);close(bounds(telemetry).bottom,bounds(stage).bottom,1);
+        close(bounds(telemetry).right,bounds(stage).right,1);
+        eq(sidebar.scrollHeight<=sidebar.clientHeight+1 && sidebar.scrollWidth<=sidebar.clientWidth+1,'sidebar fits at '+w);
+        const cells=[...telemetry.querySelectorAll('dl>div')];
+        for(const cell of cells)eq(bounds(cell.lastElementChild).left>=bounds(cell.firstElementChild).right-1,'axis and value fit at '+w);
+        eq(bounds(el('velZ')).right<bounds(cells[3].firstElementChild).left,'mass and Z are separate at '+w);
+        if(w>=1536)eq(el('moreGuidance').hidden,'full desktop advice fits at '+w);
+        if(!el('moreGuidance').hidden){
+          const trigger=bounds(el('moreGuidance'));
+          eq(trigger.bottom<=dock.top && el('moreGuidance').contains(document.elementFromPoint(trigger.x+4,trigger.y+4)),'full guidance reachable at '+w);
+          click('moreGuidance');
+          eq(fullGuidance.matches(':popover-open') && fullGuidance.contains(el('previewResult')),'expanded live preview');
+          eq(bounds(el('previewResult')).bottom<=h && bounds(el('coast')).top>=0,'expanded guidance fits');
+          fullGuidance.hidePopover();eq(hintViewport.contains(el('advice')),'inline guidance restored');
+        }
+        for(const node of [el('previewResult'),el('debrisClearance')])node.hidden=true;
+        el('advice').textContent='Save braking power.';fitGuidance();
+        close(bounds(telemetry).top,dock.top,1);
+      }
+    }finally{fullGuidance.hidePopover();frame.style.cssText=original;}
   });
   test('Short landscape keeps coast advice inside the instrument panel for both Dodgeball openings',()=>{
     if(innerWidth<600 || innerHeight>500)return;
