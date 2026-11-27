@@ -51,7 +51,7 @@ const Flight = (() => {
   const nearest = p => p.map((x,i)=>clamp(x,-half[i],half[i]));
   const clearance = p => norm(sub(p,nearest(p)));
   const inside = p => p.every((x,i)=>Math.abs(x)<=half[i]+1e-8);
-  // false is any-speed, true preserves the original soft rule and 'firm' is the trial rule.
+  // Capture rules use false for Any-speed, true for Soft and 'firm' for Firm.
   const captureLimit = rule => rule==='firm' ? .120 : limit;
   const softEnough = (speed,rule=true) => speed<=captureLimit(rule)+1e-9;
   const canGrab = (hit,soft) => !soft || softEnough(hit.speed,soft);

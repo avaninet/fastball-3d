@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg">
     <meta name="twitter:image:alt" content="Fastball 3D mission patch and title beside a visor view of a yellow power drill floating toward the space station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-7H/LX8O4HKwi/Dte1tENNZkLpUy3VeOUcdqO+2GShoo=' 'sha256-Ek9ifQVq0P+p2vjpWiqEW8Z5C64aK4pFxp0kY6QpLrg=' 'sha256-/XXf4/w6tCbRUX6T4EDrmTavt/iDfI12yks7GzXfVVo=' 'sha256-C1OrisqYuTWwRLc/30HCqBIfdpMmEDEVh38z/6XiW6k=' 'sha256-0szdOCa/MFy1YObnsRbzvTlFNYxx80vvXAdJp52liAc=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-Yrw+LvfZ6suRnxH1ivAVBcVcp+YIzNf4TZ882r6NDWI=' 'sha256-cIWE5EOcZ89qQ3zwRN9DKsgq1xoJ2JEjrzw0F2tAyI8=' 'sha256-uJ+9tmqXDLWs36krDnebWl7YWnUPoL3i/KznzW0sahk=' 'sha256-5YEGEaFjHucb7Oqq2CY+QifQG9kIWdfVvH270ErAexQ=' 'sha256-Ac6UcEShiDpEOHqwS2xPuQ7k6soc01o/J1iudLGJnZ0=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-8QgrahPA6onyFZeF448WrUq8Camb+SL42skfZ7g6z4c='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-We8geXQV84OtSb55Jj+u78XB9ujJTYjFDaOJAYjtbE8=' 'sha256-Ek9ifQVq0P+p2vjpWiqEW8Z5C64aK4pFxp0kY6QpLrg=' 'sha256-/XXf4/w6tCbRUX6T4EDrmTavt/iDfI12yks7GzXfVVo=' 'sha256-C1OrisqYuTWwRLc/30HCqBIfdpMmEDEVh38z/6XiW6k=' 'sha256-0szdOCa/MFy1YObnsRbzvTlFNYxx80vvXAdJp52liAc=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-Yrw+LvfZ6suRnxH1ivAVBcVcp+YIzNf4TZ882r6NDWI=' 'sha256-cIWE5EOcZ89qQ3zwRN9DKsgq1xoJ2JEjrzw0F2tAyI8=' 'sha256-uJ+9tmqXDLWs36krDnebWl7YWnUPoL3i/KznzW0sahk=' 'sha256-5YEGEaFjHucb7Oqq2CY+QifQG9kIWdfVvH270ErAexQ=' 'sha256-Ac6UcEShiDpEOHqwS2xPuQ7k6soc01o/J1iudLGJnZ0=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-2Ev4HzU9MFX2QYJQ2e4PI5lu17JnB5JHdlC4JjRongY='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.4 · EVA return simulator</title>
@@ -347,8 +347,8 @@ dialog::backdrop {
   color: #c3cbcd;
 }
 
-#lossEpilogue p {
-  padding-block-start: 1em;
+.endingText p {
+  margin-block-end: 1em;
 }
 
 .dialogBody h3 {
@@ -2762,7 +2762,7 @@ main {
           <label for="captureRule" class="rowLabel">Grab rule</label>
           <select id="captureRule">
             <option value="none">Any-speed capture</option>
-            <option value="firm">Firm capture · 0.120 m/s (playtest)</option>
+            <option value="firm">Firm capture · 0.120 m/s</option>
             <option value="soft">Soft capture · 0.080 m/s</option>
           </select>
           <label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small>Tools reload. Aim while paused, or use Face station and Face away. Drift scenarios start closer to the bars.</small></span></label>
@@ -2801,7 +2801,7 @@ main {
         <h3>Choose a grab rule</h3>
         <p>In <strong>New flight</strong>, choose one of the six illustrated openings, then Straight-Line or Orbital.
         <strong>Any-speed</strong> is the default and accepts a grab at any speed. Try <strong>Firm</strong>
-        (playtest, up to 0.120 m/s) to practice braking, then <strong>Soft</strong> (up to
+        (up to 0.120 m/s) to practice braking, then <strong>Soft</strong> (up to
         <span data-soft-limit></span> m/s) for a gentler catch. For example, crossing the bars at 0.100 m/s earns
         a Firm grab. In Soft you’ll pass through unless you slow enough while still within reach.</p>
         <details>
@@ -2916,26 +2916,28 @@ main {
           <h2 id="endTitle"></h2>
           <button class="x close" aria-label="Close">×</button>
         </div>
-        <p id="endCopy"></p>
-        <p id="hardGrab" hidden></p>
-        <section id="upmassHero" hidden aria-labelledby="upmassTitle">
-          <h3 id="upmassTitle">Upmass Hero</h3>
-          <p>“Supply, cross that replacement drill off the manifest. Think you could send us some board games instead?”</p>
-          <p><em>Back on Earth, the drill gets a ticker-tape parade. Tommi has a game that Saturday.</em></p>
-        </section>
-        <div id="lossEpilogue" hidden>
-          <p><span id="lossOpening"></span> “Captain Dylan, do you read?
-          We have an advisory from BOREX-Houston. Message as follows: ‘Have you tried turning it off and on again?’”</p>
-          <p>Tommi replies in the calm that lies beyond calm: “Copy, Station. Cycling thrusters now.”</p>
-          <p>The valves un-stick. The main oxygen supply flows freely. <span id="lossManeuver"></span>
-          It reminds her of her tortoiseshell cat Raspberry softly nudging her leg for attention.
-          The commander calls out: “Captain Dylan? I don't know what you did, but it worked. <span id="lossCall"></span>”</p>
-          <p><em>Raspberry, I'm coming home.</em></p>
-        </div>
-        <div id="collisionEpilogue" hidden>
-          <p>A few moments after the heavy hit, Tommi wakes to Commander Bern’s voice in her headset.</p>
-          <p>“Tommi? Tommi, are you there? If you can hear me, that hit must have jiggled something loose.”</p>
-          <p>She hears the hiss first. The main oxygen supply is flowing freely again. A tap on the controls brings the stuck thrusters back to life. Tommi eases clear of the wreckage and flies the last few meters straight into Bern’s waiting hands.</p>
+        <div class="endingText">
+          <p id="endCopy"></p>
+          <p id="hardGrab" hidden></p>
+          <section id="upmassHero" hidden aria-labelledby="upmassTitle">
+            <h3 id="upmassTitle">Upmass Hero</h3>
+            <p>“Supply, cross that replacement drill off the manifest. Think you could send us some board games instead?”</p>
+            <p><em>Back on Earth, the drill gets a ticker-tape parade. Tommi has a game that Saturday.</em></p>
+          </section>
+          <div id="lossEpilogue" hidden>
+            <p><span id="lossOpening"></span> “Captain Dylan, do you read?
+            We have an advisory from BOREX-Houston. Message as follows: ‘Have you tried turning it off and on again?’”</p>
+            <p>Tommi replies in the calm that lies beyond calm: “Copy, Station. Cycling thrusters now.”</p>
+            <p>The valves un-stick. The main oxygen supply flows freely. <span id="lossManeuver"></span>
+            It reminds her of her tortoiseshell cat Raspberry softly nudging her leg for attention.
+            The commander calls out: “Captain Dylan? I don't know what you did, but it worked. <span id="lossCall"></span>”</p>
+            <p><em>Raspberry, I'm coming home.</em></p>
+          </div>
+          <div id="collisionEpilogue" hidden>
+            <p>A few moments after the heavy hit, Tommi wakes to Commander Bern’s voice in her headset.</p>
+            <p>“Tommi? Tommi, are you there? If you can hear me, that hit must have jiggled something loose.”</p>
+            <p>She hears the hiss first. The main oxygen supply is flowing freely again. A tap on the controls brings the stuck thrusters back to life. Tommi eases clear of the wreckage and flies the last few meters straight into Bern’s waiting hands.</p>
+          </div>
         </div>
         <div class="result">
           <strong id="endBudget"></strong>
@@ -3056,7 +3058,7 @@ main {
   const nearest = p => p.map((x,i)=>clamp(x,-half[i],half[i]));
   const clearance = p => norm(sub(p,nearest(p)));
   const inside = p => p.every((x,i)=>Math.abs(x)<=half[i]+1e-8);
-  // false is any-speed, true preserves the original soft rule and 'firm' is the trial rule.
+  // Capture rules use false for Any-speed, true for Soft and 'firm' for Firm.
   const captureLimit = rule => rule==='firm' ? .120 : limit;
   const softEnough = (speed,rule=true) => speed<=captureLimit(rule)+1e-9;
   const canGrab = (hit,soft) => !soft || softEnough(hit.speed,soft);

@@ -319,8 +319,8 @@ dialog::backdrop {
   color: #c3cbcd;
 }
 
-#lossEpilogue p {
-  padding-block-start: 1em;
+.endingText p {
+  margin-block-end: 1em;
 }
 
 .dialogBody h3 {

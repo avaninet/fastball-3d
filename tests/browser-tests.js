@@ -19,6 +19,17 @@
   function enterLesson(id){
     click(id);if(el('confirmRescue').open)click('replaceFlight');
   }
+  function checkDebriefSpacing(){
+    let previousBottom;
+    for(const p of el('debrief').querySelectorAll('p')){
+      if(!p.getClientRects().length || !p.textContent.trim())continue;
+      const text=document.createRange();
+      text.selectNodeContents(p);
+      const {top,bottom}=text.getBoundingClientRect();
+      if(previousBottom!==undefined)eq(top-previousBottom>=12,'paragraph gap before '+p.textContent.trim().slice(0,40));
+      previousBottom=bottom;
+    }
+  }
   function completeLossTransition(){
     const due=lossDebriefAt;
     eq(due!==null&&!el('debrief').open,'loss starts on the visors');
@@ -26,13 +37,7 @@
     updateLossDebrief(due-1);eq(!el('debrief').open,'debrief waits for the fade');
     updateLossDebrief(due);eq(el('debrief').open&&!el('pause').disabled,'debrief ready');
     eq(!el('lossEpilogue').hidden&&el('lossEpilogue').querySelector('em').textContent==="Raspberry, I'm coming home.",'game over closes with Tommi’s thought');
-    let prior=el('endCopy').getBoundingClientRect().bottom;
-    for(const p of el('lossEpilogue').querySelectorAll('p')){
-      const text=document.createRange();
-      text.selectNodeContents(p);
-      eq(text.getBoundingClientRect().top-prior>=12,'visible gap before each debrief paragraph');
-      prior=p.getBoundingClientRect().bottom;
-    }
+    checkDebriefSpacing();
   }
   function configure(index,mode,soft=false,story=false){
     click('new');click('pick-'+index);
@@ -1416,6 +1421,7 @@
         const credit=el('endCopy').querySelector('.attribution');
         eq(credit.textContent.startsWith('— ')&&getComputedStyle(credit).whiteSpace==='nowrap','unbroken radio credit');
         eq(!el('upmassHero').hidden&&el('hardGrab').nextElementSibling===el('upmassHero'),'original drill appends epilogue');
+        checkDebriefSpacing();
         el('debrief').close();
         configure(index,mode);
         click('tool4');click('throw');
@@ -1426,12 +1432,16 @@
       }
     }
     eq(calls.size===12,'twelve distinct rescue calls');
-    configure(0,'Straight-Line');finish('capture');el('debrief').close();
+    fixture('Straight-Line',false,[0,-2,0],[0,.2,0]);advance(3);
+    eq(flight.done==='capture'&&!el('hardGrab').hidden,'hard catch adds its own paragraph');
+    checkDebriefSpacing();el('debrief').close();
     configure(0,'Straight-Line');advance(flight.limit);completeLossTransition();
     eq(el('upmassHero').hidden&&!el('endCopy').querySelector('.attribution'),'loss clears both parts of the welcome');
   });
   test('Guide and tutorial introduce recoil and the original mission',()=>{
     click('manual');const guide=el('guide').textContent.replace(/\s+/g,' ');
+    eq(el('captureRule').querySelector('[value="firm"]').textContent==='Firm capture · 0.120 m/s','public Firm capture option');
+    eq(guide.includes('Firm (up to 0.120 m/s)'),'guide explains the Firm limit');
     eq(['presumed lost','Newton’s third law','wrench','widely rumored','“unmanned” X-99 orbital spaceplane','next town'].every(s=>guide.includes(s)),'guide premise and backstory');
     eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere','credit line');
     eq(el('guide').querySelector('.credits a').getAttribute('href')==='mailto:avani@avaninet.com','credit contact');
@@ -1486,6 +1496,7 @@
       eq(flight.done==='collision' && Math.abs(flight.time-hit.t)<.015,'time of impact');
       updateLossDebrief(lossDebriefAt);
       eq(!el('collisionEpilogue').hidden && el('lossEpilogue').hidden && el('collisionEpilogue').textContent.includes('jiggled something loose'),'Bern collision ending');
+      checkDebriefSpacing();
       click('viewLog');eq(el('logEvents').textContent.includes('Debris collision'),'log records collision');
       eq(el('logPanes').querySelectorAll('.debrisTrack').length===4 && !el('logDebrisKey').hidden,'both pieces plotted on both axes');
       el('flightLog').close();click('openShareCard');
@@ -1522,7 +1533,7 @@
         updateLossDebrief(lossDebriefAt);
         eq(flight.done==='collision' && el('endCopy').textContent.startsWith('Pack snagged.'),'actual frame snag');
       }
-      eq(el('debrief').open,'appropriate ending');click('retry');
+      eq(el('debrief').open,'appropriate ending');checkDebriefSpacing();click('retry');
       eq(flight.index===4 && flight.mode===mode && flight.soft && flight.mask===Flight.fullRack,'retry restores same challenge');
     }
   });
