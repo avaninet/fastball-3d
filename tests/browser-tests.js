@@ -304,6 +304,56 @@
       configure(0,'Straight-Line');if(toggle.checked)click('showPreview');paintVisors();
     }
   });
+  test('Accelerated Dodgeball approaches keep the preview on the suit in both visors',()=>{
+    // One simulated second between paints is a 30 Hz visor at 30x.
+    const approaches=[
+      {mode:'Orbital',first:[-35,25],look:[88,-30],tool:0,power:95,time:520,aft:false},
+      {mode:'Orbital',first:[-35,25],look:[95,-23],tool:4,power:90,time:490,aft:true},
+      {mode:'Straight-Line',first:[-59,28],look:[102,-31],tool:7,power:95,time:448,aft:false},
+      {mode:'Straight-Line',first:[-59,28],look:[-94,28],tool:4,power:95,time:472,aft:true}
+    ];
+    for(const run of approaches){
+      start(4,run.mode,false,0,false,null,{preview:true,coach:false});pause();
+      setView(Flight.direction(...run.first));throwTool();
+      advance(run.time-flight.time);
+      setView(Flight.direction(...run.look));choose(run.tool);changePower(run.power);setClockStop(3);
+      const [w,h]=run.aft?[402,196]:[1393,713];
+      let lastAngle=null;
+      for(let i=0;i<30;i++){
+        const preview=predictThrow();
+        close(norm(sub(preview.anchor.p,flight.pos.p)),0);
+        close(preview.forecast.path.at(-1).t,flight.limit-flight.time);
+        eq(!preview.forecast.debris.hit,'clear of debris on final approach');
+        const cam=Visor.camera(flight.pos.p,yaw+(run.aft?180:0),run.aft?-pitch:pitch,w,h,run.aft,true);
+        const {visible,heads}=Visor.courseGlyphs(cam,preview,w,h);
+        eq(visible,'preview stays in the lens');
+        if(run.mode==='Straight-Line'){
+          eq(!heads.length,'straight coast keeps its end-on diamond');
+        }else{
+          eq(heads.length,'orbital arrow stays visible');
+          const angle=heads[0].angle;
+          if(lastAngle!==null)eq(Math.cos(angle-lastAngle)>.95,'orbital arrow turns smoothly between paints');
+          lastAngle=angle;
+        }
+        advance(1);
+      }
+    }
+  });
+  test('Random Dodgeball preview tracks a moving suit and edits to a paused throw',()=>{
+    start(5,'Orbital','firm','DB2-00500007',true,null,{preview:true,coach:false});
+    pause();
+    const opening=predictThrow();
+    advance(.25);pause();
+    const coast=predictThrow();
+    close(norm(sub(coast.anchor.p,flight.pos.p)),0);
+    eq(coast!==opening && predictThrow()===coast,'reuse only for an unchanged preview');
+    choose(0);const light=predictThrow();
+    changePower(40);const low=predictThrow();
+    setView(Flight.direction(33,-12));const aimed=predictThrow();
+    for(const [a,b] of [[coast,light],[light,low],[low,aimed]])eq(norm(sub(a.anchor.v,b.anchor.v))>1e-6,'updated recoil');
+    throwTool();
+    eq(JSON.stringify(aimed.forecast)===JSON.stringify(flight.forecast),'release matches station and debris predictions');
+  });
   test('Violet preview projects into either lens with depth and a distinct end-on mark',()=>{
     const canvas=document.createElement('canvas');
     canvas.style.cssText='position:fixed;left:-1000px;width:640px;height:320px';

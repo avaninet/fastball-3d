@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg">
     <meta name="twitter:image:alt" content="Fastball 3D mission patch and title beside a visor view of a yellow power drill floating toward the space station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-7H/LX8O4HKwi/Dte1tENNZkLpUy3VeOUcdqO+2GShoo=' 'sha256-Ek9ifQVq0P+p2vjpWiqEW8Z5C64aK4pFxp0kY6QpLrg=' 'sha256-/XXf4/w6tCbRUX6T4EDrmTavt/iDfI12yks7GzXfVVo=' 'sha256-C1OrisqYuTWwRLc/30HCqBIfdpMmEDEVh38z/6XiW6k=' 'sha256-0szdOCa/MFy1YObnsRbzvTlFNYxx80vvXAdJp52liAc=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-Yrw+LvfZ6suRnxH1ivAVBcVcp+YIzNf4TZ882r6NDWI=' 'sha256-miMm0TMpoXZSnSNA6eJriQ6JNhy2wMDN0HRNbLM9iGA=' 'sha256-uJ+9tmqXDLWs36krDnebWl7YWnUPoL3i/KznzW0sahk=' 'sha256-5YEGEaFjHucb7Oqq2CY+QifQG9kIWdfVvH270ErAexQ=' 'sha256-Ac6UcEShiDpEOHqwS2xPuQ7k6soc01o/J1iudLGJnZ0=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-8QgrahPA6onyFZeF448WrUq8Camb+SL42skfZ7g6z4c='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-7H/LX8O4HKwi/Dte1tENNZkLpUy3VeOUcdqO+2GShoo=' 'sha256-Ek9ifQVq0P+p2vjpWiqEW8Z5C64aK4pFxp0kY6QpLrg=' 'sha256-/XXf4/w6tCbRUX6T4EDrmTavt/iDfI12yks7GzXfVVo=' 'sha256-C1OrisqYuTWwRLc/30HCqBIfdpMmEDEVh38z/6XiW6k=' 'sha256-0szdOCa/MFy1YObnsRbzvTlFNYxx80vvXAdJp52liAc=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-Yrw+LvfZ6suRnxH1ivAVBcVcp+YIzNf4TZ882r6NDWI=' 'sha256-cIWE5EOcZ89qQ3zwRN9DKsgq1xoJ2JEjrzw0F2tAyI8=' 'sha256-uJ+9tmqXDLWs36krDnebWl7YWnUPoL3i/KznzW0sahk=' 'sha256-5YEGEaFjHucb7Oqq2CY+QifQG9kIWdfVvH270ErAexQ=' 'sha256-Ac6UcEShiDpEOHqwS2xPuQ7k6soc01o/J1iudLGJnZ0=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-8QgrahPA6onyFZeF448WrUq8Camb+SL42skfZ7g6z4c='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.4 · EVA return simulator</title>
@@ -4690,14 +4690,13 @@ function reseat(skipInitial=false) {
 }
 function predictThrow(){
   if(!el('showPreview').checked||flight.done||selected<0||!(flight.mask&(1<<selected)))return null;
-  const now=performance.now();
-  if(flight.debrisPieces && previewCache && now-previewCache.at<140 &&
-    flight.time-previewCache.time<2 && previewCache.yaw===yaw && previewCache.pitch===pitch &&
+  // Both visors project from the live suit position. Reuse only at the same flight time.
+  if(previewCache && previewCache.time===flight.time && previewCache.yaw===yaw && previewCache.pitch===pitch &&
     previewCache.tool===selected && previewCache.power===power)return previewCache.value;
   const anchor=Flight.release(flight.pos,selected,power,Flight.direction(yaw,pitch),flight.mask);
   const forecast=forecastFrom(anchor,Flight.inside(anchor.p)&&flight.misses>0);
   const value={anchor,pos:anchor,mode:flight.mode,soft:flight.soft,age:0,forecast,hitIndex:0};
-  if(flight.debrisPieces)previewCache={value,at:now,time:flight.time,yaw,pitch,tool:selected,power};
+  if(flight.debrisPieces)previewCache={value,time:flight.time,yaw,pitch,tool:selected,power};
   return value;
 }
 function describePreview(preview){

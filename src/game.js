@@ -50,14 +50,13 @@ function reseat(skipInitial=false) {
 }
 function predictThrow(){
   if(!el('showPreview').checked||flight.done||selected<0||!(flight.mask&(1<<selected)))return null;
-  const now=performance.now();
-  if(flight.debrisPieces && previewCache && now-previewCache.at<140 &&
-    flight.time-previewCache.time<2 && previewCache.yaw===yaw && previewCache.pitch===pitch &&
+  // Both visors project from the live suit position. Reuse only at the same flight time.
+  if(previewCache && previewCache.time===flight.time && previewCache.yaw===yaw && previewCache.pitch===pitch &&
     previewCache.tool===selected && previewCache.power===power)return previewCache.value;
   const anchor=Flight.release(flight.pos,selected,power,Flight.direction(yaw,pitch),flight.mask);
   const forecast=forecastFrom(anchor,Flight.inside(anchor.p)&&flight.misses>0);
   const value={anchor,pos:anchor,mode:flight.mode,soft:flight.soft,age:0,forecast,hitIndex:0};
-  if(flight.debrisPieces)previewCache={value,at:now,time:flight.time,yaw,pitch,tool:selected,power};
+  if(flight.debrisPieces)previewCache={value,time:flight.time,yaw,pitch,tool:selected,power};
   return value;
 }
 function describePreview(preview){
