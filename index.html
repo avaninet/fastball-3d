@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg?v=0.5">
     <meta name="twitter:image:alt" content="Fastball 3D. Throw your way home. A released drill floats in the forward visor. The aft camera shows the station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ywyihmXk2KV5Vp9k6s4cZ2/87dsP2VwtjE3WnZ+tJBE=' 'sha256-06+YnnIig+hFrBRIXNywEF6volNQSnpbRo23Y45ymQo=' 'sha256-uCXcUENFSx4L74LYcBl93eGvVQMrUc2iqLOR+FnX0B8=' 'sha256-2mZKzOnvxieMtTC6IuoSDWBwXXrI4KldF7tHMCPeUqY=' 'sha256-QMX2t5/L3pJirokWCCBI80dPE/5yFzw3s2/Dvn3unRs=' 'sha256-v5BhvJBNMykyyWGkQQQhgnmDPrAexZ34joZyCE/kaPs=' 'sha256-3J+GrDcI2C3PN3kvy0oSms5+4v/iAtkbOlnrhAjQ12I=' 'sha256-P860sML909h7koNlAdRUyy/kCyoH1vbwJaIGkDCuAk0=' 'sha256-Dn4l7kvf3shg6zrXeguY62Qvf9adEpmVqjdFUApjNZs=' 'sha256-aFv25ZGROpt9VEopxkLbNgXLvMeZkLKvRHqKAjJXDfs=' 'sha256-dwM9jQ0qIR7wXqNoPWdkm5HoX16PsP3G1rY2Rzs+aYA=' 'sha256-nOaiHRT9CKpEUon9G5TfSKowh871Sjxqhb+YJzFtcWw=' 'sha256-yhWUtXYgS1ec/nzN6Sw7zH+Aans49rczR3JGWHcI6Vc=' 'sha256-CF7JEBwMG77CYV0rFnAu47QeJYGIxeEihKO47x2reEI='; style-src 'sha256-WPzEq/IHw7opR4v2/j/yZaJdErkqGOcQkJ0TQrVdMVg='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ywyihmXk2KV5Vp9k6s4cZ2/87dsP2VwtjE3WnZ+tJBE=' 'sha256-06+YnnIig+hFrBRIXNywEF6volNQSnpbRo23Y45ymQo=' 'sha256-uCXcUENFSx4L74LYcBl93eGvVQMrUc2iqLOR+FnX0B8=' 'sha256-2mZKzOnvxieMtTC6IuoSDWBwXXrI4KldF7tHMCPeUqY=' 'sha256-QMX2t5/L3pJirokWCCBI80dPE/5yFzw3s2/Dvn3unRs=' 'sha256-v5BhvJBNMykyyWGkQQQhgnmDPrAexZ34joZyCE/kaPs=' 'sha256-3J+GrDcI2C3PN3kvy0oSms5+4v/iAtkbOlnrhAjQ12I=' 'sha256-P860sML909h7koNlAdRUyy/kCyoH1vbwJaIGkDCuAk0=' 'sha256-Dn4l7kvf3shg6zrXeguY62Qvf9adEpmVqjdFUApjNZs=' 'sha256-aFv25ZGROpt9VEopxkLbNgXLvMeZkLKvRHqKAjJXDfs=' 'sha256-dwM9jQ0qIR7wXqNoPWdkm5HoX16PsP3G1rY2Rzs+aYA=' 'sha256-nOaiHRT9CKpEUon9G5TfSKowh871Sjxqhb+YJzFtcWw=' 'sha256-yhWUtXYgS1ec/nzN6Sw7zH+Aans49rczR3JGWHcI6Vc=' 'sha256-CF7JEBwMG77CYV0rFnAu47QeJYGIxeEihKO47x2reEI='; style-src 'sha256-tE005HW1KOGrC9gbdlG7YVY+oFCXwesawL4//0Ot4xM='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.5 · EVA return simulator</title>
@@ -1837,7 +1837,7 @@ main {
     --aft-width: min(41cqw,230px);
     --aft-aspect: 2.05;
     --aft-title: 21px;
-    --sidebar-width: 37.5%;
+    --sidebar-width: max(37.5%,124px);
     grid-template-columns: minmax(0,1fr) var(--sidebar-width);
     grid-template-rows: auto auto auto;
     min-height: 0;
@@ -2111,7 +2111,7 @@ main {
     aspect-ratio: 3.35;
   }
   .metrics {
-    width: clamp(194px,25vw,240px);
+    width: clamp(216px,32vw,260px);
   }
   .metricStrip {
     padding: 4px 6px;
@@ -2301,7 +2301,7 @@ main {
   .rack .heading { flex-direction: row; align-items: baseline; flex-wrap: wrap; }
   .tool b { font-size: clamp(11px,3vw,12px); }
 }
-@container (max-width: 123px) {
+@container (max-width: 145px) {
   .velocity { padding-inline: 1px; }
   .velocity dl { column-gap: 2px; }
   .velocity dt,.velocity dd { font-size: 10px; }
@@ -2331,6 +2331,10 @@ main {
 }
 
 @media (max-width:740px) and (max-height:590px) and (min-height:501px) {
+  .topbar { gap: 2px; padding-inline: 3px; }
+  .headerActions button { padding-inline: 3px; font-size: 11px; }
+  .camTitle { column-gap: 3px; }
+  .bearingReadout { gap: 4px; font-size: 12px; }
   .brand img,.brand .version { display: none; }
   .wordmark,.wordmark i { font-size: 14px; }
   .throwPanel .heading { grid-area: 1/1/2/-1; }
@@ -2357,9 +2361,6 @@ main {
   }
   .aftPod {
     width: 33%;
-  }
-  .hudStage {
-    --sidebar-width: 37.5%;
   }
   .rack .heading {
     flex-direction: row;

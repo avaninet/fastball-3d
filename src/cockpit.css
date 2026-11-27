@@ -1809,7 +1809,7 @@ main {
     --aft-width: min(41cqw,230px);
     --aft-aspect: 2.05;
     --aft-title: 21px;
-    --sidebar-width: 37.5%;
+    --sidebar-width: max(37.5%,124px);
     grid-template-columns: minmax(0,1fr) var(--sidebar-width);
     grid-template-rows: auto auto auto;
     min-height: 0;
@@ -2083,7 +2083,7 @@ main {
     aspect-ratio: 3.35;
   }
   .metrics {
-    width: clamp(194px,25vw,240px);
+    width: clamp(216px,32vw,260px);
   }
   .metricStrip {
     padding: 4px 6px;
@@ -2273,7 +2273,7 @@ main {
   .rack .heading { flex-direction: row; align-items: baseline; flex-wrap: wrap; }
   .tool b { font-size: clamp(11px,3vw,12px); }
 }
-@container (max-width: 123px) {
+@container (max-width: 145px) {
   .velocity { padding-inline: 1px; }
   .velocity dl { column-gap: 2px; }
   .velocity dt,.velocity dd { font-size: 10px; }
@@ -2303,6 +2303,10 @@ main {
 }
 
 @media (max-width:740px) and (max-height:590px) and (min-height:501px) {
+  .topbar { gap: 2px; padding-inline: 3px; }
+  .headerActions button { padding-inline: 3px; font-size: 11px; }
+  .camTitle { column-gap: 3px; }
+  .bearingReadout { gap: 4px; font-size: 12px; }
   .brand img,.brand .version { display: none; }
   .wordmark,.wordmark i { font-size: 14px; }
   .throwPanel .heading { grid-area: 1/1/2/-1; }
@@ -2329,9 +2333,6 @@ main {
   }
   .aftPod {
     width: 33%;
-  }
-  .hudStage {
-    --sidebar-width: 37.5%;
   }
   .rack .heading {
     flex-direction: row;
