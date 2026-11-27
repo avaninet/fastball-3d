@@ -48,7 +48,7 @@
     eq(due-performance.now()<=2000,'fade uses at most two real seconds');
     updateLossDebrief(due-1);eq(!el('debrief').open,'debrief waits for the fade');
     updateLossDebrief(due);eq(el('debrief').open&&!el('pause').disabled,'debrief ready');
-    eq(!el('lossEpilogue').hidden&&el('lossEpilogue').querySelector('em').textContent==="Raspberry, I'm coming home.",'game over closes with Tommi’s thought');
+    eq(!el('lossEpilogue').hidden&&el('lossEpilogue').querySelector('em').textContent==="Raspberry, I’m coming home.",'game over closes with Tommi’s thought');
     checkDebriefSpacing();
   }
   function configure(index,mode,soft=false,story=false){
@@ -1499,7 +1499,7 @@
   });
   test('Guide and tutorial introduce recoil and the original mission',()=>{
     click('manual');const guide=el('guide').textContent.replace(/\s+/g,' ');
-    eq(el('captureRule').querySelector('[value="firm"]').textContent==='Firm capture · 0.120 m/s','public Firm capture option');
+    eq(el('captureRule').querySelector('[value="firm"]').textContent==='Firm capture ≤ 0.120 m/s','public Firm capture option');
     eq(guide.includes('Firm (up to 0.120 m/s)'),'guide explains the Firm limit');
     eq(['presumed lost','Newton’s third law','wrench','widely rumored','“unmanned” X-99 orbital spaceplane','next town'].every(s=>guide.includes(s)),'guide premise and backstory');
     eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere','credit line');
@@ -1708,9 +1708,7 @@
     }
   });
   test('Unqualified poses are rejected by every import path',()=>{
-    const row=Array.from({length:4096},(_,i)=>i).find(i=>Catalog.mask(5,i)!==65535);
-    const pose=Flight.poses.slice(1).find(p=>!(Catalog.mask(5,row)&(1<<(p.id-1))));
-    const code=Challenge.encode({index:5,seed:row,pose,mode:'Orbital',soft:true,story:false});
+    const code='F1B-000ZG7'; // Valid check digit, unqualified tilt for Dodgeball row zero.
     eq(!Replays.parse(code) && !Replays.parse('#seed='+code),'invalid pose even with valid checksum');
   });
   test('Seeded manual route, coach, log, card and retry use the selected debris',()=>{
@@ -1789,6 +1787,72 @@
     start(0,'Straight-Line',true,0,false,null,aids);flight.mask=1<<5;click('pause');setView(stationDirection());click('throw');
     eq(!flight.mask && !flight.done && running,'empty rack continues on actual coast');
     advance(600);eq(flight.done==='oxygen','oxygen expiry ends the coast');
+  });
+
+  test('A staged flight keeps its original challenge and Manual record',()=>{
+    start(0,'Straight-Line',false,0,true,null,{});click('showPreview');
+    const guided=Replays.fragment(flight);
+    eq(Replays.parse(guided).startingAids.preview,'staged Preview is shareable');
+    click('away');paintVisors();click('manualNav');
+    eq(!started && flight.sightOnly && !flight.manualThroughout,'guided lineup precedes Manual');
+    eq(Replays.fragment(flight)===guided && Readout.aids(flight).includes('Preview'),'staged aids and guided replay survive');
+    finish('capture');click('retry');
+    eq(!flight.sightOnly && el('showPreview').checked,'retry restores guided start');
+    start(0,'Straight-Line',false,0,true,null,{manual:true});
+    const manual=Replays.fragment(flight);
+    click('manualNav');click('manualNav');
+    eq(!flight.manualThroughout && Replays.fragment(flight)===manual,'staged detour forfeits credit but retains F2');
+    click('new');el('seed').value='#seed=E-12345678&level=Orbital';click('loadSeed');
+    eq(el('setup').open && el('seedPreview').textContent.includes('earlier version'),'retired opening explained');
+  });
+  test('Restoring relative navigation settles only the remaining empty-rack coast',()=>{
+    for(const [speed,elapsed,result] of [[.15,12,'overspeed'],[.15,100,'stranded'],[.06,12,'capture']]){
+      start(0,'Straight-Line',true,0,false,null,{manual:true});
+      flight.pos={p:[0,-10,0],v:[0,speed,0]};flight.mask=0;selected=-1;reseat();
+      click('pause');advance(elapsed);click('manualNav');
+      if(result==='capture'){eq(!flight.done,'safe future entry continues');advance(200);}
+      eq(flight.done===result,'remaining coast ends as '+result);
+      if(el('debrief').open)el('debrief').close();
+    }
+    start(4,'Straight-Line',true,0,false,null,{manual:true});
+    click('pause');advance(12);setView(flight.pos.p);flight.mask=1<<5;click('throw');
+    eq(!flight.mask && flight.forecast.debris.hit,'empty rack on a collision course');
+    click('manualNav');eq(!flight.done && el('advice').textContent.includes('Brace for contact'),'coast to real impact');
+    advance(600);eq(flight.done==='collision','debris contact ends the attempt');
+  });
+  test('Short landscape keeps coast advice inside the instrument panel for both Dodgeball openings',()=>{
+    if(innerWidth<600 || innerHeight>500)return;
+    for(const index of [0,4,5]){
+      configure(index,'Straight-Line');instruments();
+      const panel=el('advice').closest('.metrics').getBoundingClientRect();
+      for(const id of ['coast','advice']){
+        const node=el(id),r=node.getBoundingClientRect();
+        eq(r.top>=panel.top && r.bottom<=panel.bottom && node.contains(document.elementFromPoint(r.x+2,r.bottom-1)),id+' clipped in scenario '+index);
+      }
+    }
+  });
+  test('All six New flight configurations fit without scrolling',()=>{
+    const frame=window.frameElement,original=frame.style.cssText;
+    try{
+      // The outer runner supplies desktop and phone viewports. Also exercise the two compact limits.
+      for(const [w,h] of [[innerWidth,innerHeight],[320,568],[568,320]]){
+        frame.style.width=w+'px';frame.style.height=h+'px';openSetup();
+        const body=el('setupBody');
+        for(const index of [0,1,3,2,4,5]){
+          const rows=index===5?Debris.layouts.map((_,i)=>i*512):[0];
+          for(const seed of rows){
+            const mask=Catalog.mask(index,seed);
+            const poseId=Flight.poses.findLast(p=>p.id && (mask&(1<<(p.id-1)))).id;
+            for(const manual of [false,true]){
+              applySetup({index,seed,poseId,mode:'Orbital',soft:'firm',story:true,startingAids:{manual}});
+              eq(body.scrollHeight<=body.clientHeight+1 && body.scrollWidth<=body.clientWidth+1,
+                'setup overflow at '+w+' × '+h+' scenario '+index+' row '+seed);
+            }
+          }
+        }
+        el('setup').close();
+      }
+    }finally{frame.style.cssText=original;}
   });
 
   test('All manual openings keep the switches and release in reach',()=>{

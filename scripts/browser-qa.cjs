@@ -24,7 +24,7 @@ if (process.env.FASTBALL_QA_FONT_DIR) {
   page = page.replace('style-src ', 'font-src data:; style-src '+sourceHash(rules)+' ')
              .replace('</head>', () => '<style>'+rules+'</style></head>');
 }
-const qaScript = 'window.addEventListener("load",()=>{\n'+tests+'\n'+report+'\n});';
+const qaScript = 'window.addEventListener("load",async()=>{await document.fonts.ready;\n'+tests+'\n'+report+'\n});';
 const inner = page.replace('script-src ', 'script-src '+sourceHash(qaScript)+' ')
                   .replace('</body>', () => '<script>'+qaScript+'</script></body>');
 const fixture = JSON.stringify(inner).replace(/</g,'\\u003c');
@@ -38,7 +38,7 @@ frame.srcdoc=${fixture};
 </script>`);
 console.log('Open qa-runner.html for the in-page results.');
 if(process.argv[2]){
-  for(const [width,height] of [[1440,950],[1366,768],[390,844],[844,390]]){
+  for(const [width,height] of [[1440,950],[1366,768],[390,844],[844,390],[667,375]]){
     const profile=fs.mkdtempSync(path.join(os.tmpdir(),'fastball-qa-'));
     try{
       const url=pathToFileURL(runner);url.searchParams.set('viewport',width+'x'+height);

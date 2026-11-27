@@ -20,6 +20,12 @@
   <symbol id="act-save" viewBox="0 0 24 24">
     <path d="M12 3v11m-4.5-4.5L12 14l4.5-4.5M4 15v4.5h16V15"/>
   </symbol>
+  <symbol id="act-folder" viewBox="0 0 24 24">
+    <path d="M3 18V5h6l2 3h8v3M3 19l3-8h16l-3 8z"/>
+  </symbol>
+  <symbol id="act-disk" viewBox="0 0 24 24">
+    <path d="M4 3h13l4 4v14H3V3zM7 3v6h9V3M7 21v-8h10v8"/>
+  </symbol>
   <symbol id="act-copy" viewBox="0 0 24 24">
     <rect x="8.5" y="8" width="11.5" height="13" rx="1.5"/><path d="M15.5 5V3.5H4v13h1.5"/>
   </symbol>

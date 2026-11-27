@@ -1,3 +1,5 @@
+'use strict';
+
 const fontStyle=getComputedStyle(document.documentElement);
 const cockpitFonts={sans:fontStyle.getPropertyValue('--sans').trim(),mono:fontStyle.getPropertyValue('--mono').trim()};
 const Visor = (() => {
@@ -147,7 +149,8 @@ const Visor = (() => {
           panels.every(b=>x+pad<b.left || x-pad>b.right || y+pad<b.top || y-pad>b.bottom);
       });
     }
-    for(const lens of [1,.84,.70,.56]){
+    // A narrow strip between the rack and instruments can need a wider field of view.
+    for(const lens of [1,.84,.70,.56,.44,.34]){
       for(let ring=0;ring<=5;ring++){
         for(let x=-ring;x<=ring;x++)for(let y=-ring;y<=ring;y++){
           if(Math.max(Math.abs(x),Math.abs(y))!==ring)continue;
@@ -349,13 +352,16 @@ const Visor = (() => {
     }
     ctx.restore();
   }
+  function behindPanel([x,y],covers){
+    return covers.some(box=>x>=box.left && x<=box.right && y>=box.top && y<=box.bottom);
+  }
   function encounterMarker(ctx,cam,hit,small,label,preview,age,w,h,covers){
     if(!hit)return;
     const q=cam.world(hit.contact);
     const point=q[2]>=near?cam.screen(q):null;
     const color=preview?'#e8b6ff':'#a9d9f5',size=small?4:6;
     if(!point || point[0]<8 || point[0]>w-8 || point[1]<8 || point[1]>h-8 ||
-       covers.some(b=>point[0]>=b.left && point[0]<=b.right && point[1]>=b.top && point[1]<=b.bottom)){
+       behindPanel(point,covers)){
       if(!small&&!preview)edgeMarker(ctx,q,w,h,label,hit.body.short.toUpperCase()+' HIT',color,Math.min(w*.18,h*.23,114));
       return;
     }
@@ -374,7 +380,7 @@ const Visor = (() => {
     const q=cam.world([0,0,0]),xy=q[2]>near?cam.screen(q):null;
     if(xy && xy[0]>20 && xy[0]<w-20 && xy[1]>24 && xy[1]<h-20){
       if(small)return;
-      if(!covers.some(box=>xy[0]>=box.left && xy[0]<box.right && xy[1]>=box.top && xy[1]<box.bottom))return;
+      if(!behindPanel(xy,covers))return;
     }
     edgeMarker(ctx,q,w,h,label,'STN','#dcffe9',small?Infinity:Math.min(w*.13,h*.19,92));
   }
@@ -423,7 +429,7 @@ const Visor = (() => {
     const drift=cam.local(unit(state.pos.v));
     const driftPoint=drift[2]>.15?cam.screen(drift):null;
     const visibleDrift=driftPoint && driftPoint[0]>12 && driftPoint[0]<w-12 && driftPoint[1]>14 && driftPoint[1]<h-14 &&
-      !covers.some(b=>driftPoint[0]>=b.left && driftPoint[0]<=b.right && driftPoint[1]>=b.top && driftPoint[1]<=b.bottom);
+      !behindPanel(driftPoint,covers);
     if(visibleDrift && norm(state.pos.v)>1e-6){
       const [x,y]=driftPoint;
       ctx.strokeStyle='#b0e6cc';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.stroke();

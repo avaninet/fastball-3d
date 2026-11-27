@@ -1,27 +1,23 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
-const html=fs.readFileSync(process.argv[2] || path.join(__dirname,'../index.html'),'utf8');
+const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 const src=html.match(/<script id="physics">([\s\S]+?)<\/script>/)[1];
 const F=vm.runInNewContext(src+';Flight',{Math,Catalog:require('../studies/catalog-data.cjs')}), modes=['Straight-Line','Orbital'];
 const {norm,scale,unit,add,clamp}=F;
-if(!process.argv[2]){
-  // Propagate backwards from a known crossing on each face, then forecast the
-  // entire flight. All four speeds used to lose entries to face rounding.
-  for(const [speed,time] of [[1.5,5.037035],[3,5.037035],[8,5.012345],[12,5.012345]]){
-    for(let axis=0;axis<3;axis++)for(const sign of [-1,1]){
-      const p=[0,0,0],v=[0,0,0];
-      p[axis]=sign*F.half[axis];v[axis]=-sign*speed;
-      const opening=F.motion({p,v},-time,'Orbital');
-      for(const soft of [false,true]){
-        const hit=F.entries(opening,F.oxygenReserve,'Orbital',false,soft)[0];
-        assert.ok(hit && Math.abs(hit.t-time)<1e-8,'high-speed Orbital face entry');
-        assert.ok(F.inside(hit.p) && Math.abs(hit.speed-speed)<1e-8,'first-contact position and speed');
-      }
+// Propagate backwards from a known crossing on each face, then forecast the
+// entire flight. All four speeds used to lose entries to face rounding.
+for(const [speed,time] of [[1.5,5.037035],[3,5.037035],[8,5.012345],[12,5.012345]]){
+  for(let axis=0;axis<3;axis++)for(const sign of [-1,1]){
+    const p=[0,0,0],v=[0,0,0];
+    p[axis]=sign*F.half[axis];v[axis]=-sign*speed;
+    const opening=F.motion({p,v},-time,'Orbital');
+    for(const soft of [false,true]){
+      const hit=F.entries(opening,F.oxygenReserve,'Orbital',false,soft)[0];
+      assert.ok(hit && Math.abs(hit.t-time)<1e-8,'high-speed Orbital face entry');
+      assert.ok(F.inside(hit.p) && Math.abs(hit.speed-speed)<1e-8,'first-contact position and speed');
     }
   }
 }
-// Older standalone builds took the current state as an unused first argument.
-const buildCommand = F.command.length===4 ? F.command : (_state,dv,tool,mask)=>F.command(dv,tool,mask);
 function valid(hit,soft){return hit && (!soft || hit.speed<=F.limit+1e-9);}
 function plan(s,mode,mask,left,soft,skipInitial=false) {
   const rack=F.gear.map((_,i)=>i).filter(i=>mask&(1<<i));
@@ -36,7 +32,7 @@ function plan(s,mode,mask,left,soft,skipInitial=false) {
       const finish=avail.filter(i=>F.impulse(i,bag)*1.005>=mag).sort((a,b)=>F.impulse(a,bag)-F.impulse(b,bag))[0];
       const tool=finish ?? avail.sort((a,b)=>F.impulse(b,bag)-F.impulse(a,bag))[0];
       if(tool===undefined) break;
-      const c=buildCommand(p,dv,tool,bag); actions.push({...c,delay});
+      const c=F.command(dv,tool,bag); actions.push({...c,delay});
       p=F.applyCommand(p,c,bag);bag^=1<<tool;
       if(finish!==undefined || step===count-1) {
         const hit=F.entries(p,left-delay,mode,skipInitial && delay===0,soft).find(h=>valid(h,soft));
@@ -69,9 +65,7 @@ function runPlan(s,mode,mask,left,soft,actions,angle,pct,draw) {
   const contacts=F.entries(s,left-elapsed,mode,false,soft);
   return {win:contacts.some(h=>valid(h,soft)),s,mask,elapsed,hit:contacts[0]};
 }
-// Older builds can also be passed on the command line for balance comparisons.
-const rack=(1<<F.gear.length)-1,duration=F.oxygenReserve??F.manualReserve??450;
-const opening=(i,seed,story=false)=>F.opening?F.opening(i,seed,story):i===3?F.randomStart(seed):F.named[i];
+const rack=F.fullRack,duration=F.oxygenReserve,opening=F.opening;
 const varied=Array.from({length:128},(_,i)=>opening(3,i*32));
 const named=F.named.map((_,i)=>opening(i,0));
 for(const mode of modes){
@@ -83,7 +77,7 @@ for(const mode of modes){
     const p=[(draw()-.5)*5,-1.6-8,(draw()-.5)*5],v=[(draw()-.5)*.012,.10+draw()*.035,(draw()-.5)*.012];
     const s={p,v},hits=F.entries(s,320,mode);assert.ok(hits[0]?.speed>F.limit);
     const deadline=320,leadTime=hits[0].t-18,approach=F.motion(s,leadTime,mode);
-    const braking=buildCommand(approach,scale(unit(approach.v),-(norm(approach.v)-.061)),4,bag);
+    const braking=F.command(scale(unit(approach.v),-(norm(approach.v)-.061)),4,bag);
     const bv=F.applyCommand(approach,braking,bag);
     if(valid(F.entries(bv,deadline-leadTime,mode)[0],true))braked++;
     let after=hits[0].t+1;
@@ -133,7 +127,7 @@ function recipe(initial,mode,soft,kind){
     const entry=F.entries(state,duration-elapsed,mode)[0];
     if(entry && entry.speed>F.limit && entry.t>18){
       const wait=entry.t-18;state=F.motion(state,wait,mode);elapsed+=wait;
-      const command=buildCommand(state,scale(unit(state.v),.061-norm(state.v)),4,mask);
+      const command=F.command(scale(unit(state.v),.061-norm(state.v)),4,mask);
       pitch(4,command.power,unit(state.v));
     }
   }

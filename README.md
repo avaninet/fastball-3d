@@ -1,4 +1,4 @@
-# Fastball 3D v0.4
+# Fastball 3D v0.5
 
 You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan back within reach of the station’s grab bars.
 
@@ -26,13 +26,13 @@ The habit that comes back to her now is older than that. She was a high-school s
 
 Fly **Straight-Line** to coast in a straight line, or choose **Orbital** to see your path bend relative to the station. **Any-speed** lets you grab the bars at any speed. For a gentler arrival, **Firm** requires 0.120 m/s or slower and **Soft** requires 0.080 m/s or slower. **Story flight** gives you reloading tools and time to line up a pitch while paused.
 
-Choose **Manual (no guidance)** to fly any opening by sight. The navigation display goes offline. Use the two cameras, oxygen clock and equipment rack. You control play speed, even during a close approach. Story still lets you line up while paused and reloads each tool. Fly the entire attempt with Manual on to earn **Manual throughout** on your flight card.
+Choose **Manual (no guidance)** to fly any opening by sight. The navigation display goes offline. Use the two cameras, oxygen clock and equipment rack. You control play speed, even during a close approach. Story still lets you line up while paused and reloads each tool. Start in Manual and keep it on, including while staged or paused, to earn **Manual throughout** on your flight card.
 
 ## Challenge a friend
 
-Turn on **Random station orientation** in any of the six scenarios to try a different approach. The station holds its new angle for the whole flight. Watch the mint outline in both visors to see how much room you have.
+Turn on **Random station orientation** in any of the six scenarios to try a different approach. The station holds its new angle for the whole flight. With navigation online, watch the mint outline in both visors to see how much room you have.
 
-In **New flight**, use **Copy code** or **Copy link** for any of the six openings. For example, paste `F1B-5011G7` into **Challenge code or link** and choose **Load code** to fly a tilted, near-frame Random Dodgeball approach in Orbital with a Soft grab. The code restores Tommi, debris, station angle, flight model, capture rule, inventory and starting aids. Each player flies their own throws.
+In **New flight**, use **Copy code** or **Copy link** for any of the six openings. For example, paste `F1B-5011G7` into **Challenge code or link** and choose **Load code** to fly a tilted, near-frame Random Dodgeball approach in Orbital with a Soft grab. The code restores Tommi, debris, station angle, flight model, capture rule, inventory and starting aids. F1 codes start with navigation online and F2 codes start in Manual. Older seed formats replay in the version that made them. Each player flies their own throws.
 
 After the flight, choose **Flight card** in the debrief to save the image or copy the challenge. The upper chart shows radial motion and the lower chart shows cross-track motion. Match the numbered throws to follow the same pass in both views. Compare who made it home, who managed the gentlest grab, and who brought the drill back.
 

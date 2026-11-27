@@ -1,3 +1,5 @@
+'use strict';
+
 const Equipment = (() => {
   function makeSprite(i) {
     const canvas=document.createElement('canvas');

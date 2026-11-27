@@ -1,3 +1,5 @@
+'use strict';
+
 const rescueCalls = {
   'Tether separation': {
     'Straight-Line': ['Commander Julian Bern', 'There. That’s my tether clipped to your suit. Take all the time you need to let go of that rail.'],
@@ -15,7 +17,7 @@ const rescueCalls = {
     'Straight-Line': ['Commander Julian Bern', 'I saw the cover go by. Then the frame. Been waiting for the one thing out there I actually wanted to catch. Welcome back, Tommi.'],
     'Orbital': ['Capt. Tommi Dylan', 'That frame broke across the plate just like I thought it would. Thanks for keeping a hand on home, Julian.']
   },
-  'Random drift': {
+  'Random Drift': {
     'Straight-Line': ['Commander Julian Bern', 'BOREX just called to ask if the server’s back up. I told them I got the technician back. They can hold.'],
     'Orbital': ['Capt. Tommi Dylan', 'Save that plot for me, Julian. Next time the folks back home ask what I fly, I’ve finally got something I can show them.']
   },
@@ -25,8 +27,8 @@ const rescueCalls = {
   }
 };
 
-function showRescueCall(opening, mode) {
-  const [speaker, line] = rescueCalls[opening][mode];
+function showRescueCall(opening, mode, lesson) {
+  const [speaker, line] = lessons[lesson]?.call ?? rescueCalls[opening][mode];
   const credit = document.createElement('span');
   credit.className = 'attribution';
   credit.textContent = '— ' + speaker;
@@ -37,17 +39,17 @@ const lossCalls = {
   oxygen: {
     opening: 'The oxygen reserve ticks down to zero as Commander Bern crackles over the radio.',
     maneuver: 'The suit is already gently pushing her to intercept.',
-    call: "Looks like you'll be back on station with time to spare."
+    call: "I hear the main supply flowing again. Breathe easy, Tommi. I’ve got you in sight."
   },
   stranded: {
     opening: 'Tommi watches the last tool tumble away. Commander Bern comes over the radio.',
     maneuver: 'A short burst from the suit puts the grab bars back on her flight path.',
-    call: "Your new track takes you right to the bars. I'll meet you there."
+    call: "Your new track takes you right to the bars. I’ll meet you there."
   },
   overspeed: {
     opening: 'The grab speed on Commander Bern’s display is still in the red when he keys the radio.',
     maneuver: 'The suit is already decelerating her to a safe intercept speed.',
-    call: "Looks like you're heading for a successful capture after all."
+    call: "Looks like you’re heading for a successful capture after all."
   }
 };
 
@@ -60,10 +62,13 @@ function showLossCall(result) {
 
 const lessons=[
   {title:'First rescue',index:0,mode:'Straight-Line',soft:false,
+    brief:'Capt. Tommi Dylan (she/they) pitches on Saturdays. Rumor has it she flew the classified “unmanned” X-99 orbital spaceplane. Today her tether snaps and her suit thrusters jam.',
     cue:'Without a tether or thrusters, a drifting astronaut is presumed lost. Newton’s third law gives Tommi one last pitch. Fling a wrench away from the station as hard as you can and it pushes you back. For this gap, choose Face away and throw the heavier battery at 95%.'},
   {title:'Trim an oblique miss',index:1,mode:'Straight-Line',soft:false,
     cue:'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss, then line up a correction.'},
   {title:'Brake for the bars',index:1,mode:'Straight-Line',soft:true,
+    brief:'You’re sliding across the station face. Time a braking pitch to reach the bars at a safe speed.',
+    call:['Commander Julian Bern','Saw you ease up just before the bars. Nice hands, Tommi. Welcome home.'],
     cue:'This approach crosses the bars above the soft limit. Line up the practice pitch, then press Throw. Compare range rate with relative speed.'},
   {title:'Read the orbital bend',index:0,mode:'Orbital',soft:false,
     cue:'Repeat the first rescue’s Face away battery pitch at 95%. Watch the coast bend in the rotating frame and compare its nearest pass with the straight return.'}
@@ -207,5 +212,5 @@ el('skipLesson').onclick=()=>{
   flight.lesson=null;flight.checkAt=null;flight.stagedPitch=null;flight.story=false;flight.skippedGuidance=true;
   el('away').hidden=el('toStation').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
   invalidateInput();if(!running)pause();
-  setMsg('Guidance off. Each tool has one release left. This rescue counts as assisted. Retry for a manual score.');updateRack();instruments();
+  setMsg('Lesson coaching off. Each tool has one release left. Retry this opening with single-use tools to earn a Δv score.');updateRack();instruments();
 };

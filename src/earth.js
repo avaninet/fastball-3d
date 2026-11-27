@@ -1,3 +1,5 @@
+'use strict';
+
 // Project the night-side photograph onto camera rays. The curve and fades
 // were calibrated in a 327-row reference image; the texture stays native size.
 const EarthSky = (() => {

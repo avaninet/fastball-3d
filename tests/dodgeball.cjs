@@ -101,7 +101,7 @@ for(const mode of ['Straight-Line','Orbital']){
       const grab=F.entries(final,415,mode,false,soft).find(h=>!soft||F.softEnough(h.speed));
       assert.ok(grab && 185+grab.t<600);
       assert.equal(D.forecast(final,185,grab.t,mode).hit,null);
-      console.log(mode,story?'Story':'Manual',soft?'soft':'any', (185+grab.t).toFixed(2)+' s',grab.speed.toFixed(4)+' m/s');
+      console.log(mode,story?'Story':'Single-use',soft?'soft':'any', (185+grab.t).toFixed(2)+' s',grab.speed.toFixed(4)+' m/s');
     }
     for(const coast of [direct,side]){
       const t=coast===direct?12:36,warning=D.forecast(coast,t,600-t,mode).hit;

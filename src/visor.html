@@ -126,9 +126,11 @@ __COCKPIT_STYLE__</style>
               </div>
             </div>
             <div class="previewControl">
-              <label title="Show the suit’s predicted coast if you release the selected tool now"><input id="showPreview" type="checkbox" aria-describedby="previewResult">Preview throw</label>
-              <label id="coachControl" title="Suggest an avoidance throw during a collision warning" hidden><input id="dodgeCoach" type="checkbox">Dodgeball Coach</label>
-              <label id="manualNavControl" title="Fly using the two cameras and suit status"><input id="manualNav" type="checkbox">Manual (no guidance)</label>
+              <div class="navToggles">
+                <label title="Show the suit’s predicted coast if you release the selected tool now"><input id="showPreview" type="checkbox" aria-describedby="previewResult" aria-label="Preview throw"><span>Preview<span class="toggleQualifier"> throw</span></span></label>
+                <label id="coachControl" title="Suggest an avoidance throw during a collision warning" hidden><input id="dodgeCoach" type="checkbox" aria-label="Dodgeball Coach"><span><span class="toggleQualifier">Dodgeball </span>Coach</span></label>
+                <label id="manualNavControl" title="Fly using the two cameras and suit status"><input id="manualNav" type="checkbox" aria-label="Manual (no guidance)"><span>Manual<span class="toggleQualifier"> (no guidance)</span></span></label>
+              </div>
               <output id="previewResult" for="showPreview power" aria-live="off" hidden></output>
             </div>
             <article class="panel coastPanel">
@@ -187,7 +189,7 @@ __COCKPIT_STYLE__</style>
           <section class="panel lesson" id="lesson" hidden>
             <div class="heading">
               <h2 id="lessonTitle">First rescue</h2>
-              <button id="skipLesson">Skip guidance</button>
+              <button id="skipLesson">Skip coaching</button>
             </div>
             <p id="lessonCue" aria-live="polite" aria-atomic="true"></p>
             <button id="lessonAction" hidden></button>
@@ -208,67 +210,77 @@ __COCKPIT_STYLE__</style>
             <h2 id="setupTitle">New flight</h2>
             <button class="x close" type="button" aria-label="Close">×</button>
           </div>
-          <fieldset id="scenario">
-            <legend class="rowLabel">Separation scenario</legend>
-            <div class="scenarioGrid">
-              <label class="scenarioTile">
-                <input id="pick-0" type="radio" name="scenarioChoice" value="0" checked>
-                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-0" width="180" height="80"/></svg></span>
-                <span class="scenarioCaption">Tether separation</span>
-              </label>
-              <label class="scenarioTile">
-                <input id="pick-1" type="radio" name="scenarioChoice" value="1">
-                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-1" width="180" height="80"/></svg></span>
-                <span class="scenarioCaption">Lateral drift</span>
-              </label>
-              <label class="scenarioTile">
-                <input id="pick-3" type="radio" name="scenarioChoice" value="3">
-                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-3" width="180" height="80"/></svg></span>
-                <span class="scenarioCaption">Random Drift</span>
-              </label>
-              <label class="scenarioTile">
-                <input id="pick-2" type="radio" name="scenarioChoice" value="2">
-                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-2" width="180" height="80"/></svg></span>
-                <span class="scenarioCaption">Wide separation</span>
-              </label>
-              <label class="scenarioTile">
-                <input id="pick-4" type="radio" name="scenarioChoice" value="4">
-                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-4" width="180" height="80"/></svg></span>
-                <span class="scenarioCaption">Dodgeball Challenge</span>
-              </label>
-              <label class="scenarioTile">
-                <input id="pick-5" type="radio" name="scenarioChoice" value="5">
-                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-5" width="180" height="80"/></svg></span>
-                <span class="scenarioCaption">Random Dodgeball</span>
-              </label>
-            </div>
-          </fieldset>
-          <p id="setupBrief" aria-live="polite"></p>
-          <div id="seedGroup">
-            <label class="rowLabel" for="seed">Challenge code or link</label>
-            <input class="seedInput" id="seed" spellcheck="false" autocomplete="off" aria-describedby="seedPreview">
-            <div class="seedActions">
-              <button type="button" id="loadSeed">Load code</button>
-              <button type="button" id="reroll">Generate opening</button>
-              <button type="button" id="copyCode">Copy code</button>
-              <button type="button" id="copySetupSeed">Copy link</button>
-            </div>
-            <p id="seedPreview" role="status"></p>
+          <div class="setupScenarios">
+            <fieldset id="scenario">
+              <legend class="rowLabel">Separation scenario</legend>
+              <div class="scenarioGrid">
+                <label class="scenarioTile">
+                  <input id="pick-0" type="radio" name="scenarioChoice" value="0" checked>
+                  <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-0" width="180" height="80"/></svg></span>
+                  <span class="scenarioCaption">Tether separation</span>
+                </label>
+                <label class="scenarioTile">
+                  <input id="pick-1" type="radio" name="scenarioChoice" value="1">
+                  <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-1" width="180" height="80"/></svg></span>
+                  <span class="scenarioCaption">Lateral drift</span>
+                </label>
+                <label class="scenarioTile">
+                  <input id="pick-3" type="radio" name="scenarioChoice" value="3">
+                  <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-3" width="180" height="80"/></svg></span>
+                  <span class="scenarioCaption">Random Drift</span>
+                </label>
+                <label class="scenarioTile">
+                  <input id="pick-2" type="radio" name="scenarioChoice" value="2">
+                  <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-2" width="180" height="80"/></svg></span>
+                  <span class="scenarioCaption">Wide separation</span>
+                </label>
+                <label class="scenarioTile">
+                  <input id="pick-4" type="radio" name="scenarioChoice" value="4">
+                  <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-4" width="180" height="80"/></svg></span>
+                  <span class="scenarioCaption">Dodgeball Challenge</span>
+                </label>
+                <label class="scenarioTile">
+                  <input id="pick-5" type="radio" name="scenarioChoice" value="5">
+                  <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-5" width="180" height="80"/></svg></span>
+                  <span class="scenarioCaption">Random Dodgeball</span>
+                </label>
+              </div>
+            </fieldset>
+            <p id="setupBrief" aria-live="polite"></p>
           </div>
-          <span id="modelLabel" class="rowLabel">Flight model</span>
-          <div class="modePick" role="radiogroup" aria-labelledby="modelLabel">
-            <label><input type="radio" name="model" value="Straight-Line" checked> Straight-Line</label>
-            <label><input type="radio" name="model" value="Orbital"> Orbital</label>
+          <div class="setupSettings">
+            <div id="seedGroup">
+              <label class="rowLabel" for="seed">Challenge code or link</label>
+              <input class="seedInput" id="seed" spellcheck="false" autocomplete="off" aria-describedby="seedPreview">
+              <div class="seedActions">
+                <button type="button" id="loadSeed"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-folder"/></svg>Load code</button>
+                <button type="button" id="reroll"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-retry"/></svg>Generate opening</button>
+                <button type="button" id="copyCode"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-disk"/></svg>Copy code</button>
+                <button type="button" id="copySetupSeed"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-link"/></svg>Copy link</button>
+              </div>
+              <p id="seedPreview" role="status"></p>
+            </div>
+            <div class="setupRow">
+              <span id="modelLabel" class="rowLabel">Flight model</span>
+              <div class="modePick" role="radiogroup" aria-labelledby="modelLabel">
+                <label><input type="radio" name="model" value="Straight-Line" checked> Straight-Line</label>
+                <label><input type="radio" name="model" value="Orbital"> Orbital</label>
+              </div>
+            </div>
+            <div class="setupRow">
+              <label for="captureRule" class="rowLabel">Grab rule</label>
+              <select id="captureRule">
+                <option value="none">Any-speed capture</option>
+                <option value="firm">Firm capture</option>
+                <option value="soft">Soft capture</option>
+              </select>
+            </div>
           </div>
-          <label for="captureRule" class="rowLabel">Grab rule</label>
-          <select id="captureRule">
-            <option value="none">Any-speed capture</option>
-            <option value="firm">Firm capture · 0.120 m/s</option>
-            <option value="soft">Soft capture · 0.080 m/s</option>
-          </select>
-          <label class="challenge"><input type="checkbox" id="randomOrientation" aria-describedby="orientationNote"><span>Random station orientation<small id="orientationNote" role="status">Select to start the station at a fixed tilt.</small></span></label>
-          <label class="challenge"><input type="checkbox" id="setupManualNav"><span>Manual (no guidance)<small>Relative nav offline. Aft camera and suit status available.</small></span></label>
-          <label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small id="storyNote">Tools reload. Aim while paused, or use Face station and Face away. Drift scenarios start closer to the bars.</small></span></label>
+          <div class="setupOptions">
+            <label class="challenge"><input type="checkbox" id="randomOrientation" aria-describedby="orientationNote"><span>Random station orientation<small id="orientationNote" role="status">Start at a fixed tilt.</small></span></label>
+            <label class="challenge"><input type="checkbox" id="setupManualNav"><span>Manual (no guidance)<small>Relative nav offline.</small></span></label>
+            <label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small>Tools reload. Aim while paused.</small></span></label>
+          </div>
         </div>
         <div class="dialogFoot">
           <button type="button" class="close">Cancel</button>
@@ -299,14 +311,14 @@ __COCKPIT_STYLE__</style>
         <p><strong>The tool goes through the crosshair. You recoil the other way.</strong> On Tether separation, face
         away from the station before you throw. Look for the station in the aft camera. In the flight instruments,
         <strong>Current coast</strong> tells you whether you’ll reach the bars. Its directional hint tells you where
-        to aim the next tool in the forward visor. Before your first manual throw, check the recoil note beside
+        to aim the next tool in the forward visor. Before your first single-use throw, check the recoil note beside
         Throw to see which way the pitch will push you relative to the station.</p>
         <h3>Choose a grab rule</h3>
         <p>In <strong>New flight</strong>, choose one of the six illustrated openings, then Straight-Line or Orbital.
         <strong>Any-speed</strong> is the default and accepts a grab at any speed. Try <strong>Firm</strong>
-        (up to 0.120 m/s) to practice braking, then <strong>Soft</strong> (up to
+        (up to <span data-firm-limit></span> m/s) to practice braking, then <strong>Soft</strong> (up to
         <span data-soft-limit></span> m/s) for a gentler catch. For example, crossing the bars at 0.100 m/s earns
-        a Firm grab. In Soft you’ll pass through unless you slow enough while still within reach.</p>
+        a Firm grab. In Soft you’ll pass through unless you slow enough while still within reach. The suit uses the grab envelope for station contact and can coast through the station on an overspeed pass.</p>
         <details>
           <summary>Tommi and the BOREX suit</summary>
           <p>Mission specialist Capt. Tommi Dylan (she/they) is widely rumored to have been the test pilot of the
@@ -335,7 +347,7 @@ __COCKPIT_STYLE__</style>
         smaller and dimmer. A violet cross marks the first contact or nearest pass. Looking straight down the path,
         you’ll see a diamond. The sidebar gives the projected grab, fast entry or closest clearance. Check aft when
         recoil takes you behind the crosshair. The dashed mint line shows your actual coast.</p>
-        <p><em>Pro tip: Work the problem - let's not make things worse by guessing.</em></p>
+        <p><em>Pro tip: Work the problem — let’s not make things worse by guessing.</em></p>
         <h3>Manual (no guidance)</h3>
         <p>The BOREX suit has lost its relative navigation solution. The forward visor, aft camera,
         fixed crosshairs, oxygen display and equipment rack still work. Choose Manual in New flight
@@ -343,7 +355,7 @@ __COCKPIT_STYLE__</style>
         speed through throws and close approaches. With an empty rack you coast until a grab,
         a debris strike or oxygen expiry.</p>
         <p>Story still reloads tools and lets you aim while paused. First rescue and its lessons keep
-        their guidance. Start in Manual and keep it on for the entire attempt to earn
+        relative navigation and lesson coaching on. Start in Manual and keep it on for the entire attempt to earn
         <strong>Manual throughout</strong> on the flight card. Retry and challenge links restore
         the starting choice.</p>
         <h3>The night-side sky</h3>
@@ -365,16 +377,15 @@ __COCKPIT_STYLE__</style>
         <p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you
         which way to aim in the forward visor. A pitch up and right nudges the suit down and left. If you reach the
         top or bottom of the visor, turn along the horizon toward the heading in the hint. On a future miss,
-        match the estimated trim to the recoil beside <strong>Throw power</strong>. Manual flight selects the
-        lightest remaining tool after each release and keeps your power setting. Check both before you throw.</p>
+        match the estimated trim to the recoil beside <strong>Throw power</strong>. With single-use tools, the lightest remaining tool is selected after each release. Your power setting stays the same. Check both before you throw.</p>
         <p><strong>Fast entry in</strong> gives your projected speed at the bars. The gauge shows your speed now.
         Follow the mint <strong>DRIFT</strong> cue or press <strong>Face drift</strong> to aim along your motion.
         On a clear Firm or Soft approach, line up early and aim to brake in the final 30 seconds before entry.
         Fast-forward returns to 1× for that cue when you have a tool left. Press Throw to brake, then check
         Current coast again. If you enter fast, you can still brake inside the bars or circle back.</p>
-        <p>With guidance on, the flight ends when your last tool leaves the rack if the forecast shows a miss or an unavoidable fast entry.
+        <p>With relative navigation on, the flight ends when your last tool leaves the rack if the forecast shows a miss or an unavoidable fast entry.
         A later eligible grab keeps the clock running, including an Orbital slowdown inside the bars.
-        A forecast debris collision plays out to impact.</p>
+        A forecast debris collision plays out to impact. Restoring navigation with an empty rack checks the coast still ahead under the same rules.</p>
         <h3>Time and controls</h3>
         <p>Straight-Line holds velocity between releases. Orbital bends the coast in a rotating frame. Every flight
         starts with 10:00 of oxygen, including First rescue. Play speed stops at 1×, 10×, 20× and 30×. Throwing
@@ -382,16 +393,16 @@ __COCKPIT_STYLE__</style>
         number row and numpad select tools 1–9. The two key positions to the right of P (US [ and ]) or numpad minus
         and plus change power by one point. Enter throws from the visor, either slider or a cockpit checkbox. A focused slider keeps its arrow keys. Heading increases as you turn left. P controls the clock.</p>
         <h3>Compare rescues</h3>
-        <p>Δv (delta-v) is how much more you could change your speed or direction with the tools aboard. Manual
-        flights start with 0.456 m/s available. A throw at any power spends that tool. Your score is the budget
+        <p>Δv (delta-v) is how much more you could change your speed or direction with the tools aboard. Single-use
+        flights start with 0.456 m/s available. A throw at any power spends that tool. You can throw again as soon as you select the next pitch. Your score is the budget
         still aboard at rescue. A lost suit brings home zero. In Story, compare throw count and grab speed.
         Grab speed includes sideways motion. A hard Any-speed catch can earn an extra line in the debrief.</p>
-        <p>Each of the six openings has a different radio call for a Straight-Line and an Orbital rescue. Bring
+        <p>Each opening has a radio call for each flight model. The braking lesson has its own call. Bring
         the original drill home to hear the <strong>Upmass Hero</strong> epilogue after the call. A Story reload
-        gives you a replacement drill. Finishing a guided lesson after choosing Skip guidance also skips the award.</p>
+        gives you a replacement drill. Choosing Skip coaching makes the flight ineligible for the award.</p>
         <h3>Flying through debris</h3>
-        <p>A platform mount gives way and takes Tommi’s tether anchor with it. The loose cover and bent frame drift independently. A hit to Tommi’s suit ends the flight. Both Dodgeball modes keep the same opening geometry in Story and manual flight. Both flight models and all three grab rules work here.</p>
-        <p>With guidance on, follow the short trails to see where each piece is heading. An amber box surrounds the piece your current coast would hit. The box moves with it and extends 4 cm past each side. Steer your whole suit outside the box, including around the frame’s open middle. The blue × marks where your suit would first touch the box, with a countdown. Violet shows the predicted contact for a previewed throw. You can also slow down and let a piece cross ahead.</p>
+        <p>A platform mount gives way and takes Tommi’s tether anchor with it. The loose cover and bent frame drift independently. A hit to Tommi’s suit ends the flight. Both Dodgeball modes keep the same opening geometry in Story and single-use flight. Both flight models and all three grab rules work here.</p>
+        <p>With relative navigation on, follow the short trails to see where each piece is heading. An amber box surrounds the piece your current coast would hit. The box moves with it and extends 4 cm past each side. Steer your whole suit outside the box, including around the frame’s open middle. The blue × marks where your suit would first touch the box, with a countdown. Violet shows the predicted contact for a previewed throw. You can also slow down and let a piece cross ahead.</p>
         <p>If the impact point leaves the forward view or sits behind a panel, the <strong>COVER HIT</strong> or
         <strong>FRAME HIT</strong> arrow points toward it. A collision warning takes priority over station braking.
         Fast-forward drops to 1× with up to 65 seconds to react. Dodgeball Coach can suggest a tool, power and
@@ -399,9 +410,9 @@ __COCKPIT_STYLE__</style>
         When Current coast says a piece clears in a few seconds, hold the coast through the pass, then trim home.</p>
         <h3>Share an opening</h3>
         <p>Random Drift and Random Dodgeball each have 4,096 openings. Dodgeball draws from eight debris layouts.
-        Choose <strong>Generate opening</strong> to try another. Paste a friend's ten-character code or link
+        Choose <strong>Generate opening</strong> to try another. Paste a friend’s ten-character code or link
         in New flight to load the same opening, station angle, flight model, grab rule, inventory and starting aids.
-        The flight card prints the same code. Retry restores its starting settings.</p>
+        F1 codes start with relative navigation online. F2 codes start in Manual. Earlier seed formats belong to the builds that created them. The flight card prints the same code. Retry restores its starting settings.</p>
         <p>Choose <strong>Flight card</strong> in the debrief to share your flown path. Both charts use the same
         along-track axis and scale. The upper chart shows radial motion and the lower chart shows cross-track motion.
         Match the numbered throws between them. A blue ring marks a pass across Y = 0 that appears inside the
@@ -410,15 +421,15 @@ __COCKPIT_STYLE__</style>
         <h3>Story / guided rescue</h3>
         <p>First rescue starts a fresh Straight-Line lesson. Every Story throw reloads the selected tool. Suit mass
         stays constant, so repeating a pitch at the same power gives the same recoil. You can line up while paused
-        and, with guidance on, snap to measured bearings. First rescue pauses for one halfway check. In later lessons, choose when to
-        line up a correction. In these lessons, Throw starts or resumes the clock at 1×. Skip guidance gives you single-use tools for
-        the rest of this assisted flight. After skipping, Retry starts a manual opening eligible for a Δv score. Choose
-        Story flight in setup to use these assists on another opening.</p>
+        and, with relative navigation on, snap to measured bearings. First rescue pauses for one halfway check. In later lessons, choose when to
+        line up a correction. In these lessons, Throw starts or resumes the clock at 1×. Skip coaching gives you single-use tools for
+        the rest of this assisted flight. After skipping, Retry starts a single-use opening eligible for a Δv score. Choose
+        Story flight in setup to use these assists on another opening. Story starts closer to the bars in the four debris-free scenarios.</p>
         <section class="credits" aria-labelledby="creditsTitle">
           <h3 id="creditsTitle">Credits</h3>
           <p>an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere</p>
           <p><a href="mailto:avani@avaninet.com">avani@avaninet.com</a></p>
-          <p>version __VERSION__ - last updated <time id="gameUpdated" datetime="__UPDATE_DATE__">__UPDATE_LABEL__</time></p>
+          <p>version __VERSION__ · last updated <time id="gameUpdated" datetime="__UPDATE_DATE__">__UPDATE_LABEL__</time></p>
         </section>
       </div>
       <div class="dialogFoot">
@@ -446,13 +457,13 @@ __COCKPIT_STYLE__</style>
             <p>Tommi replies in the calm that lies beyond calm: “Copy, Station. Cycling thrusters now.”</p>
             <p>The valves un-stick. The main oxygen supply flows freely. <span id="lossManeuver"></span>
             It reminds her of her tortoiseshell cat Raspberry softly nudging her leg for attention.
-            The commander calls out: “Captain Dylan? I don't know what you did, but it worked. <span id="lossCall"></span>”</p>
-            <p><em>Raspberry, I'm coming home.</em></p>
+            The commander calls out: “Captain Dylan? I don’t know what you did, but it worked. <span id="lossCall"></span>”</p>
+            <p><em>Raspberry, I’m coming home.</em></p>
           </div>
           <div id="collisionEpilogue" hidden>
             <p>A few moments after the heavy hit, Tommi wakes to Commander Bern’s voice in her headset.</p>
             <p>“Tommi? Tommi, are you there? If you can hear me, that hit must have jiggled something loose.”</p>
-            <p>She hears the hiss first. The main oxygen supply is flowing freely again. A tap on the controls brings the stuck thrusters back to life. Tommi eases clear of the wreckage and flies the last few meters straight into Bern’s waiting hands.</p>
+            <p>She hears the hiss first. The main oxygen supply is flowing freely again. A tap on the controls brings the stuck thrusters back to life. Tommi eases clear of the wreckage and steers back to the bars, where Bern reaches out to catch her.</p>
           </div>
         </div>
         <div class="result">

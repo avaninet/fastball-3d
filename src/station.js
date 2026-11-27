@@ -1,3 +1,5 @@
+'use strict';
+
 // Assembly dimensions and attachment map: reference/station-assembly.md.
 const Station = (() => {
   const {dot,sub}=Flight;

@@ -1,3 +1,5 @@
+'use strict';
+
 const FlightLog = (() => {
   const num = value => (+Number(value).toFixed(2)).toString();
   const escape=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;')
@@ -145,6 +147,11 @@ const FlightLog = (() => {
     }
     return '<g class="debrisKey" fill="#d5dcdf" font-size="13">'+rows.join('')+'</g>';
   }
+  const alongTrackLabel='← +Y along track (m)';
+  const projectionLabels={
+    0:{title:'Orbital plane · V-bar / R-bar',vertical:'+X radial out ↑ (m)'},
+    2:{title:'Along-track / cross-track',vertical:'+Z orbit normal ↑ (m)'}
+  };
   function plot(flight,segments,grid,axis,compact=false,tracks=[],crossing=null){
     const {scale,cx,cy,project}=grid;
     const frame=compact?cardFrame:logFrame;
@@ -206,11 +213,11 @@ const FlightLog = (() => {
     }
     const [ex,ey]=point(flight.pos.p);
     svg.push('<path d="M 0 -5 L 5 0 L 0 5 L -5 0 Z" fill="'+color+'" stroke="#172126" transform="translate('+num(ex)+' '+num(ey)+')"/>');
-    if(!compact)svg.push(label(222,271,'← +Y along track (m)'),label(31,11,axis===0?'+X radial out (m) ↑':'+Z orbit normal (m) ↑','start'));
+    if(!compact)svg.push(label(222,271,alongTrackLabel),label(31,11,projectionLabels[axis].vertical,'start'));
     return svg.join('');
   }
   function pane(flight,segments,grid,axis,tracks){
-    const name=axis===0?'Orbital plane · V-bar / R-bar':'Along-track / cross-track';
+    const name=projectionLabels[axis].title;
     return '<figure><figcaption>'+name+'</figcaption><svg viewBox="0 0 430 276" role="img" aria-label="'+name+' flight path, full grab envelope and numbered releases">'+plot(flight,segments,grid,axis,false,tracks)+'</svg></figure>';
   }
 
@@ -261,7 +268,7 @@ const FlightLog = (() => {
   function card(flight,wide=matchMedia('(min-width: 680px)').matches){
     const {segments,closest,tracks}=reconstruct(flight);
     const grid=layout(segments,flight.pose,cardFrame),crossing=projectedPass(flight,segments);
-    const won=flight.done==='capture',name=flight.initial.name??'Random drift',result=outcomes[flight.done];
+    const won=flight.done==='capture',name=flight.initial.name,result=outcomes[flight.done];
     const date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
     const code=Challenge.encode(flight),capture=Readout.capture(flight.soft),aids=Readout.aids(flight);
     const releases=flight.log.releases,records=releases.slice(0,9);
@@ -297,8 +304,7 @@ const FlightLog = (() => {
     }
     content.push(rule(20,chartTop-9,edge));
     for(const axis of [0,2]){
-      const title=axis===0?'Orbital plane · V-bar / R-bar':'Along-track / cross-track';
-      const vertical=axis===0?'+X radial out ↑ (m)':'+Z orbit normal ↑ (m)';
+      const {title,vertical}=projectionLabels[axis];
       const y=chartTop+(axis===0?0:188);
       content.push(`<g class="cardPlot" data-axis="${axis}" transform="translate(${chartX} ${y})">`,
         '<rect width="442" height="180" rx="6" fill="#0c151b" stroke="'+border+'"/>',
@@ -306,7 +312,7 @@ const FlightLog = (() => {
         '<g '+mono+'>'+plot(flight,segments,grid,axis,true,tracks,crossing)+'</g></g>');
     }
     const axisY=chartTop+386;
-    content.push(label(chartX+221,axisY,'← +Y along track (m)',12,muted,middle));
+    content.push(label(chartX+221,axisY,alongTrackLabel,12,muted,middle));
 
     const left=wide?481:20,top=wide?120:axisY+29;
     const statusColor=won?'#b1e8c4':'#ffb29f';
@@ -316,7 +322,7 @@ const FlightLog = (() => {
       label(left,top+77,elapsed,18,ink,mono),label(left+173,top+77,oxygen,18,ink,mono),
       rule(left,top+92,edge),section(left,top+112,'Equipment'),
       label(left,top+133,inventory,15,ink,bold),
-      label(left,top+152,flight.story&&!flight.skippedGuidance?'Auto-reload · '+Readout.count(releases.length,'throw'):budget,13.4,muted),
+      label(left,top+152,flight.story?'Auto-reload · '+Readout.count(releases.length,'throw'):budget,13.4,muted),
       label(left,top+173,aids,13.5,mint),label(left,top+193,pose,13,muted),
       rule(left,top+205,edge),section(left,top+224,'Release record'));
     let y=top+244;

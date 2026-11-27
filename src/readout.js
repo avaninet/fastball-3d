@@ -1,3 +1,5 @@
+'use strict';
+
 const Readout={
   clock(time){
     const seconds=Math.max(0,Math.floor(time+1e-7));
@@ -21,6 +23,7 @@ const Readout={
   aids(flight){
     if(flight.manualThroughout)return 'Manual throughout';
     const aids=[];
+    if(flight.lesson!=null || flight.skippedGuidance)aids.push('Lesson coaching');
     if(flight.usedPreview)aids.push('Preview');
     if(flight.usedCoach)aids.push('Dodgeball Coach');
     if(flight.usedFaceDrift)aids.push('Face drift');

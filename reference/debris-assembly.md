@@ -1,6 +1,6 @@
 # Dodgeball debris assembly
 
-Dimensions are in metres. Both objects use the orbital X (radial), Y (along-track), and Z (orbit-normal) axes. The table gives centres and velocities at separation for the fixed Dodgeball Challenge. Random Dodgeball uses the same shapes and collision boxes. Its starting positions and velocities depend on the seed. See the [eight Random Dodgeball layouts](random-dodgeball-study.md). In Orbital flight, each centre follows its own orbital coast. Both pieces retain their orientation in orbital coordinates when the station is tilted.
+Dimensions are in metres. Both objects use the orbital X (radial), Y (along-track), and Z (orbit-normal) axes. The table gives centres and velocities at separation for the fixed Dodgeball Challenge. Random Dodgeball uses the same shapes and collision boxes. Its starting positions and velocities depend on the seed. See the [eight Random Dodgeball layouts](challenge-catalogs.md). In Orbital flight, each centre follows its own orbital coast. Both pieces retain their orientation in orbital coordinates when the station is tilted.
 
 | Piece | Initial XYZ (m) | Initial velocity XYZ (m/s) | Dimensions |
 | --- | --- | --- | --- |

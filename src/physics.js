@@ -1,3 +1,5 @@
+'use strict';
+
 const Flight = (() => {
   const n = 2 * Math.PI / (92 * 60);
   const oxygenReserve = 600, limit = 0.080, half = [7, 1.6, 7], dryMass = 186;
@@ -246,11 +248,11 @@ const Flight = (() => {
   }
   function opening(index,seed,story){
     if(index===5)return {...manualOpening(named[0]),name:'Random Dodgeball',
-      brief:'The platform took Tommi’s tether anchor with it. Read the drifting cover and frame before choosing a way home.',
-      briefing:'A failed work platform tears away Tommi’s tether anchor. The seed sets the positions and drift of the service cover and bent frame. Find a route around them and back to the bars.'};
+      brief:'The platform takes Tommi’s tether anchor with it. Read the drifting cover and frame before choosing a way home.',
+      briefing:'A platform tears free. Each opening sends its cover and bent frame across a different route home.'};
     if(index===4)return {...manualOpening(named[0]),name:'Dodgeball Challenge',
       brief:'The platform takes Tommi’s tether anchor with it. A loose cover and bent frame cross her path home.',
-      briefing:'An external work platform tears free, taking Tommi’s tether anchor with it. A service cover and a bent equipment frame drift across her route to the grab bars. Her thrusters are stuck. Pick a gap and use the tools to get home.'};
+      briefing:'A service cover and a bent equipment frame cross Tommi’s path. Pick a gap and pitch toward the bars.'};
     const base=index===3?Catalog.drift(seed):named[index];
     return story?base:manualOpening(base);
   }

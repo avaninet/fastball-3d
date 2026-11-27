@@ -1,3 +1,5 @@
+'use strict';
+
 const Replays=(()=>{
   const maxLength=512,parse=Challenge.decode;
   const fragment=replay=>'#seed='+Challenge.encode(replay);

@@ -1,3 +1,5 @@
+'use strict';
+
 // All dimensions are in metres. See reference/debris-assembly.md.
 const Debris = (() => {
   const {add,sub,scale,norm,unit,motion} = Flight;
@@ -241,5 +243,5 @@ const Debris = (() => {
     }
     return null;
   }
-  return {pieces,layoutPieces,layouts,layoutStride,speedBound,suitRadius,padding,warningLead,forecast,avoidance,gapAt};
+  return {pieces,layoutPieces,layouts,layoutStride,speedBound,suitRadius,warningLead,forecast,avoidance,gapAt};
 })();

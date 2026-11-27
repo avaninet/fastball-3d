@@ -1,3 +1,5 @@
+'use strict';
+
 const el=id=>document.getElementById(id), {scale,unit,norm,dot,sub,clamp}=Flight;
 // Gear indices identify physical items in flight records and inventory masks.
 const rackOrder=Flight.gear.map((_,i)=>i).sort((a,b)=>Flight.gear[a].mass-Flight.gear[b].mass);
@@ -32,8 +34,8 @@ function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector
 function writeText(node,text){if(node.textContent!==text)node.textContent=text;}
 function setMsg(msg){writeText(el('message'),msg);}
 function separationBrief(index){
-  return index>=4?'A work platform tore free. Its service cover and bent frame are adrift with Tommi.':
-    "Tommi's tether has parted and the suit thrusters are stuck closed.";
+  return index>=4?'A platform tears free. Tommi drifts with its cover and bent frame.':
+    "Tommi’s tether has parted and the suit thrusters are stuck closed.";
 }
 function stationDirection(){return scale(flight.pos.p,-1);}
 function forecastFrom(anchor,skipInitial){
@@ -81,10 +83,12 @@ function describePreview(preview){
 function currentAids(){
   return {manual:el('manualNav').checked,preview:el('showPreview').checked,coach:el('dodgeCoach').checked};
 }
+function flightAids(index,manual,aids){
+  return {manual,preview:!manual && !!aids.preview,coach:!manual && index>=4 && !!aids.coach};
+}
 function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids(),poseId=0) {
   const sightOnly=lesson===null && !!aids.manual;
-  const startingAids={manual:sightOnly,preview:!sightOnly && !!aids.preview,
-    coach:!sightOnly && index>=4 && !!aids.coach};
+  const startingAids=flightAids(index,sightOnly,aids);
   el('manualNav').checked=sightOnly;
   el('showPreview').checked=startingAids.preview;
   el('dodgeCoach').checked=startingAids.coach;
@@ -95,7 +99,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids()
     index,mode,soft,seed,story,initial,lesson,pose:Flight.poses[poseId],limit:Flight.oxygenReserve,
     sightOnly,manualThroughout:sightOnly,startingAids,usedPreview:startingAids.preview,usedCoach:startingAids.coach,usedFaceDrift:false,
     debrisPieces:index===5?debrisForSeed(seed):index===4?Debris.pieces:null,
-    skippedGuidance:false,checkAt:null,checked:false,stagedPitch:null,
+    skippedGuidance:false,checkAt:null,checked:false,stagedPitch:null,brakeCueHit:null,visorLens:1,
     log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},
     anchor:null,age:0,hitIndex:0,forecast:null,time:0,throws:0,mask:Flight.fullRack,
     objects:[],misses:0,done:'',finishedAt:null
@@ -106,7 +110,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids()
   el('coachControl').hidden=!flight.debrisPieces;
   el('flightDeck').classList.toggle('sightOnly',sightOnly);
   el('manualNavControl').hidden=lesson!==null;
-  el('brief').textContent=sightOnly?separationBrief(index):lesson===0?'Capt. Tommi Dylan (she/they) pitches on Saturdays. Rumor has it she flew the classified “unmanned” X-99 orbital spaceplane. Today her tether snaps and her suit thrusters jam.':initial.brief;
+  el('brief').textContent=sightOnly?separationBrief(index):lessons[lesson]?.brief??initial.brief;
   el('modeTag').textContent=mode;
   el('captureTag').textContent=Readout.capture(soft);
   refreshChallengeTag();
@@ -128,7 +132,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids()
 const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools',overspeed:'Too fast to grab',collision:'Debris collision'};
 function finish(result) {
   running=false;flight.done=result;flight.finishedAt=new Date();invalidateInput();dirty=true;
-  el('retry').querySelector('span').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
+  el('retry').querySelector('span').textContent=flight.skippedGuidance?'Retry single-use opening':'Retry';
   const won=result==='capture',drill=!flight.skippedGuidance&&!flight.log.releases.some(r=>r.tool===4);
   el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
   el('upmassHero').hidden=!(won&&drill);
@@ -137,9 +141,9 @@ function finish(result) {
   clearDebrisBrake();
   const hardGrab=won&&!flight.soft&&norm(flight.pos.v)>2*Flight.limit;
   el('hardGrab').hidden=!hardGrab;
-  el('hardGrab').textContent=hardGrab?'The rail rings through the hull. Tommi shakes out her catching hand.':'';
+  el('hardGrab').textContent=hardGrab?'The catch pulls Tommi’s arm straight. She clips in, then shakes out her catching hand.':'';
   if(won){
-    showRescueCall(flight.initial.name,flight.mode);
+    showRescueCall(flight.initial.name,flight.mode,flight.lesson);
   }else if(result==='collision'){
     el('endCopy').textContent=flight.forecast.debris.hit.body===flight.debrisPieces[1]
       ?'Pack snagged. The bent frame catches Tommi’s life-support pack. She can’t reach the station on reserve oxygen.'
@@ -190,7 +194,7 @@ function advance(dt) {
       else{
         flight.brakeCueHit=entry;
         setClockStop(0);
-        setMsg('Fast approach. Clock returned to 1x for braking.');
+        setMsg('Fast approach. Clock returned to 1× for braking.');
       }
     }
   }
@@ -259,6 +263,17 @@ function updateRecoilReadout(){
   writeText(el('impulseInfo'),selected<0?'No equipment remaining':weightClass(Flight.gear[selected])+' · '+(Flight.impulse(selected,flight.mask)*power/100).toFixed(3)+' m/s recoil'+cue);
 }
 function choose(i){if(canPitch() && (flight.mask&(1<<i))){selected=i;updateRack();}}
+function settleCoast(){
+  // The forecast includes later entries and Orbital slowdowns inside the bars.
+  const hits=flight.forecast.hits;
+  const grab=hits.find(hit=>Flight.canGrab(hit,flight.soft));
+  if(grab?.t===0){finish('capture');return true;}
+  if(!flight.sightOnly && !flight.mask && !grab && !flight.forecast.debris?.hit){
+    const reachesBars=hits.length>0 || Flight.inside(flight.pos.p,flight.pose);
+    finish(reachesBars?'overspeed':'stranded');return true;
+  }
+  return false;
+}
 function throwTool() {
   if(!canPitch())return;
   const epoch=inputEpoch;
@@ -278,14 +293,7 @@ function throwTool() {
     if(rate>1 && hazard && hazard.t<=Debris.warningLead)showDebrisBrake(hazard);
     else setClockStop(0);
   }
-  // The forecast includes later entries and Orbital slowdowns inside the bars.
-  const hits=flight.forecast.hits;
-  const grab=hits.find(hit=>Flight.canGrab(hit,flight.soft));
-  if(grab?.t===0){finish('capture');return;}
-  if(!flight.sightOnly && !flight.mask && !grab && !flight.forecast.debris?.hit){
-    const reachesBars=hits.length>0 || Flight.inside(old.p,flight.pose);
-    finish(reachesBars?'overspeed':'stranded');return;
-  }
+  if(settleCoast())return;
   if(!running)invalidateInput();
   started=true;running=true;
   if(flight.lesson===0&&!flight.checked)scheduleHalfwayCheck();
@@ -312,6 +320,7 @@ function nav(status) {
     const left=Math.max(0,hazard.t-s.age);
     c.textContent=hazard.body.short+' impact in '+clock(Math.ceil(left));c.classList.add('warn');
     a.textContent='Your suit will touch the amber box. The blue cross marks where. Preview a sideways throw or brake to let it pass.';
+    if(!s.mask){a.textContent='The rack is empty. Brace for contact.';return;}
     if(el('dodgeCoach').checked){
       if(!coachCache || s.time-coachCache.time>=4){
         const aim=Debris.avoidance(s.pos,s.mask,s.mode,s.time,s.limit-s.time,{...hazard,t:left},s.debrisPieces,s.pose);
@@ -322,7 +331,7 @@ function nav(status) {
         const [az,elev]=Flight.angles(aim.dir);
         a.textContent=trimHint(aim.dir,yaw,pitch)+' Throw '+Flight.gear[aim.tool].name.toLowerCase()+
           ' at 100%. '+Readout.bearing(az,elev)+'.';
-      }else a.textContent=s.mask?'No clear single throw found by Coach. Try an oblique brake in Preview throw.':'The rack is empty. Brace for contact.';
+      }else a.textContent='No clear single throw found by Coach. Try an oblique brake in Preview throw.';
     }
     return;
   }
@@ -385,14 +394,14 @@ function updateNavigationInstruments() {
   const rr=distance>1e-8?dot(unit(sub(p,bar)),v):0,sp=norm(v);
   writeText(el('range'),distance.toFixed(1));writeText(el('rate'),Readout.signed(rr,3));el('rate').className=rr<0?'good':rr>0?'warn':'';
   writeText(el('speed'),Readout.speed(sp,flight.soft));el('speed').className=flight.soft&&!Flight.softEnough(sp,flight.soft)?'danger':'';
-  const gauge=el('speedGauge'),ceiling=Math.max(.12,Math.ceil(sp/.04)*.04);
+  const gauge=el('speedGauge'),ceiling=Math.max(Flight.captureLimit('firm'),Math.ceil(sp/.04)*.04);
   gauge.style.setProperty('--fill',(100*sp/ceiling)+'%');
   gauge.style.setProperty('--tick',(100*Flight.captureLimit(flight.soft)/ceiling)+'%');
   gauge.classList.toggle('over',flight.soft&&!Flight.softEnough(sp,flight.soft));
   gauge.setAttribute('aria-valuemax',ceiling.toFixed(3));gauge.setAttribute('aria-valuenow',sp.toFixed(3));
   const threshold=flight.soft==='firm'?'Firm limit':flight.soft?'Soft limit':'Reference';
   writeText(el('speedRef'),threshold+' '+Flight.captureLimit(flight.soft).toFixed(3));
-  gauge.setAttribute('aria-valuetext',Readout.speed(sp,flight.soft)+' metres per second. '+threshold+' '+Flight.captureLimit(flight.soft).toFixed(3));
+  gauge.setAttribute('aria-valuetext',Readout.speed(sp,flight.soft)+' meters per second. '+threshold+' '+Flight.captureLimit(flight.soft).toFixed(3));
   for(const [i,axis] of ['X','Y','Z'].entries())writeText(el('vel'+axis),Readout.signed(v[i],4));
   writeText(el('suitMass'),Flight.mass(flight.mask).toFixed(1)+' kg');
   const [az,elv]=Flight.angles(v);
@@ -476,8 +485,8 @@ function recordAidChange(){
   const aids=currentAids();
   flight.usedPreview ||= aids.preview;
   flight.usedCoach ||= !!flight.debrisPieces && aids.coach;
-  if(!started){
-    flight.startingAids={manual:flight.sightOnly,preview:aids.preview,coach:!!flight.debrisPieces&&aids.coach};
+  if(!started && !flight.startingAids.manual && !flight.sightOnly){
+    flight.startingAids=flightAids(flight.index,false,aids);
     refreshChallengeTag();Replays.updateAddress(flight);
   }
   dirty=true;
@@ -489,7 +498,7 @@ el('manualNav').onchange=()=>{
     return;
   }
   flight.sightOnly=enabled;
-  flight.manualThroughout=enabled && (!started || flight.manualThroughout);
+  flight.manualThroughout &&= enabled;
   el('flightDeck').classList.toggle('sightOnly',enabled);
   if(enabled){
     el('showPreview').checked=false;el('dodgeCoach').checked=false;
@@ -498,7 +507,13 @@ el('manualNav').onchange=()=>{
   previewCache=null;coachCache=null;
   el('brief').textContent=enabled?separationBrief(flight.index):flight.initial.brief;
   setMsg(enabled?offlineMessage:'Relative navigation restored.');
-  recordAidChange();updateRack();instruments();paintVisors();
+  dirty=true;
+  if(!enabled && !flight.mask){
+    // Re-evaluate only the coast still ahead when navigation comes back online.
+    reseat(Flight.inside(flight.pos.p,flight.pose) && flight.misses>0);
+    if(settleCoast())return;
+  }
+  updateRack();instruments();paintVisors();
 };
 el('showPreview').onchange=recordAidChange;
 el('dodgeCoach').onchange=()=>{recordAidChange();coachCache=null;nav();};
@@ -669,7 +684,7 @@ function setupRules(){
   const rule=el('captureRule').value,index=Number(setupScenarios.value),manual=el('setupManualNav').checked;
   return {index,seed:setupSeed,poseId:setupPoseId,mode:document.querySelector('input[name=model]:checked').value,
     soft:rule==='firm'?'firm':rule==='soft',story:el('storyMode').checked,
-    startingAids:{manual,preview:!manual && setupAids.preview,coach:!manual && index>=4 && setupAids.coach}};
+    startingAids:flightAids(index,manual,setupAids)};
 }
 function chooseSetupPose(){
   const index=Number(setupScenarios.value),mask=Catalog.mask(index,setupSeed);
@@ -680,12 +695,11 @@ function updateSetup(){
   const rules=setupRules(),{index,seed,poseId,story}=rules;
   const opening=Flight.opening(index,seed,story),pose=Flight.poses[poseId];
   el('randomOrientation').checked=!!poseId;
-  el('orientationNote').textContent=rules.startingAids.manual && poseId?'Station tilt is fixed for this flight.':poseId?pose.label+' · Fixed throughout the flight.':'Select to start the station at a fixed tilt.';
+  el('orientationNote').textContent=rules.startingAids.manual && poseId?'Fixed tilt.':poseId?pose.label:'Start at a fixed tilt.';
   el('seed').value=Challenge.encode(rules);el('seed').removeAttribute('aria-invalid');
   el('reroll').hidden=!isSeeded(index)&&!poseId;
   el('setupBrief').textContent=rules.startingAids.manual?separationBrief(index):(opening.briefing??opening.brief);
-  el('storyNote').textContent=rules.startingAids.manual?'Tools reload. Aim while paused. Drift scenarios start closer to the bars.':
-    'Tools reload. Aim while paused, or use Face station and Face away. Drift scenarios start closer to the bars.';
+
   if(rules.startingAids.manual){
     el('seedPreview').textContent='';
   }else if(index===5){
@@ -707,7 +721,9 @@ function loadSetupSeed(){
   const r=Challenge.decode(el('seed').value);
   if(r){applySetup(r);return r;}
   el('seed').setAttribute('aria-invalid','true');
-  el('seedPreview').textContent='Unknown challenge. Check the full code, including its last character, or generate a new opening.';
+  el('seedPreview').textContent=Challenge.isLegacy(el('seed').value)
+    ?'This opening is from an earlier version. Choose a scenario to start a new flight.'
+    :'Unknown challenge. Check the full code, including its last character, or generate a new opening.';
   el('seed').focus();return null;
 }
 function openSetup(){

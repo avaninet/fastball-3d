@@ -8,6 +8,8 @@ In the fixed Dodgeball Challenge, throw the spare battery at 95% at separation. 
 
 In a separate Chromium run, the original build (`beda791`) reversed the first visible violet arrowhead by more than 150° on 13 forward and 24 aft transitions in one real second of Orbital flight. In Straight-Line, the preview switched between its end-on diamond and an arrowhead 23 times forward and 18 times aft. The rebuilt game produced zero reversals or glyph switches in those windows at 1×, 10×, 20× and 30×.
 
+The DB2 seed below identifies the historical benchmark. For a current near-frame opening, load `F1B-5001GZ`. Its debris state can differ from the benchmark.
+
 ## Forecast cost
 
 Chromium 148 ran on Windows with a 390 × 844 CSS-pixel viewport, a device pixel ratio of 2 and DevTools CPU throttling. These timings characterize the tested browser and host. Physical mobile hardware can have different CPU, GPU and thermal limits.

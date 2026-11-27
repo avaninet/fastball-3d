@@ -735,10 +735,11 @@ input[type=radio],input[type=checkbox] {
   line-height: 1.45;
 }
 
-/* New flight keeps its action row visible when seed details need to scroll. */
+/* Keep the launch controls reachable even with magnification or the on-screen keyboard. */
 #setup {
   --setup-gap: 32px;
-  width: min(calc(100% - var(--setup-gap)),620px);
+  width: min(calc(100% - var(--setup-gap)),660px);
+  max-width: calc(100% - var(--setup-gap));
   max-height: calc(100dvh - var(--setup-gap));
   overflow: hidden;
 }
@@ -759,15 +760,42 @@ input[type=radio],input[type=checkbox] {
 #setup .dialogHead { margin-bottom: 10px; padding-bottom: 8px; }
 #setup .dialogHead h2 { margin: 0; line-height: 1.15; }
 #setup .dialogFoot { flex: none; padding: 9px 24px; }
-#setup .rowLabel { margin-block: 10px 4px; }
-#setup .modePick label { display: flex; align-items: center; gap: 7px; }
+#setup .rowLabel { margin: 0; }
+.setupRow,#seedGroup {
+  display: grid;
+  grid-template-columns: max-content minmax(0,1fr);
+  align-items: center;
+  gap: 5px 12px;
+}
+.setupRow { grid-template-columns: 96px minmax(0,1fr); margin-top: 6px; }
+#setup :is(select,.seedInput) { height: 34px; padding-block: 3px; }
+#seedGroup .seedInput { max-width: 22ch; }
+#setup .modePick label { display: flex; align-items: center; gap: 7px; padding: 5px 8px; min-height: 32px; }
+#setup .seedActions,#seedPreview { grid-column: 1 / -1; }
+#setup .seedActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 9px;
+  color: var(--action-color);
+  border-color: color-mix(in srgb,var(--action-color) 62%,var(--panel));
+  background: color-mix(in srgb,var(--action-color) 8%,var(--panel));
+}
+#setup .seedActions button:hover { background: color-mix(in srgb,var(--action-color) 20%,var(--panel)); border-color: var(--action-color); }
+#loadSeed { --action-color: #a4ddff; }
+#reroll { --action-color: var(--gold); }
+#copyCode { --action-color: #e6c5ff; }
+#copySetupSeed { --action-color: var(--green); }
 #setup .modePick input { margin: 0; }
-#setup .challenge { margin: 10px 0 0; }
+#setup .challenge { margin: 7px 0 0; }
 #setup .challenge input { flex: none; margin: 3px 0 0; }
 #setup .challenge small { font-size: 13px; line-height: 1.4; }
 #seedGroup { margin: 8px 0 10px; }
-#setup .seedActions { margin-block: 5px; }
-#setup #seedPreview { margin: 5px 0 0; overflow-wrap: anywhere; font-size: 13px; }
+#setup .seedActions { margin: 0; }
+#setup #seedPreview { margin: 0; overflow-wrap: anywhere; font-size: 13px; }
+
+#setup #seedPreview:empty { display: none; }
 
 .scenarioSprites { position: absolute; overflow: hidden; pointer-events: none; }
 #scenario { min-width: 0; margin: 0; padding: 0; border: 0; }
@@ -842,11 +870,96 @@ input[type=radio],input[type=checkbox] {
 .scenarioTile:has(:checked) .scenarioCaption { color: #ffd390; }
 
 @media (max-width:560px) {
-  #setup { --setup-gap: 18px; }
-  #setupBody,#setup .dialogFoot { padding-inline: 14px; }
   .scenarioGrid { gap: 6px; }
   .scenarioCaption { padding: 4px 3px; font-size: 12.5px; }
   .scenarioTile:has(:checked)::after { width: 12px; height: 12px; top: 3px; right: 3px; }
+  .setupRow { grid-template-columns: max-content minmax(0,1fr); gap: 6px; }
+  #setup .seedActions { display: grid; grid-template-columns: minmax(0,.83fr) minmax(0,1.17fr); }
+  #setup .seedActions button { justify-content: flex-start; }
+  #setup .modePick label { font-size: 13px; }
+}
+
+@media (min-width:500px) and (max-height:740px) {
+  #setup { --setup-gap: 10px; width: min(calc(100% - var(--setup-gap)),940px); }
+  #setupBody {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 5px 14px;
+    padding: 6px 12px;
+  }
+  #setup .dialogHead,.setupOptions { grid-column: 1 / -1; }
+  .setupScenarios,.setupSettings { min-width: 0; }
+  #setup .dialogHead { margin: 0; padding-bottom: 3px; }
+  .scenarioGrid { gap: 4px; }
+  .scenarioArt svg { max-height: clamp(22px,8dvh,56px); }
+  .scenarioCaption { padding: 2px; font-size: 12px; }
+  #setupBrief,#setup #seedPreview { font-size: 12px; line-height: 1.25; }
+  #setupBrief { margin: 4px 0 0; }
+  #seedGroup { margin: 0; gap: 4px 6px; }
+  #setup .seedActions { display: grid; grid-template-columns: minmax(0,.82fr) minmax(0,1.18fr); gap: 4px; }
+  #setup .seedActions button { min-height: 28px; padding: 3px 5px; }
+  #setup .setupRow { grid-template-columns: max-content minmax(0,1fr); gap: 6px; }
+  #setup .modePick { grid-template-columns: max-content minmax(0,1fr); }
+  #setup .modePick label { white-space: nowrap; font-size: 12px; gap: 3px; padding: 2px 4px; min-height: 28px; }
+  #setup :is(select,.seedInput) { height: 28px; font-size: 13px; }
+  .setupOptions { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+  #setup .challenge { margin: 0; font-size: 13px; }
+  #setup .challenge small { font-size: 12px; line-height: 1.25; }
+  #setup .dialogFoot { padding: 4px 12px; }
+}
+
+html:has(#setup[open]) { overflow: hidden; }
+
+@media (max-width:680px) and (min-height:501px), (max-width:499px) {
+  #setup { --setup-gap: 10px; }
+  #setupBody { padding: 8px 10px; }
+  #setup .dialogHead { margin-bottom: 6px; padding-bottom: 4px; }
+  #setup .dialogFoot { padding: 5px 10px; }
+  #setupBrief { font-size: 13px; margin-block: 4px; line-height: 1.3; }
+  #seedGroup { margin-block: 5px; }
+  #setup .seedActions button { font-size: 12px; padding-inline: 5px; }
+  .scenarioArt svg { max-height: 38px; }
+  .modePick { grid-template-columns: auto 1fr; }
+  #setup .modePick label { white-space: nowrap; }
+  #setup .challenge small { line-height: 1.22; font-size: 12px; }
+}
+@media (max-width:599px) and (min-height:501px) and (max-height:700px) {
+  #setup { --setup-gap: 4px; }
+  #setupBody { padding: 4px 7px; }
+  #setup .rowLabel { font-size: 12px; }
+  #setup .setupRow { margin-top: 3px; }
+  #setupBrief,#setup #seedPreview { font-size: 12px; line-height: 1.15; }
+  .scenarioGrid { gap: 3px; }
+  .scenarioArt svg { max-height: 25px; }
+  .scenarioCaption { padding: 2px; line-height: 1.1; font-size: 12px; }
+  #setup .challenge { margin-top: 3px; font-size: 13px; line-height: 1.15; }
+  #setup .challenge small { display: inline; margin-left: 4px; }
+  #setup .seedActions { gap: 3px; }
+  #setup .seedActions button,#setup .modePick label { min-height: 26px; padding-block: 2px; }
+  #setup :is(select,.seedInput) { height: 28px; padding-block: 2px; font-size: 13px; }
+  #setup .dialogFoot { padding-block: 3px; }
+}
+@media (min-width:500px) and (max-height:380px) {
+  #setup { --setup-gap: 4px; }
+  #setupBody { grid-template-columns: minmax(0,.85fr) minmax(0,1fr); gap: 4px 8px; padding: 3px 7px; }
+  #setup .dialogHead { padding-bottom: 2px; }
+  #setup .dialogHead h2 { font-size: 20px; }
+  #setup .x { min-height: 26px; }
+  #setup .rowLabel { font-size: 12px; }
+  #setup .seedActions button { font-size: 12px; gap: 4px; }
+  #setup .setupRow { margin-top: 3px; }
+  #setup .challenge { gap: 4px; font-size: 12px; line-height: 1.2; }
+  #setup .dialogFoot { padding-block: 3px; }
+  #setup .dialogFoot button { min-height: 28px; padding-block: 3px; font-size: 13px; }
+}
+@media (min-width:500px) and (max-height:350px) {
+  #setup .x { width: 26px; height: 26px; line-height: 1; }
+  #setup .seedActions button { min-height: 25px; }
+  #setupBrief,#setup #seedPreview { line-height: 1.15; }
+  .scenarioArt svg { max-height: 18px; }
+  #setup .scenarioCaption { line-height: 1.1; }
+  .setupOptions { grid-template-columns: 1.13fr 1fr 1fr; }
+  #setup .challenge small { display: inline; margin-left: 3px; line-height: 1.15; }
 }
 
 @media (forced-colors:active) {
@@ -2187,7 +2300,7 @@ main {
     padding-inline: 3px;
   }
   .clockSlider {
-    width: 110px;
+    width: 120px;
   }
   .flightHead h1 {
     font-size: 16px;
@@ -2225,4 +2338,29 @@ main {
   .metrics { display: flex; flex-direction: column; }
   .previewControl { order: -1; padding-inline: 3px; }
   .previewControl label { gap: 4px; }
+}
+
+/* Keep coast advice within reach on a landscape phone, even with all three switches. */
+@media (min-width:600px) and (max-height:500px) {
+  .metrics { display: flex; flex-direction: column; }
+  .hudStage .metrics { align-self: stretch; contain: size; max-height: none; }
+  .metrics > *, .navToggles { flex: none; }
+  .previewControl { display: contents; }
+  .coastPanel { order: -2; }
+  .navToggles { order: -1; }
+  .coastPanel .driftData { gap: 0 3px; padding-top: 0; }
+  .metricStrip .metric :is(strong,small) { display: inline; }
+  .metricStrip .metric strong { line-height: 1.15; }
+  .metricStrip .metric small { white-space: nowrap; }
+  .navToggles { display: flex; justify-content: space-between; gap: 2px; padding-inline: 4px; }
+  .navToggles label { gap: 3px; font-size: 12px; }
+  .navToggles .toggleQualifier { display: none; }
+  .previewControl output { order: 1; padding-inline: 6px; }
+  .velocity { order: 2; }
+}
+
+@media (min-width:600px) and (max-width:760px) and (max-height:400px) {
+  #lesson:not([hidden]) { display: flex; flex-direction: column; }
+  #lesson .heading,#lessonAction { flex: none; }
+  #lessonCue { overflow-y: auto; min-height: 0; }
 }

@@ -157,7 +157,7 @@ for(const story of [false,true]){
   const generated=Array.from({length:128},(_,i)=>F.opening(3,i*32,story));
   print(story?'Story geometry':'Manual geometry',geometry(generated));
   for(const mode of ['Straight-Line','Orbital'])for(const soft of [false,true]){
-    const label=[story?'Story':'Manual',mode,soft?'soft':'any'].join(' ');
+    const label=[story?'Story':'Single-use',mode,soft?'soft':'any'].join(' ');
     const result=stats(generated,mode,soft,600,story);
     print(label+' curated rows',result);
     print(label+' named',named.map(s=>({name:s.name,...stats([s],mode,soft,600,story)})));

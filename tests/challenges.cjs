@@ -20,11 +20,20 @@ assert.equal(code,'F1B-5011G7');
 assert.deepEqual(Challenge.decode('https://example.test/#seed='+code.toLowerCase()),example);
 assert.deepEqual(Challenge.decode('https://example.test/'+'long/'.repeat(120)+'#seed='+code),example);
 assert.deepEqual(Challenge.decode('Flight card '.repeat(60)+'\n#seed='+code),example);
+assert.deepEqual(Challenge.decode('Try F1B-5OILG7.'),example);
+assert.deepEqual(Challenge.decode('F1B-5011G7.'),example);
 for(const bad of ['F1B-5011G8','F2B-5011G7','F1B-5011','DB2-00500007',
-  Challenge.encode({...example,index:4}),Challenge.encode({...example,poseId:17}),
-  Challenge.encode({...example,seed:4096}),Challenge.encode({...example,index:3,startingAids:{coach:true}})]){
+  'F1C-5011GT','F1B-5013GT','F1B-8011GT','F1D-5011HN','F2B-5011J1']){
   assert.equal(Challenge.decode(bad),null,bad);
 }
+for(const override of [{index:6},{index:4},{poseId:17},{seed:4096},{seed:-1},
+  {index:3,startingAids:{coach:true}},{mode:'unknown'},{soft:'soft'}]){
+  assert.throws(()=>Challenge.encode({...example,...override}),RangeError);
+}
+for(const legacy of ['#seed=E-12&level=Orbital','DB2-00500007','DB1-00000000','D-F0','FE3']){
+  assert.equal(Challenge.isLegacy(legacy),true);
+}
+for(const modern of [code,'F1B-5011G8','D-123456789'])assert.equal(Challenge.isLegacy(modern),false);
 
 // Both versions address the same catalog rows. F2 selects a sight-only start.
 for(const index of [0,1,2,3,4,5])for(const story of [false,true]){
@@ -33,7 +42,7 @@ for(const index of [0,1,2,3,4,5])for(const story of [false,true]){
   const encoded=Challenge.encode(manual);
   assert.match(encoded,/^F2/);
   assert.deepEqual(Challenge.decode('#seed='+encoded),manual);
-  assert.equal(Challenge.decode(Challenge.encode({...manual,startingAids:{manual:true,preview:true}})),null);
+  assert.throws(()=>Challenge.encode({...manual,startingAids:{manual:true,preview:true}}),RangeError);
 }
 let codes=0;
 for(let index=0;index<6;index++){
@@ -44,7 +53,7 @@ for(let index=0;index<6;index++){
     for(const pose of F.poses){
       const entry={index,seed,poseId:pose.id,mode:'Straight-Line',soft:false,story:false,startingAids:{preview:false,coach:false}};
       if(pose.id && !(mask&(1<<(pose.id-1)))){
-        assert.equal(Challenge.decode(Challenge.encode(entry)),null);
+        assert.throws(()=>Challenge.encode(entry),RangeError);
         continue;
       }
       for(const mode of modes)for(const soft of [false,'firm',true])for(const story of [false,true])
