@@ -35,7 +35,7 @@
     }
   }
   function configure(index,mode,soft=false,story=false){
-    click('new');el('scenario').value=index;el('scenario').dispatchEvent(new Event('change'));
+    click('new');click('pick-'+index);
     document.querySelector('input[name=model][value="'+mode+'"]').checked=true;
     el('soft').checked=soft;if(index===3)el('seed').value='00019919';
     el('storyMode').checked=story;el('setupForm').requestSubmit();
@@ -1354,10 +1354,28 @@
     eq(['presumed lost','Newton’s third law','wrench','pushes you back','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
     eq(['Saturdays','Rumor','X-99'].every(s=>el('brief').textContent.includes(s)),'character in opening');
   });
+  test('New flight keeps the scenario grid and launch controls usable',()=>{
+    click('new');
+    const radios=Array.from(document.querySelectorAll('#scenario input[type=radio]'));
+    eq(radios.map(r=>r.value).join()==='0,1,3,2,4,5','six scenarios in row order');
+    const boxes=radios.map(r=>r.closest('label').getBoundingClientRect());
+    eq(boxes[0].top===boxes[2].top && boxes[3].top===boxes[5].top && boxes[3].top>boxes[0].bottom,'two distinct rows');
+    eq(boxes[2].left>boxes[1].left && boxes[1].left>boxes[0].left && boxes[2].left===boxes[5].left,'random scenarios share the right column');
+    click('pick-3');keys('ArrowDown',false,el('pick-3'));
+    eq(el('pick-5').checked && document.activeElement===el('pick-5'),'down selects and focuses Random Dodgeball');
+    const seed=el('seed').value;
+    click('pick-5');keys('Enter',false,el('pick-5'));
+    eq(el('setup').open && el('seed').value===seed,'reselecting keeps the generated seed');
+    const body=el('setupBody'),launch=el('setupForm').querySelector('[type=submit]');
+    const before=launch.getBoundingClientRect();
+    eq(before.top>=body.getBoundingClientRect().bottom-1 && before.bottom<=innerHeight,'launch visible with seed controls expanded');
+    body.scrollTop=body.scrollHeight;
+    close(launch.getBoundingClientRect().top,before.top,.5);
+    keys('Home',false,el('pick-5'));eq(el('pick-0').checked && el('seedGroup').hidden,'Home restores the fixed opening');
+  });
   test('Dodgeball setup, prediction, coach, clock protection and collision ending',()=>{
     click('new');
-    eq(Array.from(el('scenario').options,o=>o.value).join()==='0,1,2,4,3,5','fixed and seeded scenario ordering');
-    el('scenario').value='4';updateSetup();
+    click('pick-4');
     eq(el('seedGroup').hidden && el('setupBrief').textContent.includes('bent equipment frame'),'incident briefing');
     el('setup').close();
     for(const mode of ['Straight-Line','Orbital']){
@@ -1443,16 +1461,16 @@
   });
   test('Random Dodgeball seed entry, scenario switching and rule-preserving replay',()=>{
     const code='DB1-007C5282';
-    click('new');el('scenario').value='5';el('scenario').dispatchEvent(new Event('change'));
-    eq(seedScenario(el('seed').value)===5 && !!Replays.parse(el('seed').value),'switching the menu generates a catalog seed');
+    click('new');click('pick-5');
+    eq(seedScenario(el('seed').value)===5 && !!Replays.parse(el('seed').value),'selecting Random Dodgeball generates a catalog seed');
     click('reroll');eq(el('seed').value.startsWith('DB2-') && approvedDodgeballSeeds.has(parseInt(el('seed').value.slice(4),16)),'rolled seed is a qualified DB2 opening');
     for(const drift of ['D-00019919','E-00019919','00019919']){
-      set('seed',drift);eq(el('scenario').value==='3','drift code changes the menu');
-      set('seed',code.toLowerCase());eq(el('scenario').value==='5' && el('seed').value===code,'Dodgeball code changes the menu');
+      set('seed',drift);eq(el('pick-3').checked,'drift code selects Random Drift');
+      set('seed',code.toLowerCase());eq(el('pick-5').checked && el('seed').value===code,'Dodgeball code selects Random Dodgeball');
     }
     el('seed').value='DB1-FFFFFFFF';el('setupForm').requestSubmit();
     eq(el('setup').open && el('seed').getAttribute('aria-invalid')==='true','unknown DB1 code stays in setup');
-    el('scenario').value='3';el('seed').value='#seed='+code+'&level=Orbital&goal=soft&story=1';
+    click('pick-3');el('seed').value='#seed='+code+'&level=Orbital&goal=soft&story=1';
     el('setupForm').requestSubmit();
     eq(flight.index===5 && flight.story && flight.soft && flight.mode==='Orbital','submit imports scenario and rules together');
     eq(!el('seedTag').hidden && !el('coachControl').hidden,'seeded debris cockpit');
@@ -1470,7 +1488,7 @@
       const id=dodgeballSeeds.find(seed=>Math.floor(seed/Debris.layoutStride)===i);
       const code='DB2-'+hex(id),expected=Debris.layoutPieces(id);
       click('new');set('seed',code.toLowerCase());
-      eq(el('scenario').value==='5' && el('seedPreview').textContent.includes(layout.name),'layout named in setup');
+      eq(el('pick-5').checked && el('seedPreview').textContent.includes(layout.name),'layout named in setup');
       el('setupForm').requestSubmit();
       eq(flight.seed===code && flight.index===5,'launched selected layout');
       const w=visor.clientWidth,h=visor.clientHeight,cam=Visor.camera(flight.pos.p,yaw,pitch,w,h,false,true,flight.visorLens);

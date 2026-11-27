@@ -65,7 +65,7 @@ const Replays=(()=>{
     }else{
       if(!flight)start(0,'Straight-Line',false);
       updateAddress(flight); // Cancel keeps the current flight and its address.
-      openSetup();el('scenario').value=replay?String(seedScenario(replay.seed)):/#seed=DB[12]-/i.test(hash)?'5':'3';
+      openSetup();setupScenarios.value=replay?String(seedScenario(replay.seed)):/#seed=DB[12]-/i.test(hash)?'5':'3';
       el('seed').value=hash.length<=maxLength?hash:'';updateSetup();loadSetupSeed();
     }
     return true;

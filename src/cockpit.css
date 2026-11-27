@@ -731,7 +731,127 @@ input[type=radio],input[type=checkbox] {
 }
 
 #setupBrief {
-  margin-top: 7px;
+  margin: 7px 0 9px;
+  line-height: 1.45;
+}
+
+/* New flight keeps its action row visible when seed details need to scroll. */
+#setup {
+  --setup-gap: 32px;
+  width: min(calc(100% - var(--setup-gap)),620px);
+  max-height: calc(100dvh - var(--setup-gap));
+  overflow: hidden;
+}
+
+#setupForm {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - var(--setup-gap) - 2px);
+}
+
+#setupBody {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 24px 12px;
+}
+
+#setup .dialogHead { margin-bottom: 10px; padding-bottom: 8px; }
+#setup .dialogHead h2 { margin: 0; line-height: 1.15; }
+#setup .dialogFoot { flex: none; padding: 9px 24px; }
+#setup .rowLabel { margin-block: 10px 4px; }
+#setup .modePick label { display: flex; align-items: center; gap: 7px; }
+#setup .modePick input { margin: 0; }
+#setup .challenge { margin: 10px 0 0; }
+#setup .challenge input { flex: none; margin: 3px 0 0; }
+#setup .challenge small { font-size: 13px; line-height: 1.4; }
+#seedGroup { margin: 8px 0 10px; }
+#setup .seedActions { margin-block: 5px; }
+#setup #seedPreview { margin: 5px 0 0; overflow-wrap: anywhere; font-size: 13px; }
+
+.scenarioSprites { position: absolute; overflow: hidden; pointer-events: none; }
+#scenario { min-width: 0; margin: 0; padding: 0; border: 0; }
+#scenario .rowLabel { padding: 0; margin: 0 0 6px; }
+.scenarioGrid {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  grid-template-rows: repeat(2,1fr);
+  gap: 6px 8px;
+}
+
+.scenarioTile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: #20282d;
+  border: 1px solid #455159;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.scenarioTile input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.scenarioTile:hover { border-color: #899b9f; background: #283137; }
+.scenarioTile:has(:checked) {
+  border-color: var(--gold);
+  background: #383028;
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+.scenarioTile:has(:focus-visible) { outline: 2px solid #fff3d8; outline-offset: 2px; }
+.scenarioTile:has(:checked)::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 8 2.5 2.5L12 5' fill='none' stroke='%23282014' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat;
+  pointer-events: none;
+}
+
+.scenarioArt {
+  display: block;
+  background: linear-gradient(155deg,#1f303c,#101b23 68%);
+  border-bottom: 1px solid #ffffff0d;
+}
+#pick-3 + .scenarioArt,#pick-5 + .scenarioArt { background: linear-gradient(150deg,#203937,#111f24 76%); }
+#pick-4 + .scenarioArt { background: linear-gradient(150deg,#353330,#1c2229 74%); }
+.scenarioArt svg { display: block; width: 100%; height: auto; max-height: clamp(40px,8dvh,58px); }
+.scenarioCaption {
+  flex: 1;
+  display: grid;
+  align-content: center;
+  padding: 5px 6px;
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 650;
+  text-align: center;
+}
+.scenarioTile:has(:checked) .scenarioCaption { color: #ffd390; }
+
+@media (max-width:560px) {
+  #setup { --setup-gap: 18px; }
+  #setupBody,#setup .dialogFoot { padding-inline: 14px; }
+  .scenarioGrid { gap: 6px; }
+  .scenarioCaption { padding: 4px 3px; font-size: 12.5px; }
+  .scenarioTile:has(:checked)::after { width: 12px; height: 12px; top: 3px; right: 3px; }
+}
+
+@media (forced-colors:active) {
+  .scenarioTile:has(:checked) { border: 2px solid Highlight; }
+  .scenarioTile:has(:focus-visible) { outline: 2px dashed Highlight; }
 }
 
 #seed[aria-invalid=true] {

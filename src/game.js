@@ -570,6 +570,7 @@ function pauseForModal(d){
   if(el('debrief').open)el('debrief').close();
   d.showModal();updateRack();
 }
+const setupScenarios=el('setupForm').elements.namedItem('scenarioChoice');
 function setupRules(){
   return {mode:document.querySelector('input[name=model]:checked').value,soft:el('soft').checked,story:el('storyMode').checked};
 }
@@ -593,33 +594,48 @@ function loadSetupSeed(){
     input.setAttribute('aria-invalid','true');input.focus();return null;
   }
   input.removeAttribute('aria-invalid');input.value=seedLabel(replay.seed);
-  el('scenario').value=String(seedScenario(replay.seed));updateSetup();
+  setupScenarios.value=String(seedScenario(replay.seed));updateSetup();
   document.querySelector('input[name=model][value="'+replay.mode+'"]').checked=true;
   el('soft').checked=replay.soft;el('storyMode').checked=replay.story;
   previewSeed(replay);return replay;
 }
 function updateSetup() {
-  const idx=Number(el('scenario').value),isRandom=isSeeded(idx);
+  const idx=Number(setupScenarios.value),isRandom=isSeeded(idx);
   el('seedGroup').hidden=!isRandom;el('seed').required=isRandom;el('seed').disabled=!isRandom;
   const opening=idx===3?null:Flight.opening(idx,0,true);
   el('setupBrief').textContent=opening?(opening.briefing??opening.brief):'Share the opening and flight rules with a friend, or load their replay.';
 }
 function openSetup(){
-  el('scenario').value=String(flight.index);el('seed').value=isSeeded(flight.index)?seedLabel(flight.seed):'';
+  setupScenarios.value=String(flight.index);el('seed').value=isSeeded(flight.index)?seedLabel(flight.seed):'';
   document.querySelector('input[name=model][value="'+flight.mode+'"]').checked=true;
   el('soft').checked=flight.soft;el('storyMode').checked=flight.story;updateSetup();
   if(isSeeded(flight.index)){
     el('seed').removeAttribute('aria-invalid');previewSeed(flight);
   }
   pauseForModal(el('setup'));
+  el('setupBody').scrollTop=0;
 }
 el('new').onclick=openSetup;el('again').onclick=openSetup;el('manual').onclick=()=>pauseForModal(el('guide'));
 function generateSetupSeed(){
-  el('seed').value=randomSeed(Number(el('scenario').value));loadSetupSeed();
+  el('seed').value=randomSeed(Number(setupScenarios.value));loadSetupSeed();
 }
 el('scenario').onchange=()=>{
   updateSetup();
   if(!el('seedGroup').hidden)generateSetupSeed();
+};
+el('scenario').onkeydown=e=>{
+  // Native Left/Right and Space already select radios. Up/Down keep the grid column.
+  const choices=Array.from(setupScenarios),current=choices.indexOf(e.target);
+  if(current<0)return;
+  let next;
+  switch(e.key){
+    case 'ArrowUp': case 'ArrowDown': next=(current+3)%choices.length;break;
+    case 'Home': next=0;break;
+    case 'End': next=choices.length-1;break;
+    case 'Enter': next=current;break;
+    default: return;
+  }
+  e.preventDefault();choices[next].focus();choices[next].click();
 };
 el('reroll').onclick=generateSetupSeed;
 el('loadSeed').onclick=loadSetupSeed;
@@ -645,7 +661,7 @@ function launchFlight(index,mode,soft,seed,story,lesson=null){
 }
 el('setupForm').onsubmit=e=>{
   e.preventDefault();
-  const index=Number(el('scenario').value);
+  const index=Number(setupScenarios.value);
   const replay=isSeeded(index)?loadSetupSeed():{...setupRules(),seed:0};
   if(!replay)return;
   const {mode,soft,seed,story}=replay;

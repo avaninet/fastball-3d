@@ -9,6 +9,7 @@ let page = read('src/visor.html', 'utf8');
 const version = require('../package.json').version.replace(/\.0$/, '');
 page = page.replaceAll('__VERSION__', version);
 const parts = {
+  SCENARIO_SPRITES: read('assets/scenario-sprites.svg', 'utf8').trimEnd(),
   READOUT: read('src/readout.js', 'utf8'),
   MAIN: read('src/main.js', 'utf8'),
   COCKPIT_STYLE: read('src/cockpit.css', 'utf8'),

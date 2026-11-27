@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg">
     <meta name="twitter:image:alt" content="Fastball 3D mission patch and title beside a visor view of a yellow power drill floating toward the space station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-FdJzErTWPVBJ9U0Qmz0eMYhuBJECI4cYLJivTUGsZMA=' 'sha256-Ek9ifQVq0P+p2vjpWiqEW8Z5C64aK4pFxp0kY6QpLrg=' 'sha256-/XXf4/w6tCbRUX6T4EDrmTavt/iDfI12yks7GzXfVVo=' 'sha256-C1OrisqYuTWwRLc/30HCqBIfdpMmEDEVh38z/6XiW6k=' 'sha256-uKXatXnheu6WoBLkqo9bVUol4Zmjgo6+cL24jRJAZsE=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-jDvYC4Hl8PZilJERnvEePSrIjZVFiG2oc3yahsIRm3Q=' 'sha256-WzsLJbZjJZLvGmGaInwJ9cgSEwq9HMnM0YrMP0QpIGM=' 'sha256-dplZu9Z6kqTn/TjOC9HkyUAAhDmada9jZUdCsxCIBKw=' 'sha256-mi4YEMgfha6KTIyE8lNLB9L7XjyAsQk0oeOyiU9SSm8=' 'sha256-09Y75/+8WYuGCysil/LZhG4htI9TdjN0/u1axwW0P0s=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-xtXaUXJXm6IpS2vDGVIhf41Rdam16Wqahc+dOMyNJH0='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-FdJzErTWPVBJ9U0Qmz0eMYhuBJECI4cYLJivTUGsZMA=' 'sha256-Ek9ifQVq0P+p2vjpWiqEW8Z5C64aK4pFxp0kY6QpLrg=' 'sha256-/XXf4/w6tCbRUX6T4EDrmTavt/iDfI12yks7GzXfVVo=' 'sha256-C1OrisqYuTWwRLc/30HCqBIfdpMmEDEVh38z/6XiW6k=' 'sha256-uKXatXnheu6WoBLkqo9bVUol4Zmjgo6+cL24jRJAZsE=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-jDvYC4Hl8PZilJERnvEePSrIjZVFiG2oc3yahsIRm3Q=' 'sha256-lkfmlM81EZmRv5BAUUA6157FYPz1vdc/pgp3H3k2g20=' 'sha256-dplZu9Z6kqTn/TjOC9HkyUAAhDmada9jZUdCsxCIBKw=' 'sha256-VW6XHW6MaHx2m96PwTkIAzqORuLdBDMO5yq8fsOlXvg=' 'sha256-09Y75/+8WYuGCysil/LZhG4htI9TdjN0/u1axwW0P0s=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-8QgrahPA6onyFZeF448WrUq8Camb+SL42skfZ7g6z4c='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.4 · EVA return simulator</title>
@@ -759,7 +759,127 @@ input[type=radio],input[type=checkbox] {
 }
 
 #setupBrief {
-  margin-top: 7px;
+  margin: 7px 0 9px;
+  line-height: 1.45;
+}
+
+/* New flight keeps its action row visible when seed details need to scroll. */
+#setup {
+  --setup-gap: 32px;
+  width: min(calc(100% - var(--setup-gap)),620px);
+  max-height: calc(100dvh - var(--setup-gap));
+  overflow: hidden;
+}
+
+#setupForm {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - var(--setup-gap) - 2px);
+}
+
+#setupBody {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 24px 12px;
+}
+
+#setup .dialogHead { margin-bottom: 10px; padding-bottom: 8px; }
+#setup .dialogHead h2 { margin: 0; line-height: 1.15; }
+#setup .dialogFoot { flex: none; padding: 9px 24px; }
+#setup .rowLabel { margin-block: 10px 4px; }
+#setup .modePick label { display: flex; align-items: center; gap: 7px; }
+#setup .modePick input { margin: 0; }
+#setup .challenge { margin: 10px 0 0; }
+#setup .challenge input { flex: none; margin: 3px 0 0; }
+#setup .challenge small { font-size: 13px; line-height: 1.4; }
+#seedGroup { margin: 8px 0 10px; }
+#setup .seedActions { margin-block: 5px; }
+#setup #seedPreview { margin: 5px 0 0; overflow-wrap: anywhere; font-size: 13px; }
+
+.scenarioSprites { position: absolute; overflow: hidden; pointer-events: none; }
+#scenario { min-width: 0; margin: 0; padding: 0; border: 0; }
+#scenario .rowLabel { padding: 0; margin: 0 0 6px; }
+.scenarioGrid {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  grid-template-rows: repeat(2,1fr);
+  gap: 6px 8px;
+}
+
+.scenarioTile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: #20282d;
+  border: 1px solid #455159;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.scenarioTile input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.scenarioTile:hover { border-color: #899b9f; background: #283137; }
+.scenarioTile:has(:checked) {
+  border-color: var(--gold);
+  background: #383028;
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+.scenarioTile:has(:focus-visible) { outline: 2px solid #fff3d8; outline-offset: 2px; }
+.scenarioTile:has(:checked)::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--gold) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 8 2.5 2.5L12 5' fill='none' stroke='%23282014' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat;
+  pointer-events: none;
+}
+
+.scenarioArt {
+  display: block;
+  background: linear-gradient(155deg,#1f303c,#101b23 68%);
+  border-bottom: 1px solid #ffffff0d;
+}
+#pick-3 + .scenarioArt,#pick-5 + .scenarioArt { background: linear-gradient(150deg,#203937,#111f24 76%); }
+#pick-4 + .scenarioArt { background: linear-gradient(150deg,#353330,#1c2229 74%); }
+.scenarioArt svg { display: block; width: 100%; height: auto; max-height: clamp(40px,8dvh,58px); }
+.scenarioCaption {
+  flex: 1;
+  display: grid;
+  align-content: center;
+  padding: 5px 6px;
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 650;
+  text-align: center;
+}
+.scenarioTile:has(:checked) .scenarioCaption { color: #ffd390; }
+
+@media (max-width:560px) {
+  #setup { --setup-gap: 18px; }
+  #setupBody,#setup .dialogFoot { padding-inline: 14px; }
+  .scenarioGrid { gap: 6px; }
+  .scenarioCaption { padding: 4px 3px; font-size: 12.5px; }
+  .scenarioTile:has(:checked)::after { width: 12px; height: 12px; top: 3px; right: 3px; }
+}
+
+@media (forced-colors:active) {
+  .scenarioTile:has(:checked) { border: 2px solid Highlight; }
+  .scenarioTile:has(:focus-visible) { outline: 2px dashed Highlight; }
 }
 
 #seed[aria-invalid=true] {
@@ -2242,23 +2362,388 @@ main {
         </div>
       </section>
     </main>
+    <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" class="scenarioSprites" focusable="false" aria-hidden="true">
+  <defs>
+    <g id="scenario-art-station">
+      <polygon points="-6.248,4.382 -1.717,4.985 -1.717,1.684 -6.248,1.081" fill="#4c637f" stroke="#b6bdbb" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-3.983,4.683L-3.983,1.383" fill="none" stroke="#d5ab72" stroke-width="0.09"/>
+      <path d="M-5.116,4.532L-5.116,1.232" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M-3.983,4.683L-3.983,1.383" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M-2.850,4.834L-2.850,1.533" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M-6.248,3.061L-1.717,3.664" fill="none" stroke="#687f96" stroke-width="0.09"/>
+      <path d="M-6.248,1.741L-1.717,2.344" fill="none" stroke="#687f96" stroke-width="0.09"/>
+      <polygon points="-6.248,1.081 -1.717,1.684 -1.662,1.638 -6.193,1.035" fill="#d0a769" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.717,4.985 -1.662,4.939 -1.662,1.638 -1.717,1.684" fill="#746247" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.746,3.518 -1.541,3.545 -1.541,3.225 -1.746,3.197" fill="#adb8b7" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.746,3.197 -1.541,3.225 -1.430,3.132 -1.634,3.105" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.541,3.545 -1.430,3.453 -1.430,3.132 -1.541,3.225" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.526,3.467 -0.728,3.573 -0.728,3.385 -1.526,3.278" fill="#a48c61" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.526,3.278 -0.728,3.385 -0.646,3.317 -1.445,3.210" fill="#d5c089" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-0.728,3.573 -0.646,3.505 -0.646,3.317 -0.728,3.385" fill="#6c675c" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.613,5.386 0.761,5.264 0.761,1.652 0.613,1.775" fill="#b6beb7" stroke="#d8ddcf" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.613,4.881L0.761,4.758" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.613,2.280L0.761,2.158" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.761,5.204 -0.704,5.334 -0.704,1.722 -0.761,1.592" fill="#ebedde" stroke="#d4dacd" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.761,4.698L-0.704,4.829" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.761,2.097L-0.704,2.228" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.704,5.334 -0.459,5.438 -0.459,1.826 -0.704,1.722" fill="#f0eee1" stroke="#ebedde" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.704,4.829L-0.459,4.932" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.704,2.228L-0.459,2.332" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.459,5.438 -0.091,5.487 -0.091,1.875 -0.459,1.826" fill="#e3e4d9" stroke="#f0eee1" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.459,4.932L-0.091,4.981" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.459,2.332L-0.091,2.381" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.091,5.487 0.302,5.468 0.302,1.856 -0.091,1.875" fill="#cbd0c7" stroke="#e3e4d9" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.091,4.981L0.302,4.962" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.091,2.381L0.302,2.362" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.302,5.468 0.613,5.386 0.613,1.775 0.302,1.856" fill="#d8ddcf" stroke="#cbd0c7" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.302,4.962L0.613,4.881" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.302,2.362L0.613,2.280" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.613,1.775 0.761,1.652 0.704,1.522 0.459,1.418 0.091,1.369 -0.302,1.388 -0.613,1.469 -0.761,1.592 -0.704,1.722 -0.459,1.826 -0.091,1.875 0.302,1.856" fill="#e4e3d5" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.646,3.756 1.445,3.862 1.445,3.674 0.646,3.567" fill="#a48c61" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.646,3.567 1.445,3.674 1.526,3.606 0.728,3.500" fill="#d5c089" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.445,3.862 1.526,3.794 1.526,3.606 1.445,3.674" fill="#6c675c" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.430,3.941 1.634,3.968 1.634,3.647 1.430,3.620" fill="#adb8b7" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.430,3.620 1.634,3.647 1.746,3.555 1.541,3.527" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.634,3.968 1.746,3.875 1.746,3.555 1.634,3.647" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.662,5.434 6.193,6.037 6.193,2.737 1.662,2.134" fill="#4c637f" stroke="#b6bdbb" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M3.928,5.736L3.928,2.435" fill="none" stroke="#d5ab72" stroke-width="0.09"/>
+      <path d="M2.795,5.585L2.795,2.285" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M3.928,5.736L3.928,2.435" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M5.061,5.887L5.061,2.586" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M1.662,4.114L6.193,4.717" fill="none" stroke="#687f96" stroke-width="0.09"/>
+      <path d="M1.662,2.794L6.193,3.397" fill="none" stroke="#687f96" stroke-width="0.09"/>
+      <polygon points="1.662,2.134 6.193,2.737 6.248,2.691 1.717,2.088" fill="#d0a769" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="6.193,6.037 6.248,5.992 6.248,2.691 6.193,2.737" fill="#746247" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.481,1.742 0.596,1.646 0.596,1.438 0.481,1.534" fill="#b6beb7" stroke="#d8ddcf" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.481,1.713L0.596,1.617" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.481,1.563L0.596,1.467" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.596,1.598 -0.552,1.701 -0.552,1.493 -0.596,1.391" fill="#ebedde" stroke="#d4dacd" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.596,1.569L-0.552,1.672" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.596,1.420L-0.552,1.522" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.552,1.701 -0.360,1.782 -0.360,1.575 -0.552,1.493" fill="#f0eee1" stroke="#ebedde" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.552,1.672L-0.360,1.753" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.552,1.522L-0.360,1.604" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.360,1.782 -0.071,1.820 -0.071,1.613 -0.360,1.575" fill="#e3e4d9" stroke="#f0eee1" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.360,1.753L-0.071,1.791" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.360,1.604L-0.071,1.642" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.071,1.820 0.237,1.806 0.237,1.598 -0.071,1.613" fill="#cbd0c7" stroke="#e3e4d9" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.071,1.791L0.237,1.777" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.071,1.642L0.237,1.627" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.237,1.806 0.481,1.742 0.481,1.534 0.237,1.598" fill="#d8ddcf" stroke="#cbd0c7" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.237,1.777L0.481,1.713" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.237,1.627L0.481,1.563" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.481,1.534 0.596,1.438 0.552,1.336 0.360,1.255 0.071,1.216 -0.237,1.231 -0.481,1.295 -0.596,1.391 -0.552,1.493 -0.360,1.575 -0.071,1.613 0.237,1.598" fill="#e4e3d5" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-6.248,-0.074 -2.766,0.389 -2.766,-1.073 -6.248,-1.536" fill="#adb8b7" stroke="#edf0dd" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-4.856,0.111L-4.856,-1.351" fill="none" stroke="#969e96" stroke-width="0.09"/>
+      <path d="M-3.463,0.297L-3.463,-1.165" fill="none" stroke="#969e96" stroke-width="0.09"/>
+      <path d="M-6.248,-1.049L-2.766,-0.585" fill="none" stroke="#a4aaa0" stroke-width="0.09"/>
+      <polygon points="-6.248,-1.536 -2.766,-1.073 -2.712,-1.118 -6.193,-1.582" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-2.766,0.389 -2.712,0.343 -2.712,-1.118 -2.766,-1.073" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-2.784,-0.214 -2.050,-0.117 -2.050,-0.343 -2.784,-0.441" fill="#adb8b7" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-2.784,-0.441 -2.050,-0.343 -1.961,-0.417 -2.694,-0.515" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-2.050,-0.117 -1.961,-0.191 -1.961,-0.417 -2.050,-0.343" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-2.176,0.403 -1.434,0.502 -1.434,-0.554 -2.176,-0.653" fill="#adb8b7" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-2.176,-0.653 -1.434,-0.554 -1.092,-0.838 -1.835,-0.937" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.434,0.502 -1.092,0.218 -1.092,-0.838 -1.434,-0.554" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.337,0.186 -1.114,0.216 -1.114,-0.369 -1.337,-0.399" fill="#a48c61" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.337,-0.399 -1.114,-0.369 -0.966,-0.493 -1.188,-0.522" fill="#d5c089" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.114,0.216 -0.966,0.092 -0.966,-0.493 -1.114,-0.369" fill="#6c675c" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.928,1.646 1.151,1.460 1.151,-1.369 0.928,-1.183" fill="#b6beb7" stroke="#d8ddcf" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.928,1.250L1.151,1.064" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.928,-0.787L1.151,-0.973" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-1.151,1.369 -1.066,1.567 -1.066,-1.263 -1.151,-1.460" fill="#ebedde" stroke="#d4dacd" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-1.151,0.973L-1.066,1.170" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-1.151,-1.064L-1.066,-0.866" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-1.066,1.567 -0.695,1.723 -0.695,-1.106 -1.066,-1.263" fill="#f0eee1" stroke="#ebedde" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-1.066,1.170L-0.695,1.327" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-1.066,-0.866L-0.695,-0.710" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.695,1.723 -0.137,1.798 -0.137,-1.031 -0.695,-1.106" fill="#e3e4d9" stroke="#f0eee1" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.695,1.327L-0.137,1.402" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.695,-0.710L-0.137,-0.635" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.137,1.798 0.457,1.769 0.457,-1.060 -0.137,-1.031" fill="#cbd0c7" stroke="#e3e4d9" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.137,1.402L0.457,1.373" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.137,-0.635L0.457,-0.664" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.457,1.769 0.928,1.646 0.928,-1.183 0.457,-1.060" fill="#d8ddcf" stroke="#cbd0c7" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.457,1.373L0.928,1.250" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.457,-0.664L0.928,-0.787" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.928,-1.183 1.151,-1.369 1.066,-1.567 0.695,-1.723 0.137,-1.798 -0.457,-1.769 -0.928,-1.646 -1.151,-1.460 -1.066,-1.263 -0.695,-1.106 -0.137,-1.031 0.457,-1.060" fill="#e4e3d5" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-0.685,0.344 -0.295,0.396 -0.295,-0.057 -0.685,-0.109" fill="#adb8b7" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-0.685,-0.109 -0.295,-0.057 -0.221,-0.118 -0.611,-0.170" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-0.295,0.396 -0.221,0.334 -0.221,-0.118 -0.295,-0.057" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.092,0.548 -0.052,0.686 -0.052,-0.125 -1.092,-0.263" fill="#d5b171" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.092,-0.263 -0.052,-0.125 0.030,-0.193 -1.010,-0.331" fill="#f0d69f" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-0.052,0.686 0.030,0.618 0.030,-0.193 -0.052,-0.125" fill="#8a7350" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.966,0.493 1.188,0.522 1.188,-0.062 0.966,-0.092" fill="#a48c61" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.966,-0.092 1.188,-0.062 1.337,-0.186 1.114,-0.216" fill="#d5c089" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.188,0.522 1.337,0.399 1.337,-0.186 1.188,-0.062" fill="#6c675c" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.092,0.838 1.835,0.937 1.835,-0.119 1.092,-0.218" fill="#adb8b7" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.092,-0.218 1.835,-0.119 2.176,-0.403 1.434,-0.502" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.835,0.937 2.176,0.653 2.176,-0.403 1.835,-0.119" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.961,0.417 2.694,0.515 2.694,0.288 1.961,0.191" fill="#adb8b7" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.961,0.191 2.694,0.288 2.784,0.214 2.050,0.117" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="2.694,0.515 2.784,0.441 2.784,0.214 2.694,0.288" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="2.712,1.118 6.193,1.582 6.193,0.120 2.712,-0.343" fill="#adb8b7" stroke="#edf0dd" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M4.104,1.304L4.104,-0.158" fill="none" stroke="#969e96" stroke-width="0.09"/>
+      <path d="M5.497,1.489L5.497,0.027" fill="none" stroke="#969e96" stroke-width="0.09"/>
+      <path d="M2.712,0.144L6.193,0.607" fill="none" stroke="#a4aaa0" stroke-width="0.09"/>
+      <polygon points="2.712,-0.343 6.193,0.120 6.248,0.074 2.766,-0.389" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="6.193,1.582 6.248,1.536 6.248,0.074 6.193,0.120" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.531,-1.282 0.658,-1.388 0.658,-1.596 0.531,-1.490" fill="#b6beb7" stroke="#d8ddcf" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.531,-1.312L0.658,-1.417" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.531,-1.461L0.658,-1.567" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.658,-1.441 -0.609,-1.328 -0.609,-1.535 -0.658,-1.648" fill="#ebedde" stroke="#d4dacd" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.658,-1.470L-0.609,-1.357" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.658,-1.619L-0.609,-1.506" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.609,-1.328 -0.397,-1.238 -0.397,-1.445 -0.609,-1.535" fill="#f0eee1" stroke="#ebedde" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.609,-1.357L-0.397,-1.267" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.609,-1.506L-0.397,-1.416" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.397,-1.238 -0.078,-1.196 -0.078,-1.403 -0.397,-1.445" fill="#e3e4d9" stroke="#f0eee1" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.397,-1.267L-0.078,-1.225" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.397,-1.416L-0.078,-1.374" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.078,-1.196 0.261,-1.212 0.261,-1.419 -0.078,-1.403" fill="#cbd0c7" stroke="#e3e4d9" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.078,-1.225L0.261,-1.241" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.078,-1.374L0.261,-1.390" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.261,-1.212 0.531,-1.282 0.531,-1.490 0.261,-1.419" fill="#d8ddcf" stroke="#cbd0c7" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.261,-1.241L0.531,-1.312" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.261,-1.390L0.531,-1.461" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.531,-1.490 0.658,-1.596 0.609,-1.709 0.397,-1.799 0.078,-1.841 -0.261,-1.825 -0.531,-1.754 -0.658,-1.648 -0.609,-1.535 -0.397,-1.445 -0.078,-1.403 0.261,-1.419" fill="#e4e3d5" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-6.248,-2.691 -1.717,-2.088 -1.717,-5.389 -6.248,-5.992" fill="#4c637f" stroke="#b6bdbb" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-3.983,-2.390L-3.983,-5.690" fill="none" stroke="#d5ab72" stroke-width="0.09"/>
+      <path d="M-5.116,-2.540L-5.116,-5.841" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M-3.983,-2.390L-3.983,-5.690" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M-2.850,-2.239L-2.850,-5.539" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M-6.248,-4.011L-1.717,-3.408" fill="none" stroke="#687f96" stroke-width="0.09"/>
+      <path d="M-6.248,-5.332L-1.717,-4.729" fill="none" stroke="#687f96" stroke-width="0.09"/>
+      <polygon points="-6.248,-5.992 -1.717,-5.389 -1.662,-5.434 -6.193,-6.037" fill="#d0a769" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.717,-2.088 -1.662,-2.134 -1.662,-5.434 -1.717,-5.389" fill="#746247" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.746,-3.555 -1.541,-3.527 -1.541,-3.848 -1.746,-3.875" fill="#adb8b7" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.746,-3.875 -1.541,-3.848 -1.430,-3.941 -1.634,-3.968" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.541,-3.527 -1.430,-3.620 -1.430,-3.941 -1.541,-3.848" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.526,-3.606 -0.802,-3.509 -0.802,-3.698 -1.526,-3.794" fill="#a48c61" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-1.526,-3.794 -0.802,-3.698 -0.720,-3.766 -1.445,-3.862" fill="#d5c089" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-0.802,-3.509 -0.720,-3.577 -0.720,-3.766 -0.802,-3.698" fill="#6c675c" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.680,-1.453 0.843,-1.589 0.843,-5.200 0.680,-5.065" fill="#b6beb7" stroke="#d8ddcf" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.680,-1.958L0.843,-2.094" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.680,-4.559L0.843,-4.695" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.843,-1.655 -0.780,-1.511 -0.780,-5.123 -0.843,-5.267" fill="#ebedde" stroke="#d4dacd" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.843,-2.161L-0.780,-2.016" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.843,-4.762L-0.780,-4.617" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.780,-1.511 -0.509,-1.396 -0.509,-5.008 -0.780,-5.123" fill="#f0eee1" stroke="#ebedde" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.780,-2.016L-0.509,-1.901" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.780,-4.617L-0.509,-4.502" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.509,-1.396 -0.101,-1.342 -0.101,-4.953 -0.509,-5.008" fill="#e3e4d9" stroke="#f0eee1" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.509,-1.901L-0.101,-1.847" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.509,-4.502L-0.101,-4.448" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.101,-1.342 0.334,-1.362 0.334,-4.974 -0.101,-4.953" fill="#cbd0c7" stroke="#e3e4d9" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.101,-1.847L0.334,-1.868" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.101,-4.448L0.334,-4.469" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.334,-1.362 0.680,-1.453 0.680,-5.065 0.334,-4.974" fill="#d8ddcf" stroke="#cbd0c7" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.334,-1.868L0.680,-1.958" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.334,-4.469L0.680,-4.559" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.680,-5.065 0.843,-5.200 0.780,-5.345 0.509,-5.460 0.101,-5.514 -0.334,-5.493 -0.680,-5.403 -0.843,-5.267 -0.780,-5.123 -0.509,-5.008 -0.101,-4.953 0.334,-4.974" fill="#e4e3d5" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.720,-3.307 1.445,-3.210 1.445,-3.399 0.720,-3.495" fill="#a48c61" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.720,-3.495 1.445,-3.399 1.526,-3.467 0.802,-3.563" fill="#d5c089" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.445,-3.210 1.526,-3.278 1.526,-3.467 1.445,-3.399" fill="#6c675c" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.430,-3.132 1.634,-3.105 1.634,-3.425 1.430,-3.453" fill="#adb8b7" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.430,-3.453 1.634,-3.425 1.746,-3.518 1.541,-3.545" fill="#e4e2ce" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.634,-3.105 1.746,-3.197 1.746,-3.518 1.634,-3.425" fill="#76858b" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="1.662,-1.638 6.193,-1.035 6.193,-4.336 1.662,-4.939" fill="#4c637f" stroke="#b6bdbb" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M3.928,-1.337L3.928,-4.637" fill="none" stroke="#d5ab72" stroke-width="0.09"/>
+      <path d="M2.795,-1.488L2.795,-4.788" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M3.928,-1.337L3.928,-4.637" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M5.061,-1.186L5.061,-4.487" fill="none" stroke="#91a5b6" stroke-width="0.09"/>
+      <path d="M1.662,-2.959L6.193,-2.356" fill="none" stroke="#687f96" stroke-width="0.09"/>
+      <path d="M1.662,-4.279L6.193,-3.676" fill="none" stroke="#687f96" stroke-width="0.09"/>
+      <polygon points="1.662,-4.939 6.193,-4.336 6.248,-4.382 1.717,-4.985" fill="#d0a769" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="6.193,-1.035 6.248,-1.081 6.248,-4.382 6.193,-4.336" fill="#746247" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="0.439,-5.124 0.545,-5.212 0.545,-6.014 0.439,-5.926" fill="#b6beb7" stroke="#d8ddcf" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.439,-5.237L0.545,-5.324" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.439,-5.814L0.545,-5.902" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.439,-5.277 0.545,-5.364 0.545,-5.493 0.439,-5.405" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="0.439,-5.581 0.545,-5.669 0.545,-5.797 0.439,-5.710" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="-0.545,-5.255 -0.504,-5.162 -0.504,-5.963 -0.545,-6.057" fill="#ebedde" stroke="#d4dacd" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.545,-5.368L-0.504,-5.274" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.545,-5.945L-0.504,-5.851" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.545,-5.408 -0.504,-5.314 -0.504,-5.442 -0.545,-5.536" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="-0.545,-5.712 -0.504,-5.619 -0.504,-5.747 -0.545,-5.841" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="-0.504,-5.162 -0.329,-5.088 -0.329,-5.889 -0.504,-5.963" fill="#f0eee1" stroke="#ebedde" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.504,-5.274L-0.329,-5.200" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.504,-5.851L-0.329,-5.777" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.504,-5.314 -0.329,-5.240 -0.329,-5.368 -0.504,-5.442" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="-0.504,-5.619 -0.329,-5.545 -0.329,-5.673 -0.504,-5.747" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="-0.329,-5.088 -0.065,-5.053 -0.065,-5.854 -0.329,-5.889" fill="#e3e4d9" stroke="#f0eee1" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.329,-5.200L-0.065,-5.165" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.329,-5.777L-0.065,-5.742" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.329,-5.240 -0.065,-5.205 -0.065,-5.333 -0.329,-5.368" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="-0.329,-5.545 -0.065,-5.509 -0.065,-5.638 -0.329,-5.673" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="-0.065,-5.053 0.216,-5.066 0.216,-5.868 -0.065,-5.854" fill="#cbd0c7" stroke="#e3e4d9" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M-0.065,-5.165L0.216,-5.178" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M-0.065,-5.742L0.216,-5.755" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="-0.065,-5.205 0.216,-5.218 0.216,-5.347 -0.065,-5.333" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="-0.065,-5.509 0.216,-5.523 0.216,-5.651 -0.065,-5.638" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="0.216,-5.066 0.439,-5.124 0.439,-5.926 0.216,-5.868" fill="#d8ddcf" stroke="#cbd0c7" stroke-width="0.06" stroke-linejoin="round"/>
+      <path d="M0.216,-5.178L0.439,-5.237" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <path d="M0.216,-5.755L0.439,-5.814" fill="none" stroke="#737f80" stroke-width="0.09"/>
+      <polygon points="0.216,-5.218 0.439,-5.277 0.439,-5.405 0.216,-5.347" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="0.216,-5.523 0.439,-5.581 0.439,-5.710 0.216,-5.651" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="0.439,-5.926 0.545,-6.014 0.504,-6.107 0.329,-6.182 0.065,-6.217 -0.216,-6.203 -0.439,-6.145 -0.545,-6.057 -0.504,-5.963 -0.329,-5.889 -0.065,-5.854 0.216,-5.868" fill="#e4e3d5" stroke="#384950" stroke-width="0.06" stroke-linejoin="round"/>
+      <polygon points="-0.295,-5.978 -0.202,-5.966 -0.002,-6.132 -0.095,-6.145" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+      <polygon points="0.011,-5.937 0.104,-5.925 0.305,-6.092 0.212,-6.104" fill="#e2ac59" stroke="none" stroke-width="0" stroke-linejoin="round"/>
+    </g>
+    <g id="scenario-art-cover">
+      <polygon points="0.875,0.538 0.938,0.485 0.843,-0.484 0.780,-0.432" fill="#adbbb9" stroke="#c3c6bb" stroke-width="0.027" stroke-linejoin="round"/>
+      <polygon points="-0.843,0.484 -0.938,-0.485 0.780,-0.432 0.875,0.538" fill="#465663" stroke="#c3c6bb" stroke-width="0.027" stroke-linejoin="round"/>
+      <path d="M-0.554,0.332L-0.617,-0.314" fill="none" stroke="#384c58" stroke-width="0.07"/>
+      <path d="M0.554,0.367L0.491,-0.280" fill="none" stroke="#384c58" stroke-width="0.07"/>
+      <polygon points="-0.300,-0.077 0.218,-0.061 0.236,0.129 -0.281,0.113" fill="#3a4a50" stroke="#a7b5b3" stroke-width="0.04" stroke-linejoin="round"/>
+      <path d="M-0.695,0.309L-0.711,0.138" fill="none" stroke="#f2bc69" stroke-width="0.1"/>
+      <path d="M0.691,0.352L0.674,0.181" fill="none" stroke="#f2bc69" stroke-width="0.1"/>
+      <polygon points="-0.938,-0.485 0.780,-0.432 0.843,-0.484 -0.875,-0.538" fill="#d2d9ce" stroke="#c3c6bb" stroke-width="0.027" stroke-linejoin="round"/>
+    </g>
+    <g id="scenario-art-frame">
+      <polygon points="-0.587,-0.818 -0.828,-0.850 -0.954,-0.745 -0.713,-0.713" fill="#ddd0b9" stroke="#c3c6bb" stroke-width="0.027" stroke-linejoin="round"/>
+      <polygon points="-0.587,0.276 -0.587,-0.818 -0.713,-0.713 -0.713,0.381" fill="#b6a596" stroke="#c3c6bb" stroke-width="0.027" stroke-linejoin="round"/>
+      <polygon points="0.643,0.440 -0.587,0.276 -0.713,0.381 0.517,0.545" fill="#ddd0b9" stroke="#c3c6bb" stroke-width="0.027" stroke-linejoin="round"/>
+      <polygon points="0.713,-0.645 0.472,-0.677 0.345,-0.572 0.587,-0.540" fill="#ddd0b9" stroke="#c3c6bb" stroke-width="0.027" stroke-linejoin="round"/>
+      <polygon points="0.927,0.741 0.713,-0.645 0.587,-0.540 0.800,0.846" fill="#b6a596" stroke="#c3c6bb" stroke-width="0.027" stroke-linejoin="round"/>
+      <polygon points="-0.954,0.613 0.800,0.846 0.587,-0.540 0.345,-0.572 0.517,0.545 -0.713,0.381 -0.713,-0.713 -0.954,-0.745" fill="#74665c" stroke="#c3c6bb" stroke-width="0.027" stroke-linejoin="round"/>
+    </g>
+    <g id="scenario-art-eva">
+      <g stroke="#27343d" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
+        <!-- Life-support pack behind the suit, then the far arm and leg. -->
+        <path d="M3 -10 9 -12 13 -9 14 5 10 9 4 8Z" fill="#a0afb0"/>
+        <path d="M10 -7 13 -8 14 4 11 6Z" fill="#687c85" stroke="none"/>
+        <path d="M6 -3 Q10 -5 12 -1L15 2 18 1Q21 1 20 4L16 7Q14 8 12 6L7 4Z" fill="#bac7c7"/>
+        <path d="M2 7 8 6 10 14 16 15 16 19 10 20Q7 20 6 17L2 12Z" fill="#b3c2c2"/>
+        <path d="M14 14 18 14 20 17 18 20 14 20Z" fill="#819298"/>
+        <path d="M-5 -6Q0 -9 5 -6L9 5 6 11-2 13-7 7-8 0Z" fill="#e0e7e0"/>
+        <path d="M-4 6 7 3 8 6-2 10-5 9Z" fill="#7b9199" stroke="none"/>
+        <path d="M-4 9 2 9 3 13 0 19-5 24-9 21-5 16Z" fill="#d8dfd8"/>
+        <path d="M-6 18 -2 21-4 23-8 20Z" fill="#9bafb1" stroke="none"/>
+        <path d="M-8 20 -4 24-7 28-13 27Q-15 26-13 24Z" fill="#93a4a6"/>
+        <path d="M-6 -4Q-10 -5-12 0L-14 4-18 3-20 6-14 10Q-11 11-9 7L-5 2Z" fill="#dce5df"/>
+        <path d="M-17 3-20 1Q-22 1-22 4L-20 7-16 7Z" fill="#aebdbc"/>
+        <path d="M-12 0-9 2" fill="none" stroke="#ce8750" stroke-width="2"/>
+        <path d="M-3 -4 2 -5 3 -1-2 1Z" fill="#6d8c99" stroke-width=".7"/>
+        <path d="M-9 -19Q-8 -24-2 -24 5 -24 7 -18L8 -13Q8 -7 2 -5L-5 -5Q-11 -8-11 -13Z" fill="#f1efe2"/>
+        <path d="M-10 -17Q-7 -21-2 -20 2 -20 3 -16L2 -12Q0 -9-5 -10L-9 -12Z" fill="#34505b" stroke="#7f765a" stroke-width="1.3"/>
+        <path d="M-9 -16Q-6 -20-2 -18" fill="none" stroke="#f5c477" stroke-width="2.3"/>
+        <path d="M-6 -7Q0 -5 6 -10" fill="none" stroke="#899fa3"/>
+      </g>
+    </g>
+    <g id="scenario-art-die">
+      <g transform="rotate(-9)" fill="#9ddfce">
+        <rect x="-7.5" y="-7.5" width="15" height="15" rx="3" fill="#152e32" stroke="#91ccbd" stroke-width="1.3"/>
+        <circle cx="-3.7" cy="-3.7" r="1.25"/>
+        <circle cx="3.7" cy="-3.7" r="1.25"/>
+        <circle r="1.25"/>
+        <circle cx="-3.7" cy="3.7" r="1.25"/>
+        <circle cx="3.7" cy="3.7" r="1.25"/>
+      </g>
+    </g>
+    <g id="scenario-art-stars">
+      <circle cx="9" cy="25" r="1" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="22" cy="8" r="0.7" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="39" cy="66" r="0.9" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="52" cy="17" r="0.6" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="65" cy="6" r="0.9" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="76" cy="53" r="0.7" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="90" cy="72" r="0.9" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="100" cy="13" r="0.7" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="112" cy="64" r="0.6" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="127" cy="21" r="0.9" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="148" cy="8" r="0.7" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="158" cy="63" r="0.7" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="171" cy="37" r="1" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="14" cy="72" r="0.6" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="70" cy="31" r="0.7" fill="#b3c9c9" opacity=".57"/>
+      <circle cx="135" cy="50" r="0.6" fill="#b3c9c9" opacity=".57"/>
+    </g>
+    <symbol id="scenario-art-scene-0" viewBox="0 0 180 80">
+      <use href="#scenario-art-stars"/>
+      <use href="#scenario-art-station" transform="translate(35 41) rotate(-17) scale(3.6)"/>
+      <path d="M36 41C48 38 53 60 65 52Q69 49 72 50M84 47C95 42 102 56 111 52L130 43" stroke="#f7bf70" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray=""/>
+      <path d="M74 44l-2 -4m6 13 1 4m0 -16 2 -3" stroke="#f7bf70" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray=""/>
+      <use href="#scenario-art-eva" transform="translate(132 38) rotate(22) scale(1.02)"/>
+    </symbol>
+    <symbol id="scenario-art-scene-1" viewBox="0 0 180 80">
+      <use href="#scenario-art-stars"/>
+      <use href="#scenario-art-station" transform="translate(53 27) rotate(-12) scale(2.9)"/>
+      <path d="M21 57H66m-36 6h26" stroke="#a3d7c7" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4"/>
+      <path d="M105 57H155m-7 -5 7 5-7 5" stroke="#a3d7c7" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray=""/>
+      <use href="#scenario-art-eva" transform="translate(86 52) rotate(-16) scale(0.82)"/>
+    </symbol>
+    <symbol id="scenario-art-scene-2" viewBox="0 0 180 80">
+      <use href="#scenario-art-stars"/>
+      <use href="#scenario-art-station" transform="translate(26 33) rotate(-17) scale(1.85)"/>
+      <path d="M45 55l71 -12M45 51v8m71 -20v8" stroke="#a6b3b6" stroke-width="1.1" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray=""/>
+      <use href="#scenario-art-eva" transform="translate(146 37) rotate(30) scale(0.87)"/>
+    </symbol>
+    <symbol id="scenario-art-scene-4" viewBox="0 0 180 80">
+      <use href="#scenario-art-stars"/>
+      <path d="M71 48l35 9m-4 -4 4 4-6 1M124 28l-30 -11m4 4-4 -4 5 -1" stroke="#ddb47f" stroke-width="1.45" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray=""/>
+      <use href="#scenario-art-cover" transform="translate(51 42) rotate(-18) scale(24)"/>
+      <use href="#scenario-art-frame" transform="translate(132 34) rotate(-18) scale(18)"/>
+    </symbol>
+    <symbol id="scenario-art-scene-3" viewBox="0 0 180 80">
+      <use href="#scenario-art-stars"/>
+      <use href="#scenario-art-station" transform="translate(48 49) rotate(-13) scale(2.4)"/>
+      <path d="M102 36l37 -18m-3 5 3-5-6 0M105 42l43 10m-5 -4 5 4-6 2" stroke="#a3d7c7" stroke-width="1.45" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"/>
+      <use href="#scenario-art-eva" transform="translate(91 40) rotate(17) scale(0.77)"/>
+      <use href="#scenario-art-die" transform="translate(16 15) rotate(0) scale(0.88)"/>
+    </symbol>
+    <symbol id="scenario-art-scene-5" viewBox="0 0 180 80">
+      <use href="#scenario-art-stars"/>
+      <path d="M63 48l-13 -23m0 6 0-6 5 4M126 35l-10 23m-1 -6 1 6 5-3" stroke="#ddb47f" stroke-width="1.45" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray=""/>
+      <use href="#scenario-art-frame" transform="translate(70 50) rotate(-18) scale(18)"/>
+      <use href="#scenario-art-cover" transform="translate(130 25) rotate(-18) scale(19)"/>
+      <use href="#scenario-art-die" transform="translate(16 15) rotate(0) scale(0.88)"/>
+    </symbol>
+  </defs>
+</svg>
     <dialog id="setup" aria-labelledby="setupTitle">
       <form id="setupForm">
-        <div class="dialogBody">
+        <div id="setupBody" class="dialogBody">
           <div class="dialogHead">
             <h2 id="setupTitle">New flight</h2>
             <button class="x close" type="button" aria-label="Close">×</button>
           </div>
-          <label class="rowLabel" for="scenario">Separation scenario</label>
-          <select id="scenario">
-            <option value="0">Tether separation</option>
-            <option value="1">Lateral drift</option>
-            <option value="2">Wide separation</option>
-            <option value="4">Dodgeball Challenge</option>
-            <option value="3">Random drift</option>
-            <option value="5">Random Dodgeball</option>
-          </select>
-          <p id="setupBrief"></p>
+          <fieldset id="scenario">
+            <legend class="rowLabel">Separation scenario</legend>
+            <div class="scenarioGrid">
+              <label class="scenarioTile">
+                <input id="pick-0" type="radio" name="scenarioChoice" value="0" checked>
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-0" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Tether separation</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-1" type="radio" name="scenarioChoice" value="1">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-1" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Lateral drift</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-3" type="radio" name="scenarioChoice" value="3">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-3" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Random Drift</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-2" type="radio" name="scenarioChoice" value="2">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-2" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Wide separation</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-4" type="radio" name="scenarioChoice" value="4">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-4" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Dodgeball Challenge</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-5" type="radio" name="scenarioChoice" value="5">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-5" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Random Dodgeball</span>
+              </label>
+            </div>
+          </fieldset>
+          <p id="setupBrief" aria-live="polite"></p>
           <div id="seedGroup" hidden>
             <label class="rowLabel" for="seed">Scenario seed or replay link</label>
             <input class="seedInput" id="seed" spellcheck="false" autocomplete="off" aria-describedby="seedPreview">
@@ -2389,7 +2874,7 @@ main {
           <h3 id="creditsTitle">Credits</h3>
           <p>an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere</p>
           <p><a href="mailto:avani@avaninet.com">avani@avaninet.com</a></p>
-          <p>version 0.4 - last updated <time id="gameUpdated" datetime="2026-11-26">Nov 26, 2026</time></p>
+          <p>version 0.4 - last updated <time id="gameUpdated" datetime="2026-11-27">Nov 27, 2026</time></p>
         </section>
       </div>
       <div class="dialogFoot">
@@ -4662,6 +5147,7 @@ function pauseForModal(d){
   if(el('debrief').open)el('debrief').close();
   d.showModal();updateRack();
 }
+const setupScenarios=el('setupForm').elements.namedItem('scenarioChoice');
 function setupRules(){
   return {mode:document.querySelector('input[name=model]:checked').value,soft:el('soft').checked,story:el('storyMode').checked};
 }
@@ -4685,33 +5171,48 @@ function loadSetupSeed(){
     input.setAttribute('aria-invalid','true');input.focus();return null;
   }
   input.removeAttribute('aria-invalid');input.value=seedLabel(replay.seed);
-  el('scenario').value=String(seedScenario(replay.seed));updateSetup();
+  setupScenarios.value=String(seedScenario(replay.seed));updateSetup();
   document.querySelector('input[name=model][value="'+replay.mode+'"]').checked=true;
   el('soft').checked=replay.soft;el('storyMode').checked=replay.story;
   previewSeed(replay);return replay;
 }
 function updateSetup() {
-  const idx=Number(el('scenario').value),isRandom=isSeeded(idx);
+  const idx=Number(setupScenarios.value),isRandom=isSeeded(idx);
   el('seedGroup').hidden=!isRandom;el('seed').required=isRandom;el('seed').disabled=!isRandom;
   const opening=idx===3?null:Flight.opening(idx,0,true);
   el('setupBrief').textContent=opening?(opening.briefing??opening.brief):'Share the opening and flight rules with a friend, or load their replay.';
 }
 function openSetup(){
-  el('scenario').value=String(flight.index);el('seed').value=isSeeded(flight.index)?seedLabel(flight.seed):'';
+  setupScenarios.value=String(flight.index);el('seed').value=isSeeded(flight.index)?seedLabel(flight.seed):'';
   document.querySelector('input[name=model][value="'+flight.mode+'"]').checked=true;
   el('soft').checked=flight.soft;el('storyMode').checked=flight.story;updateSetup();
   if(isSeeded(flight.index)){
     el('seed').removeAttribute('aria-invalid');previewSeed(flight);
   }
   pauseForModal(el('setup'));
+  el('setupBody').scrollTop=0;
 }
 el('new').onclick=openSetup;el('again').onclick=openSetup;el('manual').onclick=()=>pauseForModal(el('guide'));
 function generateSetupSeed(){
-  el('seed').value=randomSeed(Number(el('scenario').value));loadSetupSeed();
+  el('seed').value=randomSeed(Number(setupScenarios.value));loadSetupSeed();
 }
 el('scenario').onchange=()=>{
   updateSetup();
   if(!el('seedGroup').hidden)generateSetupSeed();
+};
+el('scenario').onkeydown=e=>{
+  // Native Left/Right and Space already select radios. Up/Down keep the grid column.
+  const choices=Array.from(setupScenarios),current=choices.indexOf(e.target);
+  if(current<0)return;
+  let next;
+  switch(e.key){
+    case 'ArrowUp': case 'ArrowDown': next=(current+3)%choices.length;break;
+    case 'Home': next=0;break;
+    case 'End': next=choices.length-1;break;
+    case 'Enter': next=current;break;
+    default: return;
+  }
+  e.preventDefault();choices[next].focus();choices[next].click();
 };
 el('reroll').onclick=generateSetupSeed;
 el('loadSeed').onclick=loadSetupSeed;
@@ -4737,7 +5238,7 @@ function launchFlight(index,mode,soft,seed,story,lesson=null){
 }
 el('setupForm').onsubmit=e=>{
   e.preventDefault();
-  const index=Number(el('scenario').value);
+  const index=Number(setupScenarios.value);
   const replay=isSeeded(index)?loadSetupSeed():{...setupRules(),seed:0};
   if(!replay)return;
   const {mode,soft,seed,story}=replay;
@@ -5117,7 +5618,7 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
     }else{
       if(!flight)start(0,'Straight-Line',false);
       updateAddress(flight); // Cancel keeps the current flight and its address.
-      openSetup();el('scenario').value=replay?String(seedScenario(replay.seed)):/#seed=DB[12]-/i.test(hash)?'5':'3';
+      openSetup();setupScenarios.value=replay?String(seedScenario(replay.seed)):/#seed=DB[12]-/i.test(hash)?'5':'3';
       el('seed').value=hash.length<=maxLength?hash:'';updateSetup();loadSetupSeed();
     }
     return true;

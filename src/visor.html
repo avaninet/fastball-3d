@@ -198,23 +198,50 @@ __COCKPIT_STYLE__</style>
         </div>
       </section>
     </main>
+    __SCENARIO_SPRITES__
     <dialog id="setup" aria-labelledby="setupTitle">
       <form id="setupForm">
-        <div class="dialogBody">
+        <div id="setupBody" class="dialogBody">
           <div class="dialogHead">
             <h2 id="setupTitle">New flight</h2>
             <button class="x close" type="button" aria-label="Close">×</button>
           </div>
-          <label class="rowLabel" for="scenario">Separation scenario</label>
-          <select id="scenario">
-            <option value="0">Tether separation</option>
-            <option value="1">Lateral drift</option>
-            <option value="2">Wide separation</option>
-            <option value="4">Dodgeball Challenge</option>
-            <option value="3">Random drift</option>
-            <option value="5">Random Dodgeball</option>
-          </select>
-          <p id="setupBrief"></p>
+          <fieldset id="scenario">
+            <legend class="rowLabel">Separation scenario</legend>
+            <div class="scenarioGrid">
+              <label class="scenarioTile">
+                <input id="pick-0" type="radio" name="scenarioChoice" value="0" checked>
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-0" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Tether separation</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-1" type="radio" name="scenarioChoice" value="1">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-1" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Lateral drift</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-3" type="radio" name="scenarioChoice" value="3">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-3" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Random Drift</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-2" type="radio" name="scenarioChoice" value="2">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-2" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Wide separation</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-4" type="radio" name="scenarioChoice" value="4">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-4" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Dodgeball Challenge</span>
+              </label>
+              <label class="scenarioTile">
+                <input id="pick-5" type="radio" name="scenarioChoice" value="5">
+                <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-5" width="180" height="80"/></svg></span>
+                <span class="scenarioCaption">Random Dodgeball</span>
+              </label>
+            </div>
+          </fieldset>
+          <p id="setupBrief" aria-live="polite"></p>
           <div id="seedGroup" hidden>
             <label class="rowLabel" for="seed">Scenario seed or replay link</label>
             <input class="seedInput" id="seed" spellcheck="false" autocomplete="off" aria-describedby="seedPreview">
