@@ -32,7 +32,9 @@ Choose **Manual (no guidance)** to fly any opening by sight. The navigation disp
 
 Turn on **Random station orientation** in any of the six scenarios to try a different approach. The station holds its new angle for the whole flight. Watch the mint outline in both visors to see how much room you have.
 
-In **New flight**, use **Copy code** or **Copy link** for any of the six openings. For example, paste `F1B-5011G7` into **Challenge code or link** and choose **Load code** to fly a tilted, near-frame Random Dodgeball approach in Orbital with a Soft grab. The code restores Tommi, debris, station angle, flight model, capture rule, inventory and starting aids. Each player flies their own throws. After the flight, open **Share** to save your flight card or copy the challenge. Compare who made it home, who managed the gentlest grab, and who brought the drill back.
+In **New flight**, use **Copy code** or **Copy link** for any of the six openings. For example, paste `F1B-5011G7` into **Challenge code or link** and choose **Load code** to fly a tilted, near-frame Random Dodgeball approach in Orbital with a Soft grab. The code restores Tommi, debris, station angle, flight model, capture rule, inventory and starting aids. Each player flies their own throws.
+
+After the flight, choose **Flight card** in the debrief to save the image or copy the challenge. The upper chart shows radial motion and the lower chart shows cross-track motion. Match the numbered throws to follow the same pass in both views. Compare who made it home, who managed the gentlest grab, and who brought the drill back.
 
 Fastball 3D is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. **Do not try this on orbit.**
 

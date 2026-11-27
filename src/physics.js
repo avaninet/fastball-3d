@@ -126,9 +126,24 @@ const Flight = (() => {
     }
     return polynomialRoots(coeff,0,Math.tan(n*end/2)).map(u=>2*Math.atan(u)/n);
   }
-  function entries(s,end,mode,skipInitial=false,soft=false,pose) {
+  function velocityTerms(s){
     const [x,,z]=s.p,[vx,vy,vz]=s.v;
-    const coeff=[[3*n*x+2*vy,vx,0],[-2*vx,4*vy+6*n*x,-3*vy-6*n*x],[-n*z,vz,0]];
+    return [[3*n*x+2*vy,vx,0],[-2*vx,4*vy+6*n*x,-3*vy-6*n*x],[-n*z,vz,0]];
+  }
+  // Times the flown coast reaches Y = 0, even if it reverses between plot samples.
+  function alongTrackCrossings(s,end,mode){
+    const cuts=mode==='Orbital'?extrema(...velocityTerms(s)[1],end):[0,end];
+    const at=t=>motion(s,t,mode).p[1],roots=[];
+    for(let i=1;i<cuts.length;i++){
+      const a=cuts[i-1],b=cuts[i],ya=at(a),yb=at(b);
+      if(ya===0)continue; // Ignore a stationary coast or a repeat at a release boundary.
+      if(yb===0)roots.push(b);
+      else if(ya*yb<0)roots.push(bisectCrossing(at,a,b,ya));
+    }
+    return roots;
+  }
+  function entries(s,end,mode,skipInitial=false,soft=false,pose) {
+    const coeff=velocityTerms(s);
     const candidates=[0,end];
     for(let i=0;i<3;i++) {
       const normal=pose?.id?pose.axes[i]:null;
@@ -240,5 +255,5 @@ const Flight = (() => {
     return story?base:manualOpening(base);
   }
   return {gear,fullRack,named,opening,poses,half,limit,captureLimit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,rackAfterThrow,impulse,budgets,
-    release,motion,nearest,clearance,inside,softEnough,canGrab,entries,forecast,coastPass,coastStatus,seedStream,transfer,command,applyCommand,manualOpening};
+    release,motion,nearest,clearance,inside,softEnough,canGrab,entries,alongTrackCrossings,forecast,coastPass,coastStatus,seedStream,transfer,command,applyCommand,manualOpening};
 })();

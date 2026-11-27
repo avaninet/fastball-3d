@@ -24,7 +24,7 @@ const Readout={
     if(flight.usedPreview)aids.push('Preview');
     if(flight.usedCoach)aids.push('Dodgeball Coach');
     if(flight.usedFaceDrift)aids.push('Face drift');
-    return aids.length?'Aids used: '+aids.join(', '):'Optional aids off';
+    return aids.length?'Assists used: '+aids.join(', '):'Optional aids off';
   },
   speed(value,rule=true){
     const limit=Flight.captureLimit(rule);

@@ -31,14 +31,16 @@ const FlightLog = (() => {
   }
 
   // Both panels share their along-track origin, vertical origin and metres per pixel.
-  function layout(segments,pose=Flight.poses[0]){
+  const logFrame={left:30,right:407,top:14,bottom:236,cx:222,cy:126,fitWidth:344,fitHeight:186};
+  const cardFrame={left:41,right:432,top:32,bottom:159,cx:238,cy:98,fitWidth:362,fitHeight:110};
+  function layout(segments,pose=Flight.poses[0],frame=logFrame){
     let left=-Flight.half[1],right=Flight.half[1],bottom=-Flight.half[0],top=Flight.half[0];
     for(const segment of [...segments,pose.corners.map(p=>({p}))])for(const {p} of segment){
       left=Math.min(left,-p[1]);right=Math.max(right,-p[1]);
       bottom=Math.min(bottom,p[0],p[2]);top=Math.max(top,p[0],p[2]);
     }
-    const scale=Math.min(344/Math.max(15,right-left),186/Math.max(15,top-bottom));
-    const cx=222-(left+right)*scale/2,cy=126+(top+bottom)*scale/2;
+    const scale=Math.min(frame.fitWidth/Math.max(15,right-left),frame.fitHeight/Math.max(15,top-bottom));
+    const cx=frame.cx-(left+right)*scale/2,cy=frame.cy+(top+bottom)*scale/2;
     return {scale,cx,cy,project:(p,axis)=>[cx-p[1]*scale,cy-p[axis]*scale]};
   }
   function outline(corners,project){
@@ -62,7 +64,7 @@ const FlightLog = (() => {
     const t=length2?Flight.clamp(((p[0]-a[0])*dx+(p[1]-a[1])*dy)/length2,0,1):0;
     return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);
   }
-  function releaseLabels(anchors,traces){
+  function releaseLabels(anchors,traces,frame){
     const placed=[];
     const traceGap=p=>{
       let gap=Infinity;
@@ -78,7 +80,7 @@ const FlightLog = (() => {
       for(const radius of [25,36,48,64])for(let j=0;j<16;j++){
         const angle=(j-4)*Math.PI/8;
         const lx=x+radius*Math.cos(angle),ly=y+radius*Math.sin(angle);
-        if(lx<38||lx>400||ly<23||ly>228)continue;
+        if(lx<frame.left+8||lx>frame.right-7||ly<frame.top+9||ly>frame.bottom-8)continue;
         const center=[lx,ly];
         let cost=radius+16*Math.max(0,12-traceGap(center));
         // Favor leaders that leave the path sideways instead of following it.
@@ -95,9 +97,10 @@ const FlightLog = (() => {
     }
     return placed;
   }
-  function debrisPlot(tracks,id){
+  function debrisPlot(tracks,id,frame){
     if(!tracks.length)return '';
-    const art=['<defs><clipPath id="'+id+'"><rect x="30" y="14" width="377" height="222"/></clipPath></defs><g clip-path="url(#'+id+')">'];
+    const {left,right,top,bottom}=frame;
+    const art=['<defs><clipPath id="'+id+'"><rect x="'+left+'" y="'+top+'" width="'+(right-left)+'" height="'+(bottom-top)+'"/></clipPath></defs><g clip-path="url(#'+id+')">'];
     for(const track of tracks){
       const xy=track.xy;
       art.push('<polyline class="debrisTrack" fill="none" stroke="'+track.color+'" stroke-width="1.7" stroke-dasharray="'+track.dash+'" points="'+xy.map(p=>p.map(num).join(',')).join(' ')+'"/>');
@@ -108,7 +111,7 @@ const FlightLog = (() => {
       for(let i=1;i<xy.length;i++){
         const a=xy[i-1],b=xy[i],dx=b[0]-a[0],dy=b[1]-a[1];
         let lo=0,hi=1;
-        for(const [v,d,min,max] of [[a[0],dx,37,400],[a[1],dy,21,229]]){
+        for(const [v,d,min,max] of [[a[0],dx,left+7,right-7],[a[1],dy,top+7,bottom-7]]){
           if(!d){if(v<min||v>max)hi=-1;continue;}
           const t0=(min-v)/d,t1=(max-v)/d;
           lo=Math.max(lo,Math.min(t0,t1));hi=Math.min(hi,Math.max(t0,t1));
@@ -142,30 +145,33 @@ const FlightLog = (() => {
     }
     return '<g class="debrisKey" fill="#d5dcdf" font-size="13">'+rows.join('')+'</g>';
   }
-  function plot(flight,segments,grid,axis,compact=false,tracks=[]){
+  function plot(flight,segments,grid,axis,compact=false,tracks=[],crossing=null){
     const {scale,cx,cy,project}=grid;
+    const frame=compact?cardFrame:logFrame;
+    const {left,right,top,bottom}=frame;
     const point=p=>project(p,axis), color=flight.done==='capture'?'#acdcb6':'#ffaa95';
     const svg=[];
     const line=(x1,y1,x2,y2,stroke,width=1)=>'<line x1="'+num(x1)+'" y1="'+num(y1)+'" x2="'+num(x2)+'" y2="'+num(y2)+'" stroke="'+stroke+'" stroke-width="'+width+'"/>';
     const label=(x,y,value,anchor='middle',fill='#afbfc4',size=11)=>'<text x="'+num(x)+'" y="'+num(y)+'" text-anchor="'+anchor+'" font-size="'+size+'" fill="'+fill+'">'+escape(value)+'</text>';
-    const step=[1,2,5,10,20,50,100,200].find(s=>s*scale>=38)??500;
-    for(let i=Math.ceil((30-cx)/(step*scale));cx+i*step*scale<407;i++){
-      const x=cx+i*step*scale;svg.push(line(x,14,x,236,i?'#25323a':'#637782'),label(x,251,-i*step));
+    const magnitude=10**Math.floor(Math.log10(38/scale));
+    const step=magnitude*([1,2,5,10].find(k=>k*magnitude*scale>=38)??10);
+    for(let i=Math.ceil((left-cx)/(step*scale));cx+i*step*scale<right;i++){
+      const x=cx+i*step*scale;svg.push(line(x,top,x,bottom,i?'#25323a':'#637782'),label(x,bottom+15,-i*step));
     }
-    for(let i=Math.ceil((cy-232)/(step*scale));cy-i*step*scale>=14;i++){
-      const y=cy-i*step*scale;svg.push(line(30,y,407,y,i?'#25323a':'#637782'),label(26,y+4,i*step,'end'));
+    for(let i=Math.ceil((cy-bottom+4)/(step*scale));cy-i*step*scale>=top;i++){
+      const y=cy-i*step*scale;svg.push(line(left,y,right,y,i?'#25323a':'#637782'),label(left-5,y+4,i*step,'end'));
     }
     const corners=(flight.pose??Flight.poses[0]).corners;
     svg.push('<polygon class="grabEnvelope" points="'+outline(corners,point)+'" fill="#29493d" stroke="#91c4a4"/>');
     const debrisPaths=tracks.map(track=>({...track,xy:track.points.map(point)}));
-    svg.push(debrisPlot(debrisPaths,(compact?'card':'log')+'Debris'+axis));
+    svg.push(debrisPlot(debrisPaths,(compact?'card':'log')+'Debris'+axis,frame));
     const projected=segments.map(seg=>seg.map(k=>point(k.p)));
     const anchors=flight.log.releases.map(r=>point(r.p));
     // Card numbers match its first nine records. In a long full log, spread
     // numbered callouts over the flight and mark every other release with a dot.
     const count=Math.min(anchors.length,compact?9:16);
     const indices=Array.from({length:count},(_,i)=>compact||count===anchors.length?i:Math.round(i*(anchors.length-1)/(count-1)));
-    const callouts=releaseLabels(indices.map(i=>anchors[i]),[...projected,...debrisPaths.map(track=>track.xy)]);
+    const callouts=releaseLabels(indices.map(i=>anchors[i]),[...projected,...debrisPaths.map(track=>track.xy)],frame);
     for(const {anchor:[x,y],center:[lx,ly]} of callouts)svg.push(line(x,y,lx,ly,'#b3976c',.8));
     for(const xy of projected){
       svg.push('<polyline fill="none" stroke="#99e1cc" stroke-width="2" points="'+xy.map(p=>p.map(num).join(',')).join(' ')+'"/>');
@@ -194,14 +200,41 @@ const FlightLog = (() => {
     for(const pass of flight.log.fast){
       const [x,y]=point(pass.p);svg.push(line(x-5,y-5,x+5,y+5,'#ffae74',2),line(x-5,y+5,x+5,y-5,'#ffae74',2));
     }
+    if(crossing){
+      const [x,y]=point(crossing.p);
+      svg.push('<g class="crossingMark"><circle cx="'+num(x)+'" cy="'+num(y)+'" r="4.6" fill="#0c151b" stroke="#a4ddff" stroke-width="1.8"/><circle cx="'+num(x)+'" cy="'+num(y)+'" r="1.5" fill="#a4ddff"/></g>');
+    }
     const [ex,ey]=point(flight.pos.p);
     svg.push('<path d="M 0 -5 L 5 0 L 0 5 L -5 0 Z" fill="'+color+'" stroke="#172126" transform="translate('+num(ex)+' '+num(ey)+')"/>');
-    svg.push(label(222,271,'← +Y along track (m)'),label(31,11,axis===0?'+X radial out (m) ↑':'+Z orbit normal (m) ↑','start'));
+    if(!compact)svg.push(label(222,271,'← +Y along track (m)'),label(31,11,axis===0?'+X radial out (m) ↑':'+Z orbit normal (m) ↑','start'));
     return svg.join('');
   }
   function pane(flight,segments,grid,axis,tracks){
     const name=axis===0?'Orbital plane · V-bar / R-bar':'Along-track / cross-track';
     return '<figure><figcaption>'+name+'</figcaption><svg viewBox="0 0 430 276" role="img" aria-label="'+name+' flight path, full grab envelope and numbered releases">'+plot(flight,segments,grid,axis,false,tracks)+'</svg></figure>';
+  }
+
+  // The station's edges cut Y = 0 in a cross section. Its X extent tells us
+  // whether the suit appears over the bars in the radial view at that time.
+  function projectedPass(flight,segments){
+    const pose=flight.pose??Flight.poses[0];
+    const faceXs=[];
+    for(let i=0;i<8;i++)for(const bit of [1,2,4]){
+      if(i&bit)continue;
+      const a=pose.corners[i],b=pose.corners[i|bit];
+      if(a[1]===0)faceXs.push(a[0]);
+      if(b[1]===0)faceXs.push(b[0]);
+      if(a[1]*b[1]<0)faceXs.push(a[0]+(b[0]-a[0])*a[1]/(a[1]-b[1]));
+    }
+    const minX=Math.min(...faceXs),maxX=Math.max(...faceXs);
+    for(const [i,points] of segments.entries()){
+      const state=i?flight.log.releases[i-1]:flight.initial,start=points[0].time;
+      for(const t of Flight.alongTrackCrossings(state,points.at(-1).time-start,flight.mode)){
+        const p=Flight.motion(state,t,flight.mode).p;
+        if(p[0]>=minX&&p[0]<=maxX&&!Flight.inside(p,pose))return {time:start+t,p,gap:Flight.clearance(p,pose)};
+      }
+    }
+    return null;
   }
   function precise(t){
     const ms=Math.round(t*1000);
@@ -227,73 +260,115 @@ const FlightLog = (() => {
   }
   function card(flight,wide=matchMedia('(min-width: 680px)').matches){
     const {segments,closest,tracks}=reconstruct(flight);
+    const grid=layout(segments,flight.pose,cardFrame),crossing=projectedPass(flight,segments);
+    const won=flight.done==='capture',name=flight.initial.name??'Random drift',result=outcomes[flight.done];
     const date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
-    const name=flight.initial.name??'Random drift',result=outcomes[flight.done];
-    const seed=Challenge.encode(flight);
-    const rules=[flight.mode,flight.story?'Story':'Manual',Readout.capture(flight.soft),
-      flight.pose?.id?flight.pose.label:''].filter(Boolean).join(' · ');
+    const code=Challenge.encode(flight),capture=Readout.capture(flight.soft),aids=Readout.aids(flight);
+    const releases=flight.log.releases,records=releases.slice(0,9);
     const elapsed=precise(flight.time),oxygen=Readout.clock(Math.ceil(flight.limit-flight.time));
-    const {budget,speed}=resultReadout(flight),releases=flight.log.releases;
-    const clearance=flight.done==='capture'?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
-    const passCount=flight.misses?Readout.count(flight.misses,'fast entry','fast entries'):'';
-    const passDetails=[clearance,passCount].filter(Boolean).join('   ·   ');
-    const short=wide && matchMedia('(max-height: 480px)').matches;
-    const records=releases.slice(0,9);
-    const count=Math.min(releases.length,10),width=wide?780:470;
-    const chartScale=short ? .73 : 1,chartTop=short?49:wide?92:104;
-    const chartBottom=chartTop+chartScale*(307+(!short&&tracks.length?62:0));
-    const infoX=short?365:wide?474:18,infoY=wide?chartTop+(short?13:18):chartBottom+22;
-    const toolCount=flight.story?Readout.count(releases.length,'throw'):releases.length+'/'+Flight.gear.length+' tools used';
-    const leading=short?18:20,recordY=infoY+4*leading+(short?3:7)+(passDetails?leading:0);
-    const columns=wide&&!short?1:2,rows=Math.max(1,Math.ceil(count/columns));
-    const lineHeight=short?18:wide?20:17;
-    const recordBottom=recordY+rows*lineHeight;
-    const height=Math.ceil(Math.max(chartBottom,recordBottom+(short&&tracks.length?57:0)))+(short?5:15);
-    const label=(x,y,text,size,color,attrs='')=>'<text x="'+x+'" y="'+y+'" font-size="'+size+'" fill="'+color+'" '+attrs+'>'+escape(text)+'</text>';
-    const description='Fastball 3D · AvaniNet · '+date+' · '+[name,seed].filter(Boolean).join(' ')+' · '+rules+'\n'+
-      [result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',budget,speed,Readout.aids(flight),clearance,passCount].filter(Boolean).join(' · ');
-    const parts=['<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'" role="img" aria-labelledby="flightCardTitle flightCardDesc" font-family="'+escape(cockpitFonts.sans)+'">',
-      '<title id="flightCardTitle">'+escape(name)+' · '+escape(result)+'</title><desc id="flightCardDesc">'+escape(description)+'</desc>',
-      '<rect width="'+width+'" height="'+height+'" rx="7" fill="#101a20"/>',
-      label(18,short?16:23,'FASTBALL 3D · AvaniNet',short?12:13,'#f7bc62','font-weight="bold" letter-spacing="1.6"'),
-      label(short?345:width-18,short?16:23,date,13,'#c5d1d0','text-anchor="end"'),
-      label(18,short?41:wide?55:53,result,short?21:27,'#f4f1e8','font-weight="bold"')];
-    if(short){
-      parts.push(label(infoX,17,name+'   /   '+seed,14,'#a8e4d0'),
-        label(infoX,39,rules,12,'#c5d1d0'));
-    }else if(wide){
-      parts.push(label(width-18,54,seed,16,'#a8e4d0','text-anchor="end" font-family="'+escape(cockpitFonts.mono)+'"'),
-        label(18,77,name+'   ·   '+rules,14,'#c5d1d0'));
+    const {budget,speed}=resultReadout(flight),speedValue=Readout.speed(Flight.norm(flight.pos.v),flight.soft)+' m/s';
+    const inventory=flight.story?'Story · unlimited tools':releases.length+'/'+Flight.gear.length+' tools used';
+    const clearance=won?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
+    const fast=flight.log.fast,passCount=flight.misses?Readout.count(flight.misses,'fast entry','fast entries'):'';
+    const pose=flight.pose?.id?flight.pose.label:'Station aligned';
+    const summary=[result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',
+      budget,speed,aids,clearance,passCount].filter(Boolean).join(' · ');
+    const description='Fastball 3D · AvaniNet · '+date+' · '+name+' '+code+' · '+
+      [flight.mode,flight.story?'Story':'Single-use tools',capture,pose].join(' · ')+'\n'+summary;
+
+    const width=wide?812:470,edge=width-20;
+    const ink='#f3f0e7',muted='#becace',dim='#a7b7bc',mint='#a8e4d0',gold='#f2bf74',border='#34434b';
+    const bold='font-weight="700"',end='text-anchor="end"',middle='text-anchor="middle"';
+    const mono='font-family="'+escape(cockpitFonts.mono)+'"';
+    const label=(x,y,value,size=14,color=ink,attrs='')=>
+      `<text x="${x}" y="${y}" font-size="${size}" fill="${color}" ${attrs}>${escape(value)}</text>`;
+    const section=(x,y,title)=>label(x,y,title.toUpperCase(),11,dim,'font-weight="650" letter-spacing="1.05"');
+    const rule=(x,y,right)=>`<path d="M${x} ${y}H${right}" stroke="${border}"/>`;
+    const toolBadge=(x,y,i)=>`<circle cx="${x}" cy="${y}" r="6.4" fill="#eac383"/>`+
+      label(x,y+3.4,i,10,'#112027',bold+' '+middle);
+    const chartX=wide?17:14,chartTop=wide?105:125;
+    const content=[label(20,26,'FASTBALL 3D · AvaniNet',14,gold,bold+' letter-spacing="1.1"'),
+      label(edge,26,date,13,muted,end),label(19,60,result,30,ink,bold)];
+    if(wide){
+      content.push(label(edge,58,code,16,mint,mono+' '+end),label(20,84,[name,flight.mode,capture].join(' · '),14,muted));
     }else{
-      parts.push(label(18,74,name+'   /   '+seed,14,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
-        label(18,94,rules,13,'#c5d1d0'));
+      content.push(label(20,84,name,15,mint,bold),label(edge,84,code,15,mint,mono+' '+end),
+        label(20,105,flight.mode+' · '+capture,14,muted));
     }
-    parts.push('<g transform="translate(0 '+chartTop+') scale('+chartScale+')">',
-      '<rect x="12" y="0" width="446" height="305" rx="5" fill="#0b141b" stroke="#354046"/>',
-      label(22,20,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),
-      '<g transform="translate(20 26)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments,flight.pose),0,true,tracks)+'</g></g>');
+    content.push(rule(20,chartTop-9,edge));
+    for(const axis of [0,2]){
+      const title=axis===0?'Orbital plane · V-bar / R-bar':'Along-track / cross-track';
+      const vertical=axis===0?'+X radial out ↑ (m)':'+Z orbit normal ↑ (m)';
+      const y=chartTop+(axis===0?0:188);
+      content.push(`<g class="cardPlot" data-axis="${axis}" transform="translate(${chartX} ${y})">`,
+        '<rect width="442" height="180" rx="6" fill="#0c151b" stroke="'+border+'"/>',
+        label(12,21,title,14.5,ink,bold),label(430,21,vertical,12,muted,end),
+        '<g '+mono+'>'+plot(flight,segments,grid,axis,true,tracks,crossing)+'</g></g>');
+    }
+    const axisY=chartTop+386;
+    content.push(label(chartX+221,axisY,'← +Y along track (m)',12,muted,middle));
+
+    const left=wide?481:20,top=wide?120:axisY+29;
+    const statusColor=won?'#b1e8c4':'#ffb29f';
+    content.push(section(left,top,won?'Grab speed':'Final relative speed'),
+      label(left,top+32,speedValue,28,statusColor,bold),
+      section(left,top+55,'Elapsed'),section(left+173,top+55,'Oxygen left'),
+      label(left,top+77,elapsed,18,ink,mono),label(left+173,top+77,oxygen,18,ink,mono),
+      rule(left,top+92,edge),section(left,top+112,'Equipment'),
+      label(left,top+133,inventory,15,ink,bold),
+      label(left,top+152,flight.story&&!flight.skippedGuidance?'Auto-reload · '+Readout.count(releases.length,'throw'):budget,13.4,muted),
+      label(left,top+173,aids,13.5,mint),label(left,top+193,pose,13,muted),
+      rule(left,top+205,edge),section(left,top+224,'Release record'));
+    let y=top+244;
+    for(const [i,r] of records.entries()){
+      content.push('<g class="cardRelease">',toolBadge(left+7,y-4,i+1),
+        label(left+23,y,Readout.clock(r.time),13.5,muted,mono),label(left+78,y,Flight.gear[r.tool].name),
+        label(edge,y,r.power+'%',13.5,muted,mono+' '+end),'</g>');
+      y+=21;
+    }
+    if(!records.length||records.length<releases.length){
+      const extra=records.length?'+'+Readout.count(releases.length-records.length,'more throw')+' in flight log':'No tools released';
+      content.push(label(left,y,extra,13.5,muted));y+=21;
+    }
     if(tracks.length){
-      const position=short?'translate('+infoX+' '+(recordBottom+4)+') scale(.91)':'translate(20 '+(chartTop+310)+')';
-      parts.push('<g transform="'+position+'">'+debrisKey(tracks)+'</g>');
+      content.push('<g class="debrisKey">',rule(left,y-7,edge),section(left,y+10,'Closest 3D suit–debris gap'));
+      y+=31;
+      for(const track of tracks){
+        content.push(`<path d="M${left} ${y-4}h30" stroke="${track.color}" stroke-width="2" stroke-dasharray="${track.dash}"/>`,
+          label(left+39,y,track.name),label(edge-83,y,track.gap.toFixed(2)+' m',13.5,track.color,mono+' '+end),
+          label(edge,y,Readout.clock(track.time),13.5,muted,mono+' '+end));y+=21;
+      }
+      content.push('</g>');
     }
-    parts.push(label(infoX,infoY,budget,short?13:14,'#a8e4d0','font-weight="bold"'),
-      label(infoX,infoY+leading,speed,short?13:14,'#a8e4d0'),
-      label(infoX,infoY+2*leading,elapsed+' elapsed · '+oxygen+' oxygen · '+toolCount,13,'#f4f1e8'),
-      label(infoX,infoY+3*leading,Readout.aids(flight),13,'#c5d1d0'));
-    if(passDetails)parts.push(label(infoX,infoY+4*leading,passDetails,13,'#c5d1d0'));
-    parts.push('<path d="M '+infoX+' '+(recordY-(short?13:18))+' H '+(width-18)+'" stroke="#354046"/>',
-      label(infoX,recordY,'Release record',13,'#f7bc62','font-weight="bold"'));
-    if(!records.length)parts.push(label(infoX,recordY+lineHeight,'No tools released',13,'#c5d1d0'));
-    for(let i=0;i<count;i++){
-      const columnWidth=(width-infoX-18)/columns;
-      const x=infoX+Math.floor(i/rows)*columnWidth,y=recordY+lineHeight*(1+i%rows);
-      const r=records[i],size=wide&&!short?14:13;
-      if(!r){parts.push(label(x,y,'10. ...and then some',size,'#c5d1d0'));continue;}
-      parts.push(label(x,y,(i+1)+'.  '+Readout.clock(r.time),size,'#c5d1d0'),
-        label(x+(columns===1?63:53),y,Flight.gear[r.tool].name,size,'#f1f2ef'),
-        label(x+columnWidth-(columns===1?0:10),y,r.power+'%',size,'#c5d1d0','text-anchor="end"'));
+    if(fast.length){
+      const pass=fast[0];
+      content.push(rule(left,y-6,edge),section(left,y+11,passCount),
+        label(left,y+32,(fast.length>1?'First at ':'')+precise(pass.time)+' · '+Readout.speed(pass.speed,flight.soft)+' m/s',14,'#ffc492'));
+      y+=52;
     }
-    return parts.join('')+'</svg>';
+    if(crossing){
+      content.push(rule(left,y-6,edge),`<circle cx="${left+6}" cy="${y+9}" r="4.6" stroke="#a4ddff" fill="none" stroke-width="1.7"/>`,
+        label(left+20,y+14,'Pass at Y = 0',14,'#b4e2fc',bold),
+        label(left,y+35,precise(crossing.time)+' · Z = '+Readout.signed(crossing.p[2],2)+' m',13.5,muted),
+        label(left,y+54,Readout.clearance(crossing.gap,2)+' m clear of the bars',13.5,muted));
+      y+=74;
+    }
+    if(clearance){content.push(label(left,y,clearance,13,muted));y+=21;}
+
+    const legendY=Math.max(axisY+24,y+6);
+    const height=legendY+20+(passCount&&!wide?20:0);
+    content.push(rule(20,legendY-15,edge),`<g transform="translate(20 ${legendY})">`,
+      '<path d="M0 0h22" stroke="#99e1cc" stroke-width="2"/>',label(29,4,'Tommi',12,muted),
+      '<rect x="90" y="-3.5" width="7" height="7" stroke="#e9eada" fill="#0c151b"/>',label(105,4,'Start',12,muted),
+      toolBadge(162,0,1),label(174,4,'Throw',12,muted),
+      `<path d="M238 -5l5 5-5 5-5-5Z" fill="${won?'#acdcb6':'#ffaa95'}"/>`,label(250,4,'Finish',12,muted),
+      '<rect x="307" y="-4" width="13" height="8" fill="#29493d" stroke="#91c4a4"/>',label(327,4,'Grab volume',12,muted));
+    if(passCount)content.push(`<g transform="translate(${wide?440:0} ${wide?0:20})"><path d="M0 -3l7 7m-7 0 7-7" stroke="#ffae74" stroke-width="2"/>`,
+      label(16,4,'Fast entry',12,muted),'</g>');
+    content.push('</g>');
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="flightCardTitle flightCardDesc" font-family="${escape(cockpitFonts.sans)}">`+
+      '<title id="flightCardTitle">'+escape(name+' · '+result)+'</title><desc id="flightCardDesc">'+escape(description)+'</desc>'+
+      `<rect x=".6" y=".6" width="${width-1.2}" height="${height-1.2}" rx="9" fill="#111d24" stroke="${border}"/>`+content.join('')+'</svg>';
   }
   function show(flight){
     const {segments,closest,tracks}=reconstruct(flight),grid=layout(segments,flight.pose);

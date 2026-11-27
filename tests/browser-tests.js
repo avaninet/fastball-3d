@@ -609,24 +609,20 @@
       }
       el('flightLog').close();click('openShareCard');
       const art=el('cardArt');
-      eq(art.textContent.includes('27 throws')&&art.textContent.includes('10. ...and then some'),'compact overflow line and actual count');
-      eq(art.querySelectorAll('.releaseMark').length===9&&art.querySelectorAll('polyline').length===28,'first nine callouts on the full chart');
-      eq(![...art.querySelectorAll('text')].some(t=>t.textContent.startsWith('11.  ')),'no eleventh record');
+      eq(art.textContent.includes('27 throws')&&art.textContent.includes('+18 more throws in flight log'),'compact overflow line and actual count');
+      eq(art.querySelectorAll('.cardPlot').length===2,'two flight projections');
+      for(const chart of art.querySelectorAll('.cardPlot')){
+        eq(chart.querySelectorAll('.releaseMark').length===9&&chart.querySelectorAll('polyline').length===28,'first nine callouts on the complete track');
+        eq(chart.querySelectorAll('.releaseDot').length===18,'later releases remain on both charts');
+      }
       for(const length of [0,1,5,6,9,10,27]){
         const short={...flight,log:{...flight.log,releases:flight.log.releases.slice(0,length)}};
         const svg=new DOMParser().parseFromString(FlightLog.card(short),'image/svg+xml').documentElement;
-        const rows=[...svg.querySelectorAll('text')].filter(t=>/^\d+\. /.test(t.textContent));
-        eq(rows.length===Math.min(length,10),'only the first nine details and one overflow row');
-        eq(svg.textContent.includes('10. ...and then some')===(length>9),'overflow starts on throw ten');
-        for(const [i,row] of rows.entries()){
-          eq(row.textContent.startsWith((i+1)+'. '),'reading order');
-          const wide=svg.viewBox.baseVal.width>470,short=wide && innerHeight<=480,columns=wide&&!short?1:2;
-          const perColumn=Math.ceil(rows.length/columns),left=short?365:wide?474:18;
-          const stride=(svg.viewBox.baseVal.width-left-18)/columns;
-          eq(+row.getAttribute('x')===left+Math.floor(i/perColumn)*stride,'record column');
-          const y=+rows[0].getAttribute('y')+(short?18:wide?20:17)*(i%perColumn);
-          eq(+row.getAttribute('y')===y && y<svg.viewBox.baseVal.height,'record visible in reading order');
-        }
+        const rows=[...svg.querySelectorAll('.cardRelease')];
+        eq(rows.length===Math.min(length,9),'one detail row per numbered release');
+        eq(svg.textContent.includes('in flight log')===(length>9),'overflow starts on throw ten');
+        eq(svg.textContent.includes('No tools released')===(length===0),'zero-throw flight');
+        rows.forEach((row,i)=>eq(row.querySelector('text').textContent===String(i+1),'record reading order'));
       }
       el('shareCard').close();click('retry');
       eq(flight.story&&flight.throws===0&&el('budget').textContent.includes('Unlimited'),'retry resets history and keeps Story rules');
@@ -1033,9 +1029,11 @@
     const replay=Replays.parse(Replays.fragment(flight));
     eq(replay.soft==='firm'&&replay.startingAids.preview&&!replay.startingAids.coach,'initial aid settings');
     finish('capture');
-    for(const text of [el('endStats').textContent,FlightLog.card(flight)]){
-      eq(['Preview','Dodgeball Coach','Face drift'].every(label=>text.includes(label)),'persistent aid record');
-    }
+    const card=new DOMParser().parseFromString(FlightLog.card(flight),'image/svg+xml');
+    const assists='Assists used: Preview, Dodgeball Coach, Face drift';
+    eq(el('endStats').textContent.includes(assists),'debrief assist record');
+    eq([...card.querySelectorAll('text')].some(label=>label.textContent===assists),'visible card assist record');
+    eq(card.querySelector('desc').textContent.includes(assists),'copied challenge assist record');
     click('viewLog');eq(el('logSummary').textContent.includes('Firm')&&el('logSummary').textContent.includes('Face drift'),'log records rule and aids');
     el('flightLog').close();el('debrief').close();
     for(const [rule,speed,ok] of [[true,.100,false],['firm',.100,true],['firm',.120,true],['firm',.12001,false]]){
@@ -1188,7 +1186,7 @@
       eq([...card.querySelectorAll('text')].some(node=>node.textContent==='FASTBALL 3D · AvaniNet'),'credit on exported card');
     }finally{outcomes.oxygen=saved;}
   });
-  test('Every random outcome offers a dated single-chart flight card',()=>{
+  test('Every random outcome offers a dated two-chart flight card',()=>{
     for(const ending of ['capture','oxygen','stranded','overspeed']){
       configure(3,'Straight-Line',true);
       if(ending==='capture'){
@@ -1217,11 +1215,17 @@
       eq(el('endBudget').textContent===budget&&el('endStats').textContent.includes(speed),'debrief metrics');
       click('viewLog');eq([budget,speed].every(s=>el('logSummary').textContent.includes(s)),'full log metrics');el('flightLog').close();
       click('openShareCard');const art=el('cardArt'),date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
-      eq(el('shareCard').open&&art.querySelectorAll('svg').length===1&&art.textContent.includes('V-bar / R-bar')&&!art.textContent.includes('cross-track'),'one orbital-plane chart');
+      eq(el('shareCard').open&&art.querySelectorAll('svg').length===1&&art.textContent.includes('V-bar / R-bar')&&art.textContent.includes('Along-track / cross-track'),'both projections on one export');
+      if(innerWidth>=680&&innerHeight<=480){
+        const image=art.querySelector('svg'),height=image.getBoundingClientRect().height;
+        eq(height<=art.clientHeight+1,'whole card fits in short landscape');
+        click('cardSize');eq(image.getBoundingClientRect().height>height&&el('cardSize').textContent==='Fit card','enlarge for details');
+        click('cardSize');close(image.getBoundingClientRect().height,height,.5);
+      }
       eq([date,Challenge.encode(flight),outcomes[ending],flight.throws+'/'+Flight.gear.length+' tools used'].every(s=>art.textContent.includes(s)),'actual log and local completion date');
-      eq(art.querySelectorAll('.releaseMark').length===flight.throws,'all real releases');
+      eq([...art.querySelectorAll('.cardPlot')].every(chart=>chart.querySelectorAll('.releaseMark').length===flight.throws),'all real releases on both plots');
       const labels=[...art.querySelectorAll('text')].map(node=>node.textContent);
-      eq([budget,speed].every(s=>labels.includes(s)),'both metrics printed on card');
+      eq(labels.includes(budget)&&labels.includes(Readout.speed(norm(flight.pos.v),flight.soft)+' m/s'),'both metrics printed on card');
       const savedCopy=Replays.copy;let copied;
       try{
         Replays.copy=text=>{copied=text;};click('copyChallenge');
@@ -1233,6 +1237,23 @@
       el('debrief').close();
     }
     configure(0,'Straight-Line');advance(600);eq(!el('debriefShare').hidden,'named flights share their challenge code');
+  });
+  test('A projected flyby identifies the same instant on both charts',()=>{
+    const s={...flight,mode:'Straight-Line',pose:Flight.poses[0],time:20,done:'oxygen',
+      initial:{...flight.initial,p:[1,-8,-12],v:[0,1,0]},log:{releases:[],fast:[]},misses:0,finishedAt:new Date()};
+    for(const [z,annotated] of [[-12,true],[12,true],[3,false]]){
+      s.initial.p[2]=z;s.pos=Flight.motion(s.initial,s.time,s.mode);
+      for(const wide of [true,false]){
+        const svg=new DOMParser().parseFromString(FlightLog.card(s,wide),'image/svg+xml');
+        const plots=[...svg.querySelectorAll('.cardPlot')];
+        eq(plots.length===2&&plots.every(p=>!!p.querySelector('.crossingMark')===annotated),'paired crossing markers');
+        if(annotated){
+          const [upper,lower]=plots.map(p=>p.querySelector('.crossingMark circle'));
+          eq(upper.getAttribute('cx')===lower.getAttribute('cx')&&upper.getAttribute('cy')!==lower.getAttribute('cy'),'shared along-track axis, different vertical position');
+          eq(svg.documentElement.textContent.includes('0:08.000 · Z = '+Readout.signed(z,2)+' m')&&svg.documentElement.textContent.includes('5.00 m clear'),'measured event time, signed Z and 3D gap');
+        }
+      }
+    }
   });
   test('Directional coast for closure, recession, a miss and an orbital bend',()=>{
     for(const [mode,position,velocity] of [
@@ -1539,7 +1560,7 @@
       eq(el('logPanes').querySelectorAll('.debrisTrack').length===4 && !el('logDebrisKey').hidden,'both pieces plotted on both axes');
       el('flightLog').close();click('openShareCard');
       const art=el('cardArt');
-      eq(art.querySelectorAll('.debrisTrack').length===2 && art.querySelector('.debrisArrow') && art.querySelector('.debrisKey'),'debris paths, direction and gap key on the flight card');
+      eq(art.querySelectorAll('.debrisTrack').length===4 && art.querySelector('.debrisArrow') && art.querySelectorAll('.debrisKey').length===1,'both debris tracks on each chart with one gap key');
       eq(art.textContent.includes('Dodgeball Challenge') && !el('copyEndSeed').hidden && art.textContent.includes(Challenge.encode(flight)),'fixed incident card');
       el('shareCard').close();el('debrief').close();
       el('showPreview').checked=false;el('dodgeCoach').checked=false;
@@ -1707,7 +1728,7 @@
       advance(144);fire(mode==='Orbital'?{tool:8,az:17,el:83,power:91}:{tool:8,az:111,el:83,power:100});
       advance(415);eq(flight.done==='capture','soft capture on the catalog route');
       click('viewLog');eq(el('logSummary').textContent.includes(Challenge.encode(flight)) && el('logPanes').querySelectorAll('.debrisTrack').length===4,'seed and tracks in flight log');el('flightLog').close();
-      click('openShareCard');eq(el('cardArt').textContent.includes(Challenge.encode(flight)) && el('cardArt').querySelectorAll('.debrisTrack').length===2,'seed and tracks on card');el('shareCard').close();
+      click('openShareCard');eq(el('cardArt').textContent.includes(Challenge.encode(flight)) && el('cardArt').querySelectorAll('.debrisTrack').length===4,'seed and tracks on both projections');el('shareCard').close();
       const cover=flight.debrisPieces[0].p.join();
       click('retry');eq(flight.index===5 && flight.seed===code && flight.debrisPieces[0].p.join()===cover,'retry restores incident');
       el('dodgeCoach').checked=false;
