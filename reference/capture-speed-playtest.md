@@ -108,7 +108,7 @@ Every one of the 128 DB2 openings in this route-count sample gained legal option
 - **Review simulator.** The separate Random Drift skill study uses the review’s original 200 E seeds, three attempts, four assumed skills and matching random draws. Pilots use the final 30-second braking window. Firm uses the review’s scaled brake target for each skill. Optional alignment changes braking accuracy. The comparative adapter sends Soft and Firm to the v0.4 flight queries while leaving seed generation intact.
 - **Human playability.** The browser suite exercised desktop and phone-sized viewports. The simulations cannot tell whether a first-time player recognizes the correct edge arrow, watches the other piece after a dodge, or can judge a brake on a touch screen. A useful human follow-up is the same orbital near-frame seed, Soft and Firm in alternating order, recording collision, tools left and when the pilot first noticed the fast entry.
 
-Run the offline studies from the repository root with Node 18 or newer. Each command emits one JSON record per cohort. The first four commands run from this checkout alone. The optional `review` comparison also requires the original third-party `humans.cjs` simulator. The retained research materials include that simulator, the five cohort outputs and the summarizer used to assemble the CSV.
+Use checkout `30da793` and Node 18 or newer to reproduce these historical results. The current checkout runs the studies on F1 openings. Each command emits one JSON record per cohort. The first four commands run from this checkout alone. The optional `review` comparison also requires the original third-party `humans.cjs` simulator. The retained research materials include that simulator, the five cohort outputs and the summarizer used to assemble the CSV.
 
 ```sh
 node studies/capture-speed.cjs catalog
@@ -118,4 +118,4 @@ node studies/capture-speed.cjs pilots
 node studies/capture-speed.cjs review /path/to/fastball-3d-gameplay-sim/humans.cjs
 ```
 
-[Cohort results, including both inventories, loss causes, grab speed, elapsed time and paired changes](capture-speed-results.csv) · [DB2 seed qualification](random-dodgeball-study.md)
+[Cohort results, including both inventories, loss causes, grab speed, elapsed time and paired changes](capture-speed-results.csv) · [Current catalog qualification](random-dodgeball-study.md)

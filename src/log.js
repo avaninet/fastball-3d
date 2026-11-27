@@ -14,7 +14,7 @@ const FlightLog = (() => {
     let closest=Infinity;
     for(const [i,state] of starts.entries()){
       const end=starts[i+1]?.time??flight.time;
-      const coast=Flight.forecast(state,Math.max(0,end-state.time),flight.mode);
+      const coast=Flight.forecast(state,Math.max(0,end-state.time),flight.mode,false,false,flight.pose);
       closest=Math.min(closest,coast.hits.length?0:coast.near.d);
       segments.push(coast.path.map(k=>({p:k.p,time:state.time+k.t})));
       if(tracks.length){
@@ -31,15 +31,31 @@ const FlightLog = (() => {
   }
 
   // Both panels share their along-track origin, vertical origin and metres per pixel.
-  function layout(segments){
+  function layout(segments,pose=Flight.poses[0]){
     let left=-Flight.half[1],right=Flight.half[1],bottom=-Flight.half[0],top=Flight.half[0];
-    for(const segment of segments)for(const {p} of segment){
+    for(const segment of [...segments,pose.corners.map(p=>({p}))])for(const {p} of segment){
       left=Math.min(left,-p[1]);right=Math.max(right,-p[1]);
       bottom=Math.min(bottom,p[0],p[2]);top=Math.max(top,p[0],p[2]);
     }
     const scale=Math.min(344/Math.max(15,right-left),186/Math.max(15,top-bottom));
     const cx=222-(left+right)*scale/2,cy=126+(top+bottom)*scale/2;
     return {scale,cx,cy,project:(p,axis)=>[cx-p[1]*scale,cy-p[axis]*scale]};
+  }
+  function outline(corners,project){
+    const points=corners.map(project).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+    function chain(ordered){
+      const result=[];
+      for(const p of ordered){
+        while(result.length>=2){
+          const a=result.at(-2),b=result.at(-1);
+          if((b[0]-a[0])*(p[1]-a[1])>(b[1]-a[1])*(p[0]-a[0]))break;
+          result.pop();
+        }
+        result.push(p);
+      }
+      result.pop();return result;
+    }
+    return [...chain(points),...chain(points.reverse())].map(p=>p.map(num).join(',')).join(' ');
   }
   function distanceToSegment(p,a,b){
     const dx=b[0]-a[0],dy=b[1]-a[1],length2=dx*dx+dy*dy;
@@ -139,8 +155,8 @@ const FlightLog = (() => {
     for(let i=Math.ceil((cy-232)/(step*scale));cy-i*step*scale>=14;i++){
       const y=cy-i*step*scale;svg.push(line(30,y,407,y,i?'#25323a':'#637782'),label(26,y+4,i*step,'end'));
     }
-    const half=Flight.half;
-    svg.push('<rect x="'+num(cx-half[1]*scale)+'" y="'+num(cy-half[axis]*scale)+'" width="'+num(2*half[1]*scale)+'" height="'+num(2*half[axis]*scale)+'" fill="#29493d" stroke="#91c4a4"/>');
+    const corners=(flight.pose??Flight.poses[0]).corners;
+    svg.push('<polygon class="grabEnvelope" points="'+outline(corners,point)+'" fill="#29493d" stroke="#91c4a4"/>');
     const debrisPaths=tracks.map(track=>({...track,xy:track.points.map(point)}));
     svg.push(debrisPlot(debrisPaths,(compact?'card':'log')+'Debris'+axis));
     const projected=segments.map(seg=>seg.map(k=>point(k.p)));
@@ -213,9 +229,10 @@ const FlightLog = (() => {
     const {segments,closest,tracks}=reconstruct(flight);
     const date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
     const name=flight.initial.name??'Random drift',result=outcomes[flight.done];
-    const seed=flight.index===4?'':seedLabel(flight.seed);
+    const seed=Challenge.encode(flight);
     const keyHeight=tracks.length?66:0;
-    const rules=[flight.mode,flight.story?'Story':'Manual',Readout.capture(flight.soft)].join(' · ');
+    const rules=[flight.mode,flight.story?'Story':'Manual',Readout.capture(flight.soft),
+      flight.pose?.id?flight.pose.label:''].filter(Boolean).join(' · ');
     const elapsed=precise(flight.time),oxygen=Readout.clock(Math.ceil(flight.limit-flight.time));
     const {budget,speed}=resultReadout(flight),releases=flight.log.releases;
     const clearance=flight.done==='capture'?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
@@ -235,7 +252,7 @@ const FlightLog = (() => {
       label(20,62,result,28,'#f4f1e8','font-weight="bold"'),label(20,84,[name,seed].filter(Boolean).join('  /  '),15,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
       label(20,104,rules,13,'#c5d1d0'),'<rect x="12" y="115" width="446" height="309" rx="5" fill="#0b141b" stroke="#354046"/>',
       label(22,136,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),
-      '<g transform="translate(20 143)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments),0,true,tracks)+'</g>',
+      '<g transform="translate(20 143)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments,flight.pose),0,true,tracks)+'</g>',
       tracks.length?'<g transform="translate(20 429)">'+debrisKey(tracks)+'</g>':'',
       label(20,446+keyHeight,budget,15,'#a8e4d0','font-weight="bold"'),label(20,466+keyHeight,speed,14,'#a8e4d0'),
       label(20,486+keyHeight,elapsed+' elapsed   ·   '+oxygen+' oxygen   ·   '+(flight.story?Readout.count(releases.length,'throw'):releases.length+'/'+Flight.gear.length+' tools used'),14,'#f4f1e8')];
@@ -247,13 +264,14 @@ const FlightLog = (() => {
     return parts.join('')+'</svg>';
   }
   function show(flight){
-    const {segments,closest,tracks}=reconstruct(flight),grid=layout(segments);
+    const {segments,closest,tracks}=reconstruct(flight),grid=layout(segments,flight.pose);
     const tools=Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length;
     const result=outcomes[flight.done];
     const {budget,speed}=resultReadout(flight);
     el('logTitle').textContent=flight.initial.name+' · Flight log';
     el('logSummary').textContent=[result,flight.mode,Readout.capture(flight.soft),
-      isSeeded(flight.index)?'Seed '+seedLabel(flight.seed):'',precise(flight.time)+' elapsed',
+      flight.pose?.id?flight.pose.label:'',
+      flight.lesson===null&&!flight.skippedGuidance?'Challenge '+Challenge.encode(flight):'',precise(flight.time)+' elapsed',
       Readout.clock(Math.ceil(flight.limit-flight.time))+' oxygen',(flight.story||flight.skippedGuidance)?Readout.count(flight.throws,'throw'):tools+'/'+Flight.gear.length+' tools aboard',
       budget,speed,Readout.aids(flight),flight.done==='capture'?'':'Closest approach flown '+Readout.clearance(closest,2)+' m'].filter(Boolean).join('  ·  ');
     el('logPanes').innerHTML=[0,2].map(axis=>pane(flight,segments,grid,axis,tracks)).join('');

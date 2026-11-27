@@ -65,7 +65,7 @@ async function main() {
     const exportResult = await post('/execute/async', {
       script: `const done=arguments[0];
         (async () => {
-          start(3,'Orbital',true,'E-00019919');pause();
+          start(5,'Orbital',true,2560,false,null,{preview:true,coach:true},16);pause();
           // Exercise both clipboard outcomes without modifying the host clipboard.
           let copied;
           Object.defineProperty(navigator,'clipboard',{configurable:true,value:{
@@ -87,7 +87,15 @@ async function main() {
       args: []
     });
     assert.deepEqual(exportResult, {success: true, fallback: true, png: true});
-    console.log('Native keyboard, clipboard fallback and PNG export passed.');
+    const snapshot = '({code:Challenge.encode(flight), suit:flight.initial, pose:flight.pose.axes, ' +
+      'debris:flight.debrisPieces.map(body=>[body.p,body.v]), aids:flight.startingAids})';
+    const sender = await read(snapshot);
+    const link = await read('Replays.link(flight)');
+    await post('/url', {url: 'about:blank'});
+    await post('/url', {url: pathToFileURL(path.resolve(__dirname, '../index.html')).href + link});
+    assert.deepEqual(await read(snapshot), sender);
+    assert.equal(await read('started'), false);
+    console.log('Native keyboard, clipboard fallback, PNG export and fresh challenge load passed.');
   } finally {
     await request('DELETE', session);
   }

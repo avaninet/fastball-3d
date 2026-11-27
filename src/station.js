@@ -125,7 +125,8 @@ const Station = (() => {
 
   // Clip the segment against each convex part's actual rendered face planes.
   // The capture envelope has a separate gameplay meaning and includes open gaps.
-  function crosses(from,to){
+  function crosses(from,to,pose){
+    if(pose?.id){from=pose.local(from);to=pose.local(to);}
     if(Flight.half.some((h,i)=>Math.min(from[i],to[i])>h || Math.max(from[i],to[i])<-h))return false;
     const delta=sub(to,from);
     return parts.some(solid=>{

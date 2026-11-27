@@ -22,13 +22,15 @@ The habit that comes back to her now is older than that. She was a high-school s
 
 ## Choose a challenge
 
-**New flight** has six openings. Try **Lateral drift** for a sideways approach, **Wide separation** for a longer return, or **Random Drift** for a fresh starting position. In **Dodgeball Challenge**, a loose service cover and a bent frame cross your route home. **Random Dodgeball** offers eight layouts with 512 variations each.
+**New flight** has six openings. Try **Lateral drift** for a sideways approach, **Wide separation** for a longer return, or **Random Drift** for one of 4,096 curated separations. In **Dodgeball Challenge**, a loose service cover and a bent frame cross your route home. **Random Dodgeball** offers eight layouts with 512 variations each.
 
 Fly **Straight-Line** to coast in a straight line, or choose **Orbital** to see your path bend relative to the station. **Any-speed** lets you grab the bars at any speed. For a gentler arrival, **Firm** requires 0.120 m/s or slower and **Soft** requires 0.080 m/s or slower. **Story flight** gives you reloading tools and time to line up a pitch while paused.
 
 ## Challenge a friend
 
-Choose either random opening and use **Copy replay** to share your starting position and settings. Each of you flies your own throws. After the flight, open **Share** to save your flight card or copy the challenge. Compare who made it home, who managed the gentlest grab, and who brought the drill back.
+Turn on **Random station orientation** in any of the six scenarios to try a different approach. The station holds its new angle for the whole flight. Watch the mint outline in both visors to see how much room you have.
+
+In **New flight**, use **Copy code** or **Copy link** for any of the six openings. For example, paste `F1B-5011G7` into **Challenge code or link** and choose **Load code** to fly a tilted, near-frame Random Dodgeball approach in Orbital with a Soft grab. The code restores Tommi, debris, station angle, flight model, capture rule, inventory and starting aids. Each player flies their own throws. After the flight, open **Share** to save your flight card or copy the challenge. Compare who made it home, who managed the gentlest grab, and who brought the drill back.
 
 Fastball 3D is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. **Do not try this on orbit.**
 

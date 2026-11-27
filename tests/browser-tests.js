@@ -42,8 +42,8 @@
   function configure(index,mode,soft=false,story=false){
     click('new');click('pick-'+index);
     document.querySelector('input[name=model][value="'+mode+'"]').checked=true;
-    el('captureRule').value=soft==='firm'?'firm':soft?'soft':'none';if(index===3)el('seed').value='00019919';
-    el('storyMode').checked=story;el('setupForm').requestSubmit();
+    el('captureRule').value=soft==='firm'?'firm':soft?'soft':'none';if(isSeeded(index))setupSeed=index===5?2560:0;
+    el('storyMode').checked=story;updateSetup();el('setupForm').requestSubmit();
   }
   function aim(az,elv){
     const d=(az-yaw+540)%360-180;
@@ -345,7 +345,7 @@
     }
   });
   test('Random Dodgeball preview tracks a moving suit and edits to a paused throw',()=>{
-    start(5,'Orbital','firm','DB2-00500007',true,null,{preview:true,coach:false});
+    start(5,'Orbital','firm',2560,true,null,{preview:true,coach:false});
     pause();
     const opening=predictThrow();
     advance(.25);pause();
@@ -785,8 +785,8 @@
     }
   });
   test('Replay input accepts the length boundary and discards trailing prose punctuation',()=>{
-    const code='#seed=E-ff&level=Orbital';
-    eq(Replays.parse(code.padStart(512)).seed==='E-000000FF','512-character challenge');
+    const code='#seed=F1B-5011G7';
+    eq(Replays.parse(code.padStart(512)).seed===2560,'512-character challenge');
     eq(Replays.parse(code.padStart(513))===null,'overlong input rejected before trimming');
     eq(Replays.parse('Try this ('+code+').]').mode==='Orbital','sentence punctuation');
     eq(Replays.parse('#seed=invalid!')===null,'invalid seed');
@@ -796,13 +796,13 @@
   });
   test('Pasted challenge imports once and keeps subsequent setup edits',()=>{
     configure(3,'Straight-Line');click('new');
-    set('seed','Try this: https://example.test/#seed=E-ff&level=Orbital&goal=soft in Story.');
-    eq(el('seed').value==='E-000000FF' && setupRules().mode==='Orbital' && (el('captureRule').value==='soft'),'imported pasted rules');
+    set('seed','Try this: https://example.test/#seed=F1B-5011G7 in Story.');
+    eq(el('seed').value==='F1B-5011G7' && setupRules().mode==='Orbital' && (el('captureRule').value==='soft'),'imported pasted rules');
     click('storyMode');el('captureRule').value='none';document.querySelector('[name=model][value="Straight-Line"]').click();
     el('setupForm').requestSubmit();
-    eq(flight.seed==='E-000000FF'&&flight.story&&!flight.soft&&flight.mode==='Straight-Line','manual changes take precedence');
+    eq(flight.seed===2560&&flight.story&&!flight.soft&&flight.mode==='Straight-Line','manual changes take precedence');
     click('new');set('seed','a');keys('Enter',false,el('seed'));
-    eq(el('seed').value==='0000000A' && el('setup').open,'Enter previews a bare seed');
+    eq(el('seed').getAttribute('aria-invalid')==='true' && el('setup').open,'Enter rejects an incomplete code');
   });
   test('Grazing misses and a second Orbital approach report their clearance',()=>{
     fixture('Straight-Line',true,[0,-15,7.002],[0,.07,0]);instruments();
@@ -849,7 +849,7 @@
 
   test('Seed reuse and expiry',()=>{
     configure(3,'Orbital',true);const p=flight.pos.p.join(',');advance(flight.limit);
-    eq(flight.done==='oxygen','expiry');completeLossTransition();click('viewLog');eq(el('logSummary').textContent.includes('00019919')&&el('logThrows').textContent.includes('No tools'),'seeded log');
+    eq(flight.done==='oxygen','expiry');completeLossTransition();click('viewLog');eq(el('logSummary').textContent.includes(Challenge.encode(flight))&&el('logThrows').textContent.includes('No tools'),'seeded log');
     el('flightLog').querySelector('.close').click();click('retry');eq(flight.pos.p.join(',')===p,'retry seed');
     configure(3,'Straight-Line');eq(flight.pos.p.join(',')===p,'same model-independent start');
   });
@@ -1023,7 +1023,7 @@
     const challenge=card.querySelector('desc').textContent;
     eq(challenge.includes('1 throw ·')&&challenge.endsWith('1 fast entry'),'singular challenge text');
     el('debrief').close();
-    configure(3,'Orbital');eq(el('seedTag').textContent.startsWith('Copy replay'),'correct action label');
+    configure(3,'Orbital');eq(el('seedTag').textContent.startsWith('Copy link'),'correct action label');
     click('throw');advance(600);eq(el('advice').textContent.includes('1 throw'),'singular coast');
   });
   test('Keyboard aim repeats and a real-time stall pauses at 30×',()=>{
@@ -1073,8 +1073,8 @@
   });
 
   test('Equivalent manual straight-back pitch on named and seeded starts',()=>{
-    const seeds=Array.from({length:8},(_,i)=>104729+i);
-    const trials=[...Flight.named.map((_,i)=>[i,0]),...seeds.flatMap(n=>[[3,n],[3,'D-'+hex(n)]])];
+    const rows=Array.from({length:8},(_,i)=>[3,i*512+17]);
+    const trials=[...Flight.named.map((_,i)=>[i,0]),...rows];
     for(const mode of ['Straight-Line','Orbital'])for(const [index,seed] of trials){
       start(index,mode,true,seed);click('pause');advance(12);
       const [az,elev]=Flight.angles(flight.pos.p);
@@ -1097,40 +1097,33 @@
   });
   test('Seed generation, playback and log preserve the drift family',()=>{
     configure(3,'Straight-Line');click('new');click('reroll');const seed=el('seed').value;
-    eq(/^E-[0-9A-F]{8}$/.test(seed)&&el('seed').checkValidity(),'generated seed format');
-    el('seed').value='d-19919';el('setupForm').requestSubmit(el('setupForm').querySelector('[type="submit"]'));
-    eq(flight.seed==='D-00019919','canonical D seed');
-    eq(flight.pos.p.join(',')===Flight.opening(3,'D-00019919',false).p.join(','),'replayed new geometry');
-    const v=flight.pos.v.join(',');advance(flight.limit);click('viewLog');eq(el('logSummary').textContent.includes('D-00019919'),'seed in log');
-    el('flightLog').querySelector('.close').click();click('retry');eq(v===flight.pos.v.join(','),'D retry');
+    eq(Replays.parse(seed).index===3 && el('seed').checkValidity(),'generated drift code');
+    el('setupForm').requestSubmit();const v=flight.pos.v.join(',');
+    advance(600);click('viewLog');eq(el('logSummary').textContent.includes(seed),'code in log');
+    el('flightLog').close();click('retry');eq(v===flight.pos.v.join(','),'same drift on retry');
   });
   test('Copy, load and open shared scenarios with the original rules',()=>{
-    const source={seed:'D-00019919',mode:'Orbital',soft:true,story:true};
-    const hash='#seed=D-00019919&level=Orbital&goal=soft&story=1';
+    const source={index:3,seed:12,mode:'Orbital',soft:true,story:true};
+    const hash=Replays.fragment(source);
     const web=Replays.link(source,'https://example.test/games/3d/index.html');
     eq(web==='https://example.test/games/3d/index.html'+hash,'Alpha-style URL');
     eq(Replays.link(source,'file:///somewhere/index.html')===hash,'portable offline replay');
-    for(const seed of [0,0xffffffff,'D-00000000','D-FFFFFFFF','E-00000000','E-FFFFFFFF'])
-      for(const mode of ['Straight-Line','Orbital'])for(const soft of [true,false])for(const story of [true,false]){
-        const rules={seed,mode,soft,story},decoded=Replays.parse(Replays.fragment(rules));
-        eq(Object.keys(rules).every(key=>rules[key]===decoded[key]),'seed and rules round trip');
-      }
-    eq(Replays.parse('19',source).story&&Replays.parse('19',source).seed===25,'bare code keeps rules');
     start(0,'Straight-Line',false);
     eq(Replays.openHash(hash)&&!started&&flight.index===3&&flight.soft&&flight.story,'open directly, staged');
     const ref=Flight.opening(3,source.seed,true);
     eq(flight.initial.p.join()===ref.p.join()&&flight.initial.v.join()===ref.v.join(),'same position and velocity');
     click('pause');advance(12);const current=flight;
-    Replays.openHash('#seed=42&level=Straight-Line');
+    Replays.openHash('#seed=F1B-5011G7');
     eq(el('setup').open&&flight===current&&!running,'in-flight link prompts');
     el('setup').querySelector('.close').click();eq(flight===current&&flight.time>=12,'cancel keeps flight');
     click('new');el('seed').value='https://example.test/#seed=nope';click('loadSeed');
     eq(el('seed').getAttribute('aria-invalid')==='true'&&flight===current,'bad seed stays in setup');
     el('seed').value=web;click('loadSeed');
-    eq(el('seed').value===source.seed&&el('seedPreview').textContent.includes('m/s')&&(el('captureRule').value==='soft')&&el('storyMode').checked,'load link with settings');
+    eq(el('seed').value===Challenge.encode(source)&&el('seedPreview').textContent.includes('m/s')&&(el('captureRule').value==='soft')&&el('storyMode').checked,'load link with settings');
     const savedCopy=Replays.copy;let copied;
     try{
-      Replays.copy=text=>{copied=text;};click('copySetupSeed');
+      Replays.copy=text=>{copied=text;};click('copyCode');
+      eq(copied===Challenge.encode(source),'setup copies bare code');click('copySetupSeed');
       eq(copied.endsWith(hash),'setup copy');
       el('setupForm').requestSubmit();click('seedTag');
       eq(copied.endsWith(hash)&&flight.initial.p.join()===ref.p.join(),'in-flight copy and replay geometry');
@@ -1143,7 +1136,7 @@
     try{
       outcomes.oxygen='End <tspan>of</tspan> flight & debrief';
       const seed='Practice <tspan>opening</tspan>';
-      const card=new DOMParser().parseFromString(FlightLog.card({...flight,seed}),'image/svg+xml');
+      const card=new DOMParser().parseFromString(FlightLog.card({...flight,initial:{...flight.initial,name:seed}}),'image/svg+xml');
       eq(!card.querySelector('parsererror,tspan'),'well-formed SVG without injected markup');
       eq(card.querySelector('title').textContent.includes(outcomes.oxygen),'literal outcome in title');
       eq(card.querySelector('desc').textContent.includes(seed),'literal seed in description');
@@ -1169,7 +1162,7 @@
         eq(el('lossEpilogue').textContent.includes('Raspberry softly nudging her leg'),'Raspberry memory');
       }
       eq(flight.done===ending&&el('debrief').open&&!el('debriefShare').hidden,'share after '+ending);
-      eq(el('endSeed').textContent==='00019919','debrief seed');
+      eq(el('endSeed').textContent===Challenge.encode(flight),'debrief seed');
       const recovered=ending==='capture'?Flight.budgets[flight.mask]:0;
       const percent=(100*recovered/Flight.budgets[Flight.fullRack]).toFixed(1);
       const budget='Δv brought home '+recovered.toFixed(3)+' / 0.456 m/s ('+percent+'%)';
@@ -1180,7 +1173,7 @@
       click('viewLog');eq([budget,speed].every(s=>el('logSummary').textContent.includes(s)),'full log metrics');el('flightLog').close();
       click('openShareCard');const art=el('cardArt'),date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
       eq(el('shareCard').open&&art.querySelectorAll('svg').length===1&&art.textContent.includes('V-bar / R-bar')&&!art.textContent.includes('cross-track'),'one orbital-plane chart');
-      eq([date,seedLabel(flight.seed),outcomes[ending],flight.throws+'/'+Flight.gear.length+' tools used'].every(s=>art.textContent.includes(s)),'actual log and local completion date');
+      eq([date,Challenge.encode(flight),outcomes[ending],flight.throws+'/'+Flight.gear.length+' tools used'].every(s=>art.textContent.includes(s)),'actual log and local completion date');
       eq(art.querySelectorAll('.releaseMark').length===flight.throws,'all real releases');
       const labels=[...art.querySelectorAll('text')].map(node=>node.textContent);
       eq([budget,speed].every(s=>labels.includes(s)),'both metrics printed on card');
@@ -1194,7 +1187,7 @@
       }finally{Replays.copy=savedCopy;}
       el('debrief').close();
     }
-    configure(0,'Straight-Line');advance(600);eq(el('debriefShare').hidden,'named flight has no random seed');
+    configure(0,'Straight-Line');advance(600);eq(!el('debriefShare').hidden,'named flights share their challenge code');
   });
   test('Directional coast for closure, recession, a miss and an orbital bend',()=>{
     for(const [mode,position,velocity] of [
@@ -1466,12 +1459,12 @@
     eq(before.top>=body.getBoundingClientRect().bottom-1 && before.bottom<=innerHeight,'launch visible with seed controls expanded');
     body.scrollTop=body.scrollHeight;
     close(launch.getBoundingClientRect().top,before.top,.5);
-    keys('Home',false,el('pick-5'));eq(el('pick-0').checked && el('seedGroup').hidden,'Home restores the fixed opening');
+    keys('Home',false,el('pick-5'));eq(el('pick-0').checked && !el('seedGroup').hidden,'Home restores the fixed opening');
   });
   test('Dodgeball setup, prediction, coach, clock protection and collision ending',()=>{
     click('new');
     click('pick-4');
-    eq(el('seedGroup').hidden && el('setupBrief').textContent.includes('bent equipment frame'),'incident briefing');
+    eq(!el('seedGroup').hidden && el('setupBrief').textContent.includes('bent equipment frame'),'incident briefing');
     el('setup').close();
     for(const mode of ['Straight-Line','Orbital']){
       configure(4,mode,true,true);
@@ -1502,7 +1495,7 @@
       el('flightLog').close();click('openShareCard');
       const art=el('cardArt');
       eq(art.querySelectorAll('.debrisTrack').length===2 && art.querySelector('.debrisArrow') && art.querySelector('.debrisKey'),'debris paths, direction and gap key on the flight card');
-      eq(art.textContent.includes('Dodgeball Challenge') && el('copyEndSeed').hidden,'fixed incident card');
+      eq(art.textContent.includes('Dodgeball Challenge') && !el('copyEndSeed').hidden && art.textContent.includes(Challenge.encode(flight)),'fixed incident card');
       el('shareCard').close();el('debrief').close();
       el('showPreview').checked=false;el('dodgeCoach').checked=false;
     }
@@ -1555,38 +1548,22 @@
       eq(debris.every((span,i)=>span.min>0 && span.max<[width,height][i]),body.short+' in view');
     }
   });
-  test('Random Dodgeball seed entry, scenario switching and rule-preserving replay',()=>{
-    const code='DB1-007C5282';
-    click('new');click('pick-5');
-    eq(seedScenario(el('seed').value)===5 && !!Replays.parse(el('seed').value),'selecting Random Dodgeball generates a catalog seed');
-    click('reroll');eq(el('seed').value.startsWith('DB2-') && approvedDodgeballSeeds.has(parseInt(el('seed').value.slice(4),16)),'rolled seed is a qualified DB2 opening');
-    for(const drift of ['D-00019919','E-00019919','00019919']){
-      set('seed',drift);eq(el('pick-3').checked,'drift code selects Random Drift');
-      set('seed',code.toLowerCase());eq(el('pick-5').checked && el('seed').value===code,'Dodgeball code selects Random Dodgeball');
-    }
-    el('seed').value='DB1-FFFFFFFF';el('setupForm').requestSubmit();
-    eq(el('setup').open && el('seed').getAttribute('aria-invalid')==='true','unknown DB1 code stays in setup');
-    click('pick-3');el('seed').value='#seed='+code+'&level=Orbital&goal=soft&story=1';
-    el('setupForm').requestSubmit();
-    eq(flight.index===5 && flight.story && flight.soft && flight.mode==='Orbital','submit imports scenario and rules together');
-    eq(!el('seedTag').hidden && !el('coachControl').hidden,'seeded debris cockpit');
-    const original=flight.debrisPieces.map(b=>[b.p,b.v]),fragment=Replays.fragment(flight);
-    start(0,'Straight-Line',false);Replays.openHash(fragment);
-    eq(flight.seed===code && JSON.stringify(original)===JSON.stringify(flight.debrisPieces.map(b=>[b.p,b.v])),'shared replay restores both pieces');
-    eq(el('seedTag').textContent.includes(code) && flight.story && flight.soft,'shared replay retains rules');
-    for(const mode of ['Straight-Line','Orbital'])for(const soft of [false,true])for(const story of [false,true]){
-      const rules={mode,soft,story,seed:code},read=Replays.parse(Replays.fragment(rules));
-      eq(read.seed===code && read.mode===mode && read.soft===soft && read.story===story,'seed and flight rules round trip');
-    }
+  test('Challenge codes switch scenarios and restore exact flight rules',()=>{
+    click('new');set('seed','f1b-5011g7');
+    eq(setupRules().index===5 && setupPoseId===16 && el('captureRule').value==='soft','loaded pose, family and grab rule');
+    const old=flight;el('seed').value='F1B-5011G8';el('setupForm').requestSubmit();
+    eq(el('seed').getAttribute('aria-invalid')==='true' && flight===old,'invalid checksum does not launch');
+    set('seed','F1B-5011G7');el('setupForm').requestSubmit();
+    eq(flight.index===5 && flight.seed===2560 && Challenge.encode(flight)==='F1B-5011G7','exact canonical code');
   });
   test('Eight Random Dodgeball layouts open, frame both pieces and restore their own replay',()=>{
     for(const [i,layout] of Debris.layouts.entries()){
-      const id=dodgeballSeeds.find(seed=>Math.floor(seed/Debris.layoutStride)===i);
-      const code='DB2-'+hex(id),expected=Debris.layoutPieces(id);
+      const row=i*512,id=Catalog.debrisKey(row),expected=Debris.layoutPieces(id);
+      const code=Challenge.encode({index:5,seed:row,mode:'Orbital',soft:false,story:false});
       click('new');set('seed',code.toLowerCase());
       eq(el('pick-5').checked && el('seedPreview').textContent.includes(layout.name),'layout named in setup');
       el('setupForm').requestSubmit();
-      eq(flight.seed===code && flight.index===5,'launched selected layout');
+      eq(flight.seed===row && flight.index===5,'launched selected layout');
       const w=visor.clientWidth,h=visor.clientHeight,cam=Visor.camera(flight.pos.p,yaw,pitch,w,h,false,true,flight.visorLens);
       const view=visor.getBoundingClientRect();
       const panels=Array.from(visor.closest('.deck').querySelectorAll('.metrics,.pitchPod,.aftPod'),p=>p.getBoundingClientRect());
@@ -1600,26 +1577,79 @@
       }
       const fragment=Replays.fragment(flight);
       start(0,'Straight-Line',false);Replays.openHash(fragment);
-      eq(flight.seed===code && flight.debrisPieces[1].v.join()===expected[1].v.join(),'shared DB2 replay');
+      eq(flight.seed===row && flight.debrisPieces[1].v.join()===expected[1].v.join(),'shared Dodgeball opening');
     }
     eq(!Replays.parse('DB2-00FFFFFF') && !Replays.parse('DB1-00000000'),'validation uses the catalog for the supplied version');
   });
+  test('New flight offers qualified fixed station attitudes in all 72 configurations',()=>{
+    start(0,'Straight-Line',false);click('new');
+    eq(!el('randomOrientation').checked,'default orientation is standard');
+    el('setup').close();
+    for(let index=0;index<6;index++)for(const mode of ['Straight-Line','Orbital'])
+      for(const rule of ['none','firm','soft'])for(const story of [false,true]){
+        click('new');click('pick-'+index);
+        if(index===3)setupSeed=0;
+        if(index===5)setupSeed=2560;
+        document.querySelector('input[name=model][value="'+mode+'"]').checked=true;
+        el('captureRule').value=rule;el('storyMode').checked=story;
+        chooseSetupPose();updateSetup();if(!el('randomOrientation').checked)click('randomOrientation');
+        el('setupForm').requestSubmit();
+        eq(!el('setup').open && flight.pose.id && flight.index===index && flight.mode===mode && flight.story===story,'launch '+[index,mode,rule,story]);
+        eq(flight.soft===(rule==='firm'?'firm':rule==='soft'),'grab rule');
+        const restored=Replays.parse(Replays.fragment(flight));
+        eq(restored.poseId===flight.pose.id && restored.index===index && restored.seed===flight.seed,'replay identifies opening and pose');
+        const base=Flight.opening(index,flight.seed,story);eq(base.p.join()===flight.initial.p.join(),'opening position preserved');
+      }
+    start(0,'Straight-Line',false);
+  });
+  test('Tilted named flight previews, projects, shares and retries the same catch',()=>{
+    start(0,'Straight-Line',true);click('new');click('randomOrientation');el('setupForm').requestSubmit();
+    const pose=flight.pose,hash=Replays.fragment(flight);
+    el('showPreview').checked=true;const staged=predictThrow();
+    eq(staged.pose===pose,'preview uses the selected station');
+    // Fly a known coast into the local thin face at 30x.
+    const p=pose.world([5,-5.6,3]),v=pose.world([0,.05,0]);
+    flight.initial={...flight.initial,p,v};flight.pos={p,v};flight.time=0;reseat();
+    setClockStop(3);advance(150);
+    eq(flight.done==='capture' && Math.abs(flight.time-80)<1e-6,'continuous oriented grab');
+    click('viewLog');eq(el('logPanes').querySelectorAll('.grabEnvelope').length===2 && el('logSummary').textContent.includes(pose.label),'both log projections');
+    el('flightLog').close();click('openShareCard');
+    eq(el('cardArt').textContent.includes(pose.label) && el('cardArt').querySelector('.grabEnvelope'),'share card identifies the pose');
+    el('shareCard').close();click('retry');eq(flight.pose===pose && flight.time===0,'retry holds pose');
+    start(3,'Orbital',false,0);Replays.openHash(hash);
+    eq(flight.index===0 && flight.pose===pose,'named replay opens directly');
+    click('new');click('pick-3');el('seed').value=Challenge.encode({index:3,seed:0,mode:'Orbital',soft:false,story:false});click('loadSeed');
+    eq(!el('randomOrientation').checked,'bare seed restores standard station');
+    el('setup').close();beginLesson(0);eq(!flight.pose.id,'authored first rescue');
+    start(0,'Straight-Line',false);
+  });
   test('Near frame crossing reverses the hazard order and permits a manual Orbital soft grab',()=>{
-    const code='DB2-00500007';
-    start(5,'Orbital',true,code);click('pause');advance(12);
-    const fire=c=>{choose(c.tool);changePower(c.power);setView(Flight.direction(c.az,c.el));click('throw');};
-    fire(Flight.command(Flight.transfer(flight.pos,[3,0,3],420,'Orbital'),5,flight.mask));
-    eq(flight.forecast.debris.hit?.body.short==='Frame','frame crosses the first pitch');
-    advance(24);fire({tool:7,az:165,el:38,power:100});
-    eq(flight.forecast.debris.hit?.body.short==='Cover','cover crosses the detour');
-    advance(144);fire({tool:8,az:-21,el:-36,power:100});advance(420);
-    eq(flight.done==='capture' && flight.throws===3,'captured with three manual throws');
-    click('openShareCard');eq(el('cardArt').textContent.includes(code),'new code on flight card');el('shareCard').close();
-    click('retry');eq(flight.seed===code && flight.time===0,'retry restores new opening');
+    const code=2560;
+    const mask=Catalog.mask(5,code),tilt=Flight.poses.findLast(p=>p.id && (mask&(1<<(p.id-1))));
+    for(const pose of [Flight.poses[0],tilt]){
+      start(5,'Orbital',true,code,false,null,{preview:true,coach:true},pose.id);click('pause');advance(12);
+      const fire=c=>{choose(c.tool);changePower(c.power);setView(Flight.direction(c.az,c.el));click('throw');};
+      fire(Flight.command(Flight.transfer(flight.pos,[3,0,3],420,'Orbital'),5,flight.mask));
+      eq(flight.forecast.debris.hit?.body.short==='Frame','frame crosses the first pitch');
+      click('showPreview');click('dodgeCoach');
+      advance(24);fire({tool:7,az:165,el:38,power:100});
+      eq(flight.forecast.debris.hit?.body.short==='Cover','cover crosses the detour');
+      advance(144);fire({tool:8,az:-21,el:-36,power:100});advance(420);
+      eq(flight.done==='capture' && flight.throws===3,'captured with three manual throws');
+      click('openShareCard');eq(el('cardArt').textContent.includes(Challenge.encode(flight)),'new code on flight card');el('shareCard').close();
+      click('retry');eq(flight.seed===code && flight.time===0 && flight.pose===pose,'retry restores opening and tilt');
+      eq(el('showPreview').checked && el('dodgeCoach').checked,'retry restores the two starting aids');
+    }
+  });
+  test('Unqualified poses are rejected by every import path',()=>{
+    const row=Array.from({length:4096},(_,i)=>i).find(i=>Catalog.mask(5,i)!==65535);
+    const pose=Flight.poses.slice(1).find(p=>!(Catalog.mask(5,row)&(1<<(p.id-1))));
+    const code=Challenge.encode({index:5,seed:row,pose,mode:'Orbital',soft:true,story:false});
+    eq(!Replays.parse(code) && !Replays.parse('#seed='+code),'invalid pose even with valid checksum');
   });
   test('Seeded manual route, coach, log, card and retry use the selected debris',()=>{
     for(const mode of ['Straight-Line','Orbital']){
-      const code='DB1-007C5282';
+      const code=0;
       start(5,mode,true,code,false);click('pause');advance(12);
       const fire=c=>{choose(c.tool);changePower(c.power);setView(Flight.direction(c.az,c.el));click('throw');};
       fire(Flight.command(Flight.transfer(flight.pos,[3,0,3],420,mode),5,flight.mask));
@@ -1629,10 +1659,10 @@
       eq(aim && !Debris.forecast(Flight.release(flight.pos,aim.tool,100,aim.dir,flight.mask),flight.time,600-flight.time,mode,flight.debrisPieces).hit,'coach clears the two seeded objects');
       advance(24);fire({tool:7,az:0,el:-90,power:100});
       eq(flight.forecast.debris.hit?.body===flight.debrisPieces[1],'seeded frame crosses detour');paintVisors();
-      advance(149);fire(mode==='Orbital'?{tool:8,az:-31,el:81,power:99}:{tool:8,az:104,el:88,power:98});
+      advance(144);fire(mode==='Orbital'?{tool:8,az:17,el:83,power:91}:{tool:8,az:111,el:83,power:100});
       advance(415);eq(flight.done==='capture','soft capture on the catalog route');
-      click('viewLog');eq(el('logSummary').textContent.includes(code) && el('logPanes').querySelectorAll('.debrisTrack').length===4,'seed and tracks in flight log');el('flightLog').close();
-      click('openShareCard');eq(el('cardArt').textContent.includes(code) && el('cardArt').querySelectorAll('.debrisTrack').length===2,'seed and tracks on card');el('shareCard').close();
+      click('viewLog');eq(el('logSummary').textContent.includes(Challenge.encode(flight)) && el('logPanes').querySelectorAll('.debrisTrack').length===4,'seed and tracks in flight log');el('flightLog').close();
+      click('openShareCard');eq(el('cardArt').textContent.includes(Challenge.encode(flight)) && el('cardArt').querySelectorAll('.debrisTrack').length===2,'seed and tracks on card');el('shareCard').close();
       const cover=flight.debrisPieces[0].p.join();
       click('retry');eq(flight.index===5 && flight.seed===code && flight.debrisPieces[0].p.join()===cover,'retry restores incident');
       el('dodgeCoach').checked=false;

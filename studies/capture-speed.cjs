@@ -2,9 +2,10 @@
 // Each JSON line compares identical initial states, inventory and error streams.
 'use strict';
 const {F,D,fly,modes}=require('./random-dodgeball.cjs');
-const ids=require('../assets/dodgeball-layout-seeds.json');
+const catalogData=require('./catalog-data.cjs');
+const ids=Array.from({length:catalogData.count},(_,row)=>catalogData.debrisKey(row));
 const rules=[true,'firm'];
-const seeds=Array.from({length:200},(_,i)=>'E-'+((0x3a7c0001+i*104729)>>>0).toString(16));
+const seeds=Array.from({length:200},(_,i)=>(11+i*137)%4096);
 const layouts=D.layouts.map((layout,i)=>({
   name:layout.name,ids:ids.filter(id=>Math.floor(id/D.layoutStride)===i),index:i
 }));
@@ -60,7 +61,7 @@ function catalog(){
   }
 }
 // Enumerate single throws and paired throws separated by 24 seconds. Cache the
-// instrument settings and coast arcs before checking the moving boxes for each DB2 seed.
+// instrument settings and coast arcs before checking the moving boxes for each Dodgeball opening.
 function candidates(initial,mode,story,rule){
   const plans=[],keys=new Set(),stage=F.motion(initial,12,mode);
   function finish(state,time,path,mask,key,throws){
@@ -222,6 +223,9 @@ function review(){
   const path=require('node:path');
   process.env.FB3D_ROOT=path.resolve(__dirname,'..');
   const H=require(path.resolve(process.argv[3]));
+  // The external simulator reads the standalone physics in its own context.
+  // Supply our catalog-backed opening function for this checkout.
+  H.F.opening=F.opening;
   const original={...H.F};
   let rule=true;
   H.F.softEnough=speed=>original.softEnough(speed,rule);

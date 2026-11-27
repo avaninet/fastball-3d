@@ -75,14 +75,14 @@ function beginLesson(i){
   visor.focus({preventScroll:true});
 }
 function scheduleHalfwayCheck(){
-  const target=Flight.clearance(flight.initial.p)/2,nearest=flight.forecast.near;
+  const target=Flight.clearance(flight.initial.p,flight.pose)/2,nearest=flight.forecast.near;
   flight.checkAt=null;
-  if(nearest.d>target || Flight.clearance(flight.pos.p)<=target)return;
+  if(nearest.d>target || Flight.clearance(flight.pos.p,flight.pose)<=target)return;
   // First rescue flies Straight-Line. Clearance decreases up to the nearest pass.
   let lo=0,hi=nearest.t;
   for(let i=0;i<32;i++){
     const mid=(lo+hi)/2;
-    if(Flight.clearance(Flight.motion(flight.anchor,mid,flight.mode).p)>target)lo=mid;else hi=mid;
+    if(Flight.clearance(Flight.motion(flight.anchor,mid,flight.mode).p,flight.pose)>target)lo=mid;else hi=mid;
   }
   flight.checkAt=flight.time+hi;
 }
@@ -128,7 +128,7 @@ function updateLessonCue(status=Flight.coastStatus(flight)){
     label='Line up brake';
   }else{
     const near=status.near;
-    const miss=near.t>flight.age?sub(near.p,near.bar):sub(flight.pos.p,Flight.nearest(flight.pos.p));
+    const miss=near.t>flight.age?sub(near.p,near.bar):sub(flight.pos.p,Flight.nearest(flight.pos.p,flight.pose));
     const advice=status.kind==='receding'?'A heavy pitch can counter your outward drift.':'A pitch that way nudges your suit back toward the bars.';
     cue=[trimHint(miss,yaw,pitch),advice,'Line up a correction and check its tool and power.'].filter(Boolean).join(' ');
     label='Line up correction';
@@ -142,25 +142,25 @@ function storyCorrection(){
   for(const i of rackOrder){
     if(!(flight.mask&(1<<i)))continue;
     const candidates=[];
-    if(flight.soft && (hit ? !Flight.softEnough(hit.speed,flight.soft) : Flight.inside(s.p))){
+    if(flight.soft && (hit ? !Flight.softEnough(hit.speed,flight.soft) : Flight.inside(s.p,flight.pose))){
       const magnitude=norm(s.v)-(Flight.captureLimit(flight.soft)-.012);
       if(magnitude>0)candidates.push(scale(unit(s.v),-magnitude));
     }else{
       for(const f of [.75,.9,.6,.45,.3])for(const fraction of [.85,.55,0]){
-        candidates.push(Flight.transfer(s,scale(Flight.nearest(s.p),fraction),left*f,flight.mode));
+        candidates.push(Flight.transfer(s,scale(Flight.nearest(s.p,flight.pose),fraction),left*f,flight.mode));
       }
     }
     for(const dv of candidates){
       const command=Flight.command(dv,i,flight.mask);
       const next=Flight.applyCommand(s,command,flight.mask);
-      const contacts=Flight.entries(next,left,flight.mode,Flight.inside(s.p)&&flight.misses>0,flight.soft);
+      const contacts=Flight.entries(next,left,flight.mode,Flight.inside(s.p,flight.pose)&&flight.misses>0,flight.soft,flight.pose);
       if(contacts.some(entry=>Flight.canGrab(entry,flight.soft)))return command;
     }
   }
   // Story reloads the battery. Aim its strongest impulse toward an intercept,
   // then plan the next pitch from the resulting measured coast.
   if(flight.story && left>0){
-    const dv=Flight.transfer(s,Flight.nearest(s.p),left*.8,flight.mode);
+    const dv=Flight.transfer(s,Flight.nearest(s.p,flight.pose),left*.8,flight.mode);
     return {...Flight.command(dv,5,flight.mask),power:100,partial:true};
   }
 }

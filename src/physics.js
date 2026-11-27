@@ -48,9 +48,27 @@ const Flight = (() => {
       v:[3*n*b*x+c*vx+2*b*vy,-6*n*k*x-2*b*vx+(1-4*k)*vy,-n*b*z+c*vz]
     };
   }
-  const nearest = p => p.map((x,i)=>clamp(x,-half[i],half[i]));
-  const clearance = p => norm(sub(p,nearest(p)));
-  const inside = p => p.every((x,i)=>Math.abs(x)<=half[i]+1e-8);
+  // Version 1 replay IDs. Rotate about X, then fixed-frame Z. The orbital
+  // equations and velocities always use the original orbital coordinates.
+  const tilts=[15,30].flatMap(d=>[[d,0],[-d,0],[0,d],[0,-d],[d,d],[-d,d],[d,-d],[-d,-d]]);
+  const poses=[[0,0],...tilts].map(([x,z],id)=>{
+    const a=x*rad,b=z*rad,c=Math.cos(a),s=Math.sin(a),u=Math.cos(b),v=Math.sin(b);
+    const axes=[[u,v,0],[-v*c,u*c,s],[v*s,-u*s,c]];
+    const local=p=>axes.map(axis=>dot(axis,p));
+    const world=p=>[0,1,2].map(i=>axes[0][i]*p[0]+axes[1][i]*p[1]+axes[2][i]*p[2]);
+    const corners=[];
+    for(const i of [-1,1])for(const j of [-1,1])for(const k of [-1,1])
+      corners.push(world([i*half[0],j*half[1],k*half[2]]));
+    const signed=n=>(n>0?'+':'')+n+'°';
+    return {id,axes,local,world,corners,label:'Tilt X '+signed(x)+' / Z '+signed(z)};
+  });
+  function nearest(p,pose){
+    const q=pose?.id?pose.local(p):p;
+    const bar=q.map((x,i)=>clamp(x,-half[i],half[i]));
+    return pose?.id?pose.world(bar):bar;
+  }
+  const clearance = (p,pose) => norm(sub(p,nearest(p,pose)));
+  const inside = (p,pose) => (pose?.id?pose.local(p):p).every((x,i)=>Math.abs(x)<=half[i]+1e-8);
   // Capture rules use false for Any-speed, true for Soft and 'firm' for Firm.
   const captureLimit = rule => rule==='firm' ? .120 : limit;
   const softEnough = (speed,rule=true) => speed<=captureLimit(rule)+1e-9;
@@ -108,20 +126,24 @@ const Flight = (() => {
     }
     return polynomialRoots(coeff,0,Math.tan(n*end/2)).map(u=>2*Math.atan(u)/n);
   }
-  function entries(s,end,mode,skipInitial=false,soft=false) {
+  function entries(s,end,mode,skipInitial=false,soft=false,pose) {
     const [x,,z]=s.p,[vx,vy,vz]=s.v;
     const coeff=[[3*n*x+2*vy,vx,0],[-2*vx,4*vy+6*n*x,-3*vy-6*n*x],[-n*z,vz,0]];
     const candidates=[0,end];
     for(let i=0;i<3;i++) {
-      const cuts=mode==='Orbital' ? extrema(...coeff[i],end) : [0,end];
+      const normal=pose?.id?pose.axes[i]:null;
+      const component=p=>normal?dot(normal,p):p[i];
+      const faceAt=t=>component(motion(s,t,mode).p);
+      const velocity=normal?[0,1,2].map(k=>normal[0]*coeff[0][k]+normal[1]*coeff[1][k]+normal[2]*coeff[2][k]):coeff[i];
+      const cuts=mode==='Orbital' ? extrema(...velocity,end) : [0,end];
       for(let j=1;j<cuts.length;j++) {
-        const a=cuts[j-1],b=cuts[j],pa=motion(s,a,mode).p[i],pb=motion(s,b,mode).p[i];
+        const a=cuts[j-1],b=cuts[j],pa=faceAt(a),pb=faceAt(b);
         for(const face of [-half[i],half[i]]) {
           if(Math.abs(pa-face)<1e-9) candidates.push(a);
           if(Math.abs(pb-face)<1e-9) candidates.push(b);
           if((pa-face)*(pb-face)>=0) continue;
           if(mode==='Straight-Line') {candidates.push(a+(b-a)*(face-pa)/(pb-pa)); continue;}
-          candidates.push(bisectCrossing(t=>motion(s,t,mode).p[i]-face,a,b,pa-face));
+          candidates.push(bisectCrossing(t=>faceAt(t)-face,a,b,pa-face));
         }
       }
     }
@@ -130,26 +152,26 @@ const Flight = (() => {
     const found=[];
     for(let i=0;i<sorted.length;i++) {
       const t=sorted[i], sample=motion(s,t,mode);
-      if(!inside(sample.p)) continue;
+      if(!inside(sample.p,pose)) continue;
       const before=i?motion(s,(sorted[i-1]+t)/2,mode):null;
-      const alreadyInside=before?inside(before.p):skipInitial;
+      const alreadyInside=before?inside(before.p,pose):skipInitial;
       const speed=norm(sample.v);
       if(alreadyInside && !(soft && softEnough(speed,soft) && (!before||norm(before.v)>captureLimit(soft))))continue;
       found.push({t,p:sample.p,speed});
     }
     return found;
   }
-  function forecast(s,end,mode,skipInitial=false,soft=false) {
-    const hits=entries(s,end,mode,skipInitial,soft);
+  function forecast(s,end,mode,skipInitial=false,soft=false,pose) {
+    const hits=entries(s,end,mode,skipInitial,soft,pose);
     const path=[], steps=Math.max(2,Math.ceil(end/6)), ds=[];
     for(let i=0;i<=steps;i++) {
       const t=end*i/steps,p=motion(s,t,mode).p;
-      path.push({t,p}); ds.push(clearance(p));
+      path.push({t,p}); ds.push(clearance(p,pose));
     }
-    const dist=t=>clearance(motion(s,t,mode).p);
+    const dist=t=>clearance(motion(s,t,mode).p,pose);
     const pass=t=>{
       const p=motion(s,t,mode).p;
-      return {t,p,d:clearance(p),bar:nearest(p)};
+      return {t,p,d:clearance(p,pose),bar:nearest(p,pose)};
     };
     const passes=[];
     for(let i=0;i<=steps;i++) {
@@ -178,7 +200,7 @@ const Flight = (() => {
     if(state.done)return {kind:'finished'};
     const {forecast,age}=state,hit=forecast.hits[state.hitIndex];
     if(hit)return {kind:canGrab(hit,state.soft)?'grab':'fastEntry',hit};
-    if(inside(state.pos.p))return {kind:'inside'};
+    if(inside(state.pos.p,state.pose))return {kind:'inside'};
     const near=coastPass(forecast,age);
     if(state.misses && near.d<1e-6 && near.t<=age)return {kind:'cleared',near};
     if(near.t===0)return {kind:'receding',near};
@@ -202,65 +224,6 @@ const Flight = (() => {
     return {tool,az:Math.round(az),el:Math.round(el),power:clamp(Math.round(100*norm(dv)/impulse(tool,mask)),10,100)};
   }
   function applyCommand(s,c,mask) {return release(s,c.tool,c.power,direction(c.az,c.el),mask);}
-  // Keep the seed sequence compatible with the first six-slot prototype.
-  // The live opening is derived from this reproducible separation below.
-  const seedRack=(1<<6)-1, seedHorizon=450;
-  function witness(s,mode) {
-    if(entries(s,seedHorizon,mode).length) return false;
-    for(const t of [350,395,305,420]) {
-      const target=scale(nearest(s.p),0.55), dv=transfer(s,target,t,mode);
-      for(const tool of [3,4,5]) {
-        if(norm(dv)>impulse(tool,seedRack)*1.01) continue;
-        const c=command(dv,tool,seedRack), hit=entries(applyCommand(s,c,seedRack),seedHorizon-12,mode)[0];
-        if(hit && hit.speed<=limit-.004) return true;
-      }
-    }
-    return false;
-  }
-  // The original D-seed filter also admitted two releases four seconds apart.
-  function twoThrowWitness(s,mode){
-    if(entries(s,seedHorizon,mode).length)return false;
-    for(const t of [350,395,305,420]){
-      const target=scale(nearest(s.p),.55);
-      const first=command(transfer(s,target,t,mode),5,seedRack);
-      const coast=applyCommand(s,first,seedRack);
-      if(entries(coast,4,mode).length)continue;
-      const next=motion(coast,4,mode),dv=transfer(next,target,t-4,mode),mask=seedRack^(1<<5);
-      for(const tool of [2,3,4]){
-        if(norm(dv)>impulse(tool,mask)*1.01)continue;
-        const final=applyCommand(next,command(dv,tool,mask),mask);
-        const hit=entries(final,seedHorizon-16,mode)[0];
-        if(hit && hit.speed<=limit-.004)return true;
-      }
-    }
-    return false;
-  }
-  function randomStart(seed) {
-    const current=typeof seed==='string' && /^E-/i.test(seed);
-    const varied=current || (typeof seed==='string' && /^D-/i.test(seed));
-    const numeric=typeof seed==='string'?parseInt(seed.replace(/^[DE]-/i,''),16):seed;
-    const rng=seedStream(numeric);
-    const crossing=varied && rng()<.76;
-    for(let i=0;i<350;i++) {
-      const side=rng()<.5?-1:1;
-      const s={name:'Random drift',seed,p:[rng()*32-16,side*(12+rng()*12),rng()*28-14],
-        v:[(rng()-.5)*.068,side*(.003+rng()*.027),(rng()-.5)*.055],
-        brief:'An unfamiliar separation. Read your drift and choose an opening pitch.'};
-      if(varied){
-        if(crossing)s.p=[rng()*56-28,side*(14+rng()*17),rng()*44-22];
-        const [az,el]=angles(s.p),angle=2*Math.PI*rng();
-        const tangent=add(scale(direction(az+90,0),Math.cos(angle)),scale(direction(az,el+90),Math.sin(angle)));
-        const radial=crossing?(rng()-.56)*.095:-.012+.045*rng();
-        const lateral=crossing?.070+.057*rng():.020+.040*rng();
-        s.v=add(scale(unit(s.p),radial),scale(tangent,lateral));
-      }
-      if(current && [s,manualOpening(s)].some(initial=>
-        ['Straight-Line','Orbital'].some(mode=>entries(initial,oxygenReserve,mode).length)))continue;
-      const reachable=mode=>witness(s,mode)||(crossing&&twoThrowWitness(s,mode));
-      if(reachable('Straight-Line') && reachable('Orbital'))return s;
-    }
-    return {...named[0],seed,name:'Random drift',brief:'A seeded tether-separation reserve case.'};
-  }
   function manualOpening(base){
     // Manual separations start one third farther from the nearest grab bar.
     const bar=nearest(base.p);
@@ -273,9 +236,9 @@ const Flight = (() => {
     if(index===4)return {...manualOpening(named[0]),name:'Dodgeball Challenge',
       brief:'The platform takes Tommi’s tether anchor with it. A loose cover and bent frame cross her path home.',
       briefing:'An external work platform tears free, taking Tommi’s tether anchor with it. A service cover and a bent equipment frame drift across her route to the grab bars. Her thrusters are stuck. Pick a gap and use the tools to get home.'};
-    const base=index===3?randomStart(seed):named[index];
+    const base=index===3?Catalog.drift(seed):named[index];
     return story?base:manualOpening(base);
   }
-  return {gear,fullRack,named,opening,half,limit,captureLimit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,rackAfterThrow,impulse,budgets,
-    release,motion,nearest,clearance,inside,softEnough,canGrab,entries,forecast,coastPass,coastStatus,seedStream,transfer,command,applyCommand,randomStart};
+  return {gear,fullRack,named,opening,poses,half,limit,captureLimit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,rackAfterThrow,impulse,budgets,
+    release,motion,nearest,clearance,inside,softEnough,canGrab,entries,forecast,coastPass,coastStatus,seedStream,transfer,command,applyCommand,manualOpening};
 })();

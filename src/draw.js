@@ -58,7 +58,15 @@ const Visor = (() => {
   function polygon(ctx,xy){
     ctx.beginPath();ctx.moveTo(...xy[0]);for(let i=1;i<xy.length;i++)ctx.lineTo(...xy[i]);ctx.closePath();
   }
-  function station(ctx,cam) {
+  function station(ctx,cam,pose) {
+    // The assembly, painter ordering and surface details share its local camera.
+    if(pose?.id){
+      const eye=pose.local(cam.p);
+      const right=pose.local(cam.right),up=pose.local(cam.up),ahead=pose.local(cam.forward);
+      cam={...cam,p:eye,world:q=>{
+        const d=sub(q,eye);return [dot(d,right),dot(d,up),dot(d,ahead)];
+      }};
+    }
     Station.forEachVisibleFace(cam.p,face=>{
       const vertices=face.points.map(cam.world),whole=vertices.every(q=>q[2]>=near);
       const clipped=whole?vertices:clip(vertices);
@@ -303,7 +311,7 @@ const Visor = (() => {
     objects.sort((a,b)=>cam.world(b.center)[2]-cam.world(a.center)[2]);
     ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
     for(const {body,center} of objects){
-      if(Station.crosses(cam.p,center))continue;
+      if(Station.crosses(cam.p,center,state.pose))continue;
       let previous=center;
       for(const seconds of [12,24,36,48]){
         const next=Flight.motion(body,state.time+seconds,state.mode).p;
@@ -407,7 +415,7 @@ const Visor = (() => {
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const covers=small?[]:cockpitPanels.get(canvas)??[];
     const label=captions(ctx,covers,w);
-    station(ctx,cam);
+    station(ctx,cam,state.pose);
     if(state.forecast.debris)debrisScene(ctx,cam,state,small);
     Equipment.draw(ctx,cam,w,sceneHeight,state.objects,small);
     if(preview)course(ctx,cam,preview,small,w,h,label,true);

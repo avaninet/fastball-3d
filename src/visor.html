@@ -242,13 +242,14 @@ __COCKPIT_STYLE__</style>
             </div>
           </fieldset>
           <p id="setupBrief" aria-live="polite"></p>
-          <div id="seedGroup" hidden>
-            <label class="rowLabel" for="seed">Scenario seed or replay link</label>
+          <div id="seedGroup">
+            <label class="rowLabel" for="seed">Challenge code or link</label>
             <input class="seedInput" id="seed" spellcheck="false" autocomplete="off" aria-describedby="seedPreview">
             <div class="seedActions">
-              <button type="button" id="loadSeed">Load seed</button>
-              <button type="button" id="reroll">Generate seed</button>
-              <button type="button" id="copySetupSeed">Copy replay</button>
+              <button type="button" id="loadSeed">Load code</button>
+              <button type="button" id="reroll">Generate opening</button>
+              <button type="button" id="copyCode">Copy code</button>
+              <button type="button" id="copySetupSeed">Copy link</button>
             </div>
             <p id="seedPreview" role="status"></p>
           </div>
@@ -263,6 +264,7 @@ __COCKPIT_STYLE__</style>
             <option value="firm">Firm capture · 0.120 m/s</option>
             <option value="soft">Soft capture · 0.080 m/s</option>
           </select>
+          <label class="challenge"><input type="checkbox" id="randomOrientation" aria-describedby="orientationNote"><span>Random station orientation<small id="orientationNote" role="status">Select to start the station at a fixed tilt.</small></span></label>
           <label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small>Tools reload. Aim while paused, or use Face station and Face away. Drift scenarios start closer to the bars.</small></span></label>
         </div>
         <div class="dialogFoot">
@@ -342,7 +344,10 @@ __COCKPIT_STYLE__</style>
         path looks end-on, read the time, side and clearance under Current coast. A negative range rate means the gap
         to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the chosen grab limit. Any-speed flights show the soft limit as a reference. Positive X
         points away from Earth, +Y along the orbit and +Z above its plane. The whole <span id="envelopeSize"></span>
-        m outline (X × Y × Z, with the thin side along track) is within reach, including the gaps between panels.</p>
+        m outline (the thin side points along track in the standard orientation) is within reach, including the gaps between panels.</p>
+        <p>Choose <strong>Random station orientation</strong> in New flight to tilt the station for this opening.
+        It holds that angle while you coast. Check the mint outline in both visors, especially when one view
+        shows a thin edge. The miss distance and Preview throw use the tilted bars. X, Y and Z still follow the orbit.</p>
         <h3>Trim and brake</h3>
         <p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you
         which way to aim in the forward visor. A pitch up and right nudges the suit down and left. If you reach the
@@ -379,16 +384,11 @@ __COCKPIT_STYLE__</style>
         Fast-forward drops to 1× with up to 65 seconds to react. Dodgeball Coach can suggest a tool, power and
         bearing to clear both pieces. Use Preview throw to check where that dodge leaves you relative to the bars.
         When Current coast says a piece clears in a few seconds, hold the coast through the pass, then trim home.</p>
-        <h3>Share a seeded flight</h3>
-        <p>The two right-hand scenario buttons open the seed controls. Random Drift shows Tommi’s opening gap
-        and speed. Random Dodgeball draws from eight layouts with 512 variations each. Its preview names the
-        layout and gives the distance to each piece. Choose <strong>Generate seed</strong> for a new challenge,
-        or paste a friend’s code or link and choose <strong>Load seed</strong>.</p>
-        <p>A bare code uses your current settings. <strong>Copy replay</strong> shares the opening, flight model,
-        grab rule, Story setting and starting Preview and Coach settings. Your friend flies the throws.
-        The debrief, log and flight card record Preview and Coach if enabled at any point, even if you turned
-        them off before the grab. Using Face drift in manual flight is recorded too. Retry keeps your current
-        Preview and Coach choices. You can save the flight card as an image.</p>
+        <h3>Share an opening</h3>
+        <p>Random Drift and Random Dodgeball each have 4,096 openings. Dodgeball draws from eight debris layouts.
+        Choose <strong>Generate opening</strong> to try another. Paste a friend's ten-character code or link
+        in New flight to load the same opening, station angle, flight model, grab rule, inventory and starting aids.
+        The flight card prints the same code. Retry restores its starting settings.</p>
         <h3>Story / guided rescue</h3>
         <p>First rescue starts a fresh Straight-Line lesson. Every Story throw reloads the selected tool. Suit mass
         stays constant, so repeating a pitch at the same power gives the same recoil. You can line up while paused
@@ -443,10 +443,10 @@ __COCKPIT_STYLE__</style>
         </div>
         <section id="debriefShare" hidden aria-labelledby="shareHeading">
           <h3 id="shareHeading">Share</h3>
-          <p id="shareIntro">Copy the replay to challenge a friend on this opening. Compare the aids, throws and grab speeds on your flight cards.</p>
+          <p id="shareIntro">Share the challenge link to give a friend the same opening and starting settings. Compare the aids, throws and grab speeds on your flight cards.</p>
           <div class="seedActions">
             <code id="endSeed"></code>
-            <button id="copyEndSeed">Copy replay</button>
+            <button id="copyEndSeed">Copy link</button>
             <button id="openShareCard">View flight card</button>
           </div>
           <p id="endShareStatus" role="status"></p>
@@ -495,7 +495,7 @@ __COCKPIT_STYLE__</style>
     <dialog id="copyDialog" aria-labelledby="copyTitle">
       <div class="dialogBody">
         <div class="dialogHead">
-          <h2 id="copyTitle">Copy replay</h2>
+          <h2 id="copyTitle">Copy link</h2>
           <button class="x close" aria-label="Close">×</button>
         </div>
         <label for="copyText">Select and copy the text below.</label>
@@ -505,8 +505,12 @@ __COCKPIT_STYLE__</style>
     <img id="earthArt" hidden src="__EARTH__" alt="">
     <script id="physics">__PHYSICS__</script>
     <script id="debris">__DEBRIS__</script>
-    <script id="dodgeballLayoutCatalog" type="application/json">__DODGEBALL_LAYOUT_CATALOG__</script>
-    <script id="dodgeballCatalog" type="application/json">__DODGEBALL_CATALOG__</script>
+    <script id="catalog">
+__CATALOG__
+function unpackCatalog(text){return new DataView(Uint8Array.from(atob(text),c=>c.charCodeAt(0)).buffer);}
+const Catalog=createCatalog(unpackCatalog('__DRIFT_BYTES__'),unpackCatalog('__DODGE_BYTES__'),__CHALLENGE_MASK__);
+    </script>
+    <script id="challenge">__CHALLENGE__</script>
     <script>__READOUT__</script>
     <script>__EARTH_SKY__</script>
     <script>__STATION__</script>

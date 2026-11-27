@@ -98,22 +98,7 @@ const Debris = (() => {
       colors:['#46494d','#74665c','#99887a','#b6a596','#ddd0b9'],
       mesh:bentFrame()}
   ];
-  // DB1 replay contract. These incident states, draw order and arithmetic
-  // reproduce the catalog's full-precision centres and velocities.
-  function seededPieces(seed){
-    const rng=Flight.seedStream(seed),offset=width=>(2*rng()-1)*width;
-    return pieces.map((base,i)=>{
-      const horizon=i===0?77:270;
-      const displacement=[offset(2.2),offset(2.8),offset(1.3)];
-      const jitter=[offset(.003),offset(.003),offset(.002)];
-      const encounterTime=horizon+offset(i===0?6:18);
-      const v=add(scale(sub(scale(base.v,horizon),displacement),1/encounterTime),jitter);
-      return {...base,p:add(base.p,displacement),v};
-    });
-  }
-  // DB2. Each layout fixes two reference states and their crossing times.
-  // Bits 20 and above select the layout. The low bits identify a candidate
-  // inside it. Only IDs qualified offline are offered to players.
+  // The offline catalog stores a generator key for each debris pair.
   const layoutStride = 0x100000;
   const layouts = [
     {name:'Left cover crossing', bodies:[
@@ -234,7 +219,7 @@ const Debris = (() => {
     const nearest=approaches.reduce((a,b)=>a.gap<b.gap?a:b);
     return {hit,nearest,approaches};
   }
-  function avoidance(s,mask,mode,epoch,end,hazard,bodies=pieces){
+  function avoidance(s,mask,mode,epoch,end,hazard,bodies=pieces,pose){
     if(!mask)return null;
     const relative=sub(s.v,motion(hazard.body,epoch,mode).v);
     const dirs=[[0,0,-1],[0,0,1],[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],unit(relative)];
@@ -249,12 +234,12 @@ const Debris = (() => {
         const check=forecast(next,epoch,end,mode,bodies);
         if(check.hit || check.nearest.gap<.30)continue;
         const at=motion(next,Math.min(end,hazard.t+35),mode).p;
-        const score=Math.min(check.nearest.gap,1.4)-.045*Flight.clearance(at);
+        const score=Math.min(check.nearest.gap,1.4)-.045*Flight.clearance(at,pose);
         if(!best || score>best.score)best={tool,dir,score};
       }
       if(best)return best;
     }
     return null;
   }
-  return {pieces,seededPieces,layoutPieces,layouts,layoutStride,speedBound,suitRadius,padding,warningLead,forecast,avoidance,gapAt};
+  return {pieces,layoutPieces,layouts,layoutStride,speedBound,suitRadius,padding,warningLead,forecast,avoidance,gapAt};
 })();

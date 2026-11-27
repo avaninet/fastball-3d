@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const html=fs.readFileSync(process.argv[2] || path.join(__dirname,'../index.html'),'utf8');
 const src=html.match(/<script id="physics">([\s\S]+?)<\/script>/)[1];
-const F=vm.runInNewContext(src+';Flight',{Math}), modes=['Straight-Line','Orbital'];
+const F=vm.runInNewContext(src+';Flight',{Math,Catalog:require('../studies/catalog-data.cjs')}), modes=['Straight-Line','Orbital'];
 const {norm,scale,unit,add,clamp}=F;
 if(!process.argv[2]){
   // Propagate backwards from a known crossing on each face, then forecast the
@@ -17,19 +17,6 @@ if(!process.argv[2]){
         assert.ok(hit && Math.abs(hit.t-time)<1e-8,'high-speed Orbital face entry');
         assert.ok(F.inside(hit.p) && Math.abs(hit.speed-speed)<1e-8,'first-contact position and speed');
       }
-    }
-  }
-}
-// Historical builds can still be supplied for comparison. The E family is
-// part of v0.2 and later, and both old families retain their original starts.
-if(!process.argv[2] || F.coastPass){
-  const legacy=F.opening(3,'D-0C338116',true);
-  const late=F.entries(legacy,F.oxygenReserve,'Orbital')[0];
-  assert.ok(late.t>581 && late.t<584 && F.softEnough(late.speed));
-  for(const code of ['0C338116',...Array.from({length:128},(_,i)=>(104729+i).toString(16))]){
-    for(const story of [false,true]){
-      const start=F.opening(3,'E-'+code,story);
-      for(const mode of modes)assert.equal(F.entries(start,F.oxygenReserve,mode).length,0,'unassisted entry E-'+code);
     }
   }
 }
@@ -85,8 +72,7 @@ function runPlan(s,mode,mask,left,soft,actions,angle,pct,draw) {
 // Older builds can also be passed on the command line for balance comparisons.
 const rack=(1<<F.gear.length)-1,duration=F.oxygenReserve??F.manualReserve??450;
 const opening=(i,seed,story=false)=>F.opening?F.opening(i,seed,story):i===3?F.randomStart(seed):F.named[i];
-const varied=Array.from({length:128},(_,i)=>opening(3,'D-'+(104729+i).toString(16)));
-const legacy=Array.from({length:128},(_,i)=>opening(3,104729+i));
+const varied=Array.from({length:128},(_,i)=>opening(3,i*32));
 const named=F.named.map((_,i)=>opening(i,0));
 for(const mode of modes){
   // A spent battery and pouch, an already excessive speed toward the thin
@@ -160,7 +146,7 @@ for(const mode of modes)for(const soft of [false,true]){
     return [s.name,route.actions.map(c=>[c.tool,c.az,c.el,c.power]),Math.round(route.hit.t),route.hit.speed.toFixed(4)];
   });
   console.log('Named',mode,soft?'soft':'any',JSON.stringify(rows));
-  for(const [label,starts] of [['named',named],['legacy',legacy],['generated',varied]]){
+  for(const [label,starts] of [['named',named],['generated',varied]]){
     const counts={};
     for(const kind of ['snap','manual','repeat','brake'])counts[kind]=starts.filter(s=>recipe(s,mode,soft,kind)).length;
     const routes=starts.map(s=>plan(s,mode,rack,duration,soft));counts.exact=routes.filter(Boolean).length;
@@ -190,7 +176,7 @@ for(const mode of modes)for(const soft of [false,true]){
   }
 }
 
-const holdout=Array.from({length:256},(_,i)=>opening(3,'D-'+(0x726800+i*1543).toString(16)));
+const holdout=Array.from({length:256},(_,i)=>opening(3,(11+i*137)%4096));
 for(const mode of modes){
   const softWins=holdout.filter(s=>plan(s,mode,rack,duration,true)).length;
   console.log('Independent generated seeds',mode,'soft',softWins,'/',holdout.length);

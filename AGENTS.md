@@ -9,10 +9,10 @@ Use Node.js 18 or newer. There are no package dependencies to install.
 | When | Command |
 | --- | --- |
 | After editing game source or embedded artwork | `npm run build` regenerates `index.html`. Its credits use the package version and preserve the update date when the build is identical. |
-| Before committing a game change | `npm test` checks the standalone file against its sources, the station joints, flight balance, and Dodgeball routes and replay catalogs. |
+| Before committing a game change | `npm test` checks the standalone file against its sources, the station joints, flight balance, F1 share codes and the two qualified catalogs. |
 | After gameplay or cockpit changes | `npm run test:browser -- <chromium-executable>` runs the four viewport checks. `npm run test:browser` alone creates a local `qa-runner.html` for interactive inspection. |
 | For native keyboard, clipboard and PNG export | Start a matching ChromeDriver on port 9515 and run `npm run test:native`. |
-| After changing physics or directional hints | `npm run test:difficulty` repeats the historical Random Drift pilot comparison. |
+| After changing physics or directional hints | `npm run test:difficulty` compares Random Drift pilots on the current catalog. |
 
 Use a trusted browser and trusted builds for comparisons. CI supplies its font set via `FASTBALL_QA_FONT_DIR`. Exact font setup and native browser commands are in the [workflow](.github/workflows/check.yml).
 
@@ -23,13 +23,15 @@ Use a trusted browser and trusted builds for comparisons. CI supplies its font s
 | `src/visor.html`, `src/cockpit.css` | Cockpit, setup, controls, guide, debrief and responsive layout |
 | `src/game.js`, `src/story.js`, `src/main.js` | Flight state, inputs, guidance, startup and the animation loop |
 | `src/physics.js`, `src/readout.js` | Equipment impulses, coasts, grab rules, seeded starts and directional hints |
-| `src/debris.js`, `assets/dodgeball-seeds.json`, `assets/dodgeball-layout-seeds.json` | Preserve DB1 replay trajectories and the eight DB2 layouts. [Debris geometry](reference/debris-assembly.md) · [Seed qualification](reference/random-dodgeball-study.md) |
+| `src/debris.js`, `src/catalog.js`, `src/challenge.js`, `assets/*-v1.bin` | Reconstruct F1 challenges, the curated Drift states and eight debris layouts. [Debris geometry](reference/debris-assembly.md) · [Seed qualification](reference/random-dodgeball-study.md) |
 | `src/station.js`, `src/draw.js`, `src/earth.js`, `src/equipment.js` | Station, visors, Earth, equipment artwork and occlusion. [Station assembly](reference/station-assembly.md) |
 | `src/log.js`, `src/share.js` | Flight reconstruction, replay links and flight cards |
 | `scripts/build.cjs`, `scripts/csp.cjs`, `assets/` | Embed game source, seed catalogs, WebP artwork and scenario sprites. The social preview remains a separate public JPEG. |
-| `tests/`, `scripts/browser-qa.cjs`, `studies/` | Regression checks, on-demand studies and seed qualification. The Dodgeball tests import `studies/random-dodgeball.cjs`. The DB2 generator also uses the DB1 catalog writer. |
+| `tests/`, `scripts/browser-qa.cjs`, `studies/` | Regression checks, on-demand studies and seed qualification. The Dodgeball tests import `studies/random-dodgeball.cjs`. |
 
 Use the same physics and grab volume for the course display, contact and replays. X is radially outward, Y along track and Z perpendicular to the orbital plane. Preserve stabilized camera roll, capture timing and measured entry speed at every clock speed and frame rate. Preserve the guided battery shortcut and its manual counterpart. Keep seeded comparisons reproducible and distinguish automated pilot results from human playtests.
+
+F1 codes identify the base opening, station pose, rules and starting aids. Keep the row mapping, approved poses and X-then-Z rotation order stable within a version. After changes to physics or geometry, run both offline catalog generators and the independent Dodgeball audit described in the [catalog study](reference/random-dodgeball-study.md). Lessons use their authored poses.
 
 [Open playtests](reference/playtests.md) · [Historical Random Drift difficulty study](reference/random-drift-difficulty.md) · [Firm and Soft capture study](reference/capture-speed-playtest.md)
 

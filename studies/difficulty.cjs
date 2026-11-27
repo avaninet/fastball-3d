@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const scripts=['physics','readout'].map(name=>fs.readFileSync(path.join(root,'src',name+'.js'),'utf8'));
-const {F,trimHint}=vm.compileFunction(scripts.join('\n')+'\nreturn {F:Flight,trimHint};')();
+const {F,trimHint}=vm.compileFunction(scripts.join('\n')+'\nreturn {F:Flight,trimHint};',['Catalog'])(require('./catalog-data.cjs'));
 const {norm,unit,add,sub,scale,clamp}=F;
 const tools=F.gear.map((g,i)=>i).sort((a,b)=>F.impulse(a,F.fullRack)-F.impulse(b,F.fullRack));
 function coast(state,left,mode,soft){
@@ -154,18 +154,12 @@ function geometry(states){
 const print=(label,data)=>console.log(label,JSON.stringify(data));
 for(const story of [false,true]){
   const named=F.named.map((_,i)=>F.opening(i,0,story));
-  const generated=Array.from({length:128},(_,i)=>F.opening(3,'D-'+(104729+i).toString(16),story));
-  const legacy=Array.from({length:128},(_,i)=>F.opening(3,104729+i,story));
+  const generated=Array.from({length:128},(_,i)=>F.opening(3,i*32,story));
   print(story?'Story geometry':'Manual geometry',geometry(generated));
   for(const mode of ['Straight-Line','Orbital'])for(const soft of [false,true]){
     const label=[story?'Story':'Manual',mode,soft?'soft':'any'].join(' ');
     const result=stats(generated,mode,soft,600,story);
-    if(!story && mode==='Orbital' && soft){
-      assert.equal(result.planned,128,'D-family planned soft returns');
-      assert.equal(result.hints,115,'D-family manual Orbital hint pilot');
-    }
-    print(label+' D-seeds',result);
-    print(label+' legacy',stats(legacy,mode,soft,600,story));
+    print(label+' curated rows',result);
     print(label+' named',named.map(s=>({name:s.name,...stats([s],mode,soft,600,story)})));
   }
 }
@@ -177,7 +171,7 @@ const variants=[
   [2.35,1.7,.045],[2.65,1.6,.055],[2.65,1.6,.055,57,81],[2.45,1.55,.04,54,77]
 ];
 for(const holdout of [false,true]){
-  const sample=Array.from({length:128},(_,i)=>F.opening(3,'D-'+(holdout?0x726800+i*1543:104729+i).toString(16),false));
+  const sample=Array.from({length:128},(_,i)=>F.opening(3,(holdout?11+i*137:i*32)%4096,false));
   for(const change of variants){
     const states=sample.map(s=>variant(s,...change)),label=(holdout?'Holdout':'Paired')+' '+change.join('/');
     print(label+' geometry',geometry(states));

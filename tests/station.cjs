@@ -57,3 +57,33 @@ for(const part of Station.parts){
   }
 }
 console.log(Station.parts.length+' station parts connected; all mating patches and convex surfaces verified.');
+
+for(const pose of Flight.poses.slice(1)){
+  const world=pose.world;
+  const p=world([4,-4,2]),bar=Flight.nearest(p,pose);
+  assert.ok(Flight.norm(Flight.sub(bar,world([4,-1.6,2])))<1e-10);
+  assert.ok(Math.abs(Flight.clearance(p,pose)-2.4)<1e-10);
+  assert.ok(Station.crosses(world([0,-4,0]),world([0,4,0]),pose));
+  assert.ok(!Station.crosses(world([4,-4,1.6]),world([4,4,1.6]),pose));
+  for(const mode of ['Straight-Line','Orbital'])for(const axis of [0,1,2]){
+    const point=[0,0,0],velocity=[0,0,0];
+    point[axis]=-Flight.half[axis];velocity[axis]=.075;
+    const contact={p:world(point),v:world(velocity)};
+    const initial=Flight.motion(contact,-23,mode);
+    const hit=Flight.entries(initial,80,mode,false,true,pose)[0];
+    assert.ok(hit && Math.abs(hit.t-23)<1e-7 && Math.abs(hit.speed-.075)<1e-9);
+  }
+  // A tangent to the two faces meeting at this edge touches at one instant.
+  const graze={p:world([5,-3.6,0]),v:world([.05,.05,0])};
+  assert.ok(Math.abs(Flight.entries(graze,100,'Straight-Line',false,true,pose)[0].t-40)<1e-7);
+  // Start inside, a fraction too fast. Orbital acceleration lowers the true
+  // relative speed through the selected limit before the suit leaves the box.
+  for(const rule of [true,'firm']){
+    const speed=Flight.captureLimit(rule);
+    const atLimit={p:[.6,0,.2],v:[-speed,0,0]};
+    const before=Flight.motion(atLimit,-2,'Orbital');
+    assert.ok(Flight.inside(before.p,pose) && !Flight.softEnough(Flight.norm(before.v),rule));
+    const [slowdown]=Flight.entries(before,5,'Orbital',true,rule,pose);
+    assert.ok(slowdown && Math.abs(slowdown.t-2)<1e-6 && Flight.canGrab(slowdown,rule));
+  }
+}

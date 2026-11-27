@@ -1,69 +1,87 @@
-# Random Dodgeball seed catalog
+# F1 challenge catalogs and station tilt
 
-Random Dodgeball offers 4,096 openings, distributed evenly across eight pairs of debris starting positions. A DB2 code restores the service cover and bent frame to the same full-precision positions and velocities. Tommi starts at station-relative XYZ (13.67, −24.80, 8.33) m, with 600 seconds of oxygen. The same seed works in Straight-Line or Orbital flight, in manual or Story, with any grab rule. The [capture-speed playtest](capture-speed-playtest.md) compares the Firm and Soft limits on these same openings.
+Random Drift and Random Dodgeball each ship 4,096 distinct base openings. New flight chooses a row uniformly, then, if **Random station orientation** is selected, chooses uniformly among that row's approved tilts. With the option off, the station starts in its standard pose. Retry and shared codes restore the actual tilt. Each flight keeps that pose from separation to debrief. The three named debris-free scenarios offer all 16 tilts. The fixed Dodgeball Challenge offers six. Guided lessons use their authored station orientation.
 
-## Eight opening layouts
+## Sharing the starting conditions
 
-The coordinates are the centres of the eight tested layouts, in metres. X is radially outward, Y is along track, and Z is perpendicular to the orbital plane. Speeds are the observed minimum and maximum initial speeds among the 512 **accepted** variations in each row. Position and velocity are coupled. Combining independent extremes from these ranges can produce an unqualified encounter.
+`F1B-5011G7` loads Random Dodgeball row 2560, station tilt X -30° / Z -30°, Orbital motion, Soft capture, manual inventory and both starting aids off. `F1B-5001GZ` loads the standard station with the same debris and rules. These make a matched pair for a first playtest.
 
-| Layout | Cover centre XYZ (m) | Frame centre XYZ (m) | Cover speed (m/s) | Frame speed (m/s) | Example code |
-| --- | --- | --- | --- | --- | --- |
-| Left cover crossing | (-3, -13, -1.1) | (12, 0.8, 3.6) | 0.125–0.186 | 0.049–0.071 | `DB2-00000000` |
-| Right cover crossing | (12.8, -4.3, 5.1) | (-4.8, -9.4, -4) | 0.100–0.163 | 0.034–0.059 | `DB2-00100001` |
-| High cover crossing | (-0.4, -5.7, 9.9) | (11, -2.7, -1.6) | 0.101–0.161 | 0.044–0.068 | `DB2-00200001` |
-| Low cover crossing | (10.8, -2.7, -1.8) | (-5.6, -6.4, 9.5) | 0.103–0.154 | 0.043–0.067 | `DB2-00300000` |
-| Far frame crossing | (14.6, -4.6, 2.3) | (-14.9, 0.7, 1.7) | 0.066–0.086 | 0.287–0.378 | `DB2-00400002` |
-| Near frame crossing | (-5.3, -0.5, 9.7) | (12.7, -10.6, 1.5) | 0.084–0.112 | 0.067–0.119 | `DB2-00500007` |
-| Upper frame crossing | (-4.9, -12.1, 0.4) | (9.7, 0.9, 5.6) | 0.057–0.078 | 0.109–0.165 | `DB2-00600000` |
-| Lower frame crossing | (11.9, 1.2, 6) | (-3.1, -6.4, -10) | 0.048–0.066 | 0.137–0.199 | `DB2-00700000` |
+A code contains the version (`F1`), scenario letter, hyphen, five most-significant-first base-32 digits and a check digit. The letters in New Flight order are T (Tether separation), L (Lateral drift), W (Wide separation), D (Random Drift), C (Dodgeball Challenge) and B (Random Dodgeball). The alphabet is `0123456789ABCDEFGHJKMNPQRSTVWXYZ`. The decoder accepts either case.
 
-On a direct reference approach, the first four layouts bring the service cover across Tommi's path. The frame crosses her detour. The last four reverse the order. In the far-frame layout the frame starts about 39 m from her and moves quickly across the station face. In the near-frame layout it starts about 16 m away at a much lower speed. Each layout has its own detour bearing and return pitch. Players can discover other routes.
+| Payload bits | Meaning |
+| --- | --- |
+| 24–23 | Reserved, zero |
+| 22–11 | Catalog row 0–4095. The four named scenarios use row 0. |
+| 10–6 | Station pose 0–16. Pose 0 is standard. Each row has its own allowed nonzero poses. |
+| 5 | Straight-Line 0, Orbital 1 |
+| 4–3 | Any-speed 0, Firm 1, Soft 2 |
+| 2 | Manual inventory 0, Story inventory 1 |
+| 1, 0 | Starting Preview and Dodgeball Coach, respectively. Coach requires a debris scenario. |
 
-## Qualification
+The check digit is CRC-5 over the uppercase ASCII prefix and five payload digits, excluding the hyphen. It uses polynomial x⁵+x²+1, MSB first, initial and final XOR zero. Decode checks the checksum, reserved values, scenario and pose permissions before launching. Opening a share link stages the flight so each player can start their own clock.
 
-Both the central states and every admitted variation passed the following checks in the game's Straight-Line and Orbital models.
+Each Drift row stores six little-endian float64 values and a 16-bit approved-tilt mask (50 bytes). Each Dodgeball row stores a 32-bit deterministic debris key and a 16-bit mask (6 bytes). Bit zero of either mask identifies pose 1. The two binaries total 224 KiB before base64 embedding. The standalone game reconstructs the selected row locally. A frozen row ordering, debris generator, tilt definitions and flight rules give F1 its meaning. Use a new version for revisions that change a code's challenge.
 
-- The two silhouettes start apart from each other and from the projected grab envelope. The opening visor frames the debris and station centre around the cockpit panels.
-- The initial unpowered coast gives Tommi at least 1 m of suit clearance for 90 seconds. Both debris boxes clear the station assembly and each other throughout the ten-minute flight. The offline test conservatively encloses each station part and the moving debris in world-axis boxes and bounds travel continuously between samples.
-- The reference approach predicts a hit with at least 45 seconds of lead time. After the detour pitch, the other piece threatens a hit at least 70 seconds ahead.
-- A three-throw route reaches the bars at or below 0.080 m/s within nine minutes in both manual and Story inventories. The suit clears both padded debris boxes by at least 0.25 m. Closest-pass checks include a 0.012 m search margin.
-- At least 14 of 16 perturbed manual flights per model must reach soft capture. The pilot varies each release by up to three degrees of aim, three power points and five seconds. The catalog retains exactly 512 passing IDs for each layout.
+## Random Drift
 
-The candidate generator offsets each piece by up to 2.0 m in X, 2.6 m in Y and 1.5 m in Z. It adjusts the velocity to cross near that layout's reference point, varies the reference crossing time by up to 6.5%, and adds independent component jitter up to (0.003, 0.002, 0.002) m/s. The eight crossing geometries and the different detour pitches give the catalog its wider spread.
+The generator makes a deterministic pool of 16,384 starting positions and velocities. It divides the pool into four groups by velocity change needed for a 500-second transfer, then halves each group by lateral speed and again by 300-second orbital bend. Bend is the distance between Orbital and Straight-Line unpowered positions starting from the same manual opening. It shuffles within each group and keeps 256 qualified openings from each of the 16 groups. Selection examined 4,100 candidates.
 
-The search examined **10,816 candidate pairs**. After selection, the automated pilot flew 32 previously unused combinations of execution errors for each accepted seed and model. The draws were shared across seeds to make the layouts comparable.
+| Measure over the selected openings | Range |
+| --- | ---: |
+| Manual transfer demand, taking the higher of the two models | 0.024–0.215 m/s |
+| Initial speed perpendicular to the separation direction | 0.012–0.127 m/s |
+| Orbital bend after 300 seconds | 0.09–18.95 m |
+| Tools used by the nominal feedback pilot | 1–5 |
 
-| Held-out manual soft captures | Successful flights | Success rate | Lowest single-seed result |
-| --- | ---: | ---: | ---: |
-| Straight-Line | 130,818 / 131,072 | 99.8% | 26 / 32 |
-| Orbital | 128,154 / 131,072 | 97.8% | 25 / 32 |
+Every accepted opening passes in manual and Story inventory and in both motion models. An unpowered entry into the bars at any point in 600 seconds disqualifies that opening or tilt. For powered recovery a pilot makes legal pitches, adjusting to the measured state between throws. Its target is within 1.59 m of the station centre at less than 0.079 m/s by 520 s. This sphere fits inside the grab envelope at every orientation. All 4,096 standard openings and 65,520 additional row/tilt pairs qualify. Sixteen of the possible tilted pairs would admit an unpowered catch.
 
-These results measure tolerance while following a known route. Human pilots still need to judge how readily they can read each crossing and discover a route unaided.
+Selection required 15 wins from 16 perturbed trials per configuration. In a separate set of 16 trials per opening, model and inventory the pilot succeeded **262,144 / 262,144** times. Errors were up to 3° in heading and elevation, three power points and five seconds. In a separate comparison using 128 manual Orbital Soft openings, a pilot following the on-screen directional hints won 117, while the same pilot trimming straight back toward the station won 28. This gives players a reason to read the approach.
 
-## Browser measurements
+## Random Dodgeball
 
-In local headless Chrome at 1440 × 950 with GPU acceleration disabled, the median setup time across 64 Orbital openings was 4.0 ms. The first draw after framing a new view took 40 ms at the median and 60 ms at the 95th percentile. During 576 subsequent coasting updates, advancing the flight and drawing both visors took 4.6 ms at the median and 7.6 ms at the 95th percentile. The game targets a 32 ms redraw interval during flight.
+Tommi always starts at station-relative (13.67, -24.80, 8.33) m, with 600 s of oxygen. The debris geometry supplies the variation. The first four layouts send the service cover across the reference approach and the frame across the detour. The last four reverse that order. Each layout has its own directions for pitching sideways and turning back. Each row reconstructs the positions and velocities of both pieces.
 
-## Reproducing the catalog
+| Layout | Openings | Approved tilted pairs | Example tilted Orbital Soft code | Final audit, manual Orbital wins / 8,192 |
+| --- | ---: | ---: | --- | ---: |
+| Left cover | 512 | 7,366 | `F1B-0011G0` | 8,173 |
+| Right cover | 512 | 6,971 | `F1B-1011GA` | 8,179 |
+| High cover | 512 | 6,977 | `F1B-2011GM` | 8,052 |
+| Low cover | 512 | 7,252 | `F1B-3011GY` | 8,192 |
+| Far frame | 512 | 6,938 | `F1B-4011GD` | 8,189 |
+| Near frame | 512 | 6,765 | `F1B-5011G7` | 8,074 |
+| Upper frame | 512 | 2,250 | `F1B-600SGS` | 7,585 |
+| Lower frame | 512 | 2,115 | `F1B-700VGG` | 7,961 |
 
-Create a local `.local/` directory for the detailed reports. The JSON files in `assets/` contain the approved IDs used by the game.
+The candidate generator offsets the reference positions, adjusts velocities around the intended crossing and varies crossing time. Selection examined 10,852 pairs. Each approved row and pose meets these checks in **both motion models**.
+
+- The opening view separates the pieces from each other and the grab envelope.
+- The full ten-minute unpowered coast misses the bars. During the first 90 seconds, the suit has at least 1 m of clearance from either debris box. Across the shipped rows the smallest measured gap, allowing for the 0.012 m closest-pass search tolerance, exceeds **8.29 m**.
+- Both pieces clear each other and the oriented station assembly throughout the flight. The reference approach gives at least 45 s of warning before the first threatened hit. After the dodge, the second threat gives at least 70 s of warning.
+- Three legal pitches reach a Soft grab within nine minutes, with at least 0.25 m of suit clearance, in both manual and Story inventory.
+- Each row passes at least 14 of 16 perturbed manual flights per model in standard orientation. Each approved tilt passes that test and an additional 30 of 32 perturbed flights per model. Errors vary aim by up to 3° within a cone, power by three points and release time by five seconds.
+
+The upper-frame Orbital approach had the lowest error tolerance in the first pass. Tightening tilt admission replaced nine base openings and retained 4,087 of the previous 4,096 debris states. All rows offer 2–16 tilts (median 14), for **46,634 additional row/tilt pairs**. A 32-draw manual check on one approved tilt per row landed 130,589/131,072 Straight-Line flights and 128,311/131,072 Orbital flights.
+
+The **final audit** used a separate pool of 256 error patterns. It flew 16 patterns per row, model and inventory, half in the standard pose and half distributed among approved tilts. The checker reads the packed catalog and never changes it.
+
+| Final audit | Straight-Line Soft | Orbital Soft |
+| --- | ---: | ---: |
+| Manual | 65,419 / 65,536 (99.82%) | 64,405 / 65,536 (98.27%) |
+| Story | 65,388 / 65,536 (99.77%) | 64,279 / 65,536 (98.08%) |
+
+These rates describe errors while following a known route. The upper-frame Orbital opening remains a good human playtest of whether players can discover the detour. Compare it with the low-cover opening, then try the paired near-frame codes above to isolate how the angle changes the visible grab profile.
+
+## Reproduction
+
+From the repository root with Node 18 or newer:
 
 ```sh
-node studies/dodgeball-layouts.cjs .local/DB2-study.json assets/dodgeball-layout-seeds.json
-node scripts/build.cjs
+node studies/curate-drift.cjs
+node studies/station-orientations.cjs
+node studies/station-orientations.cjs --audit
+npm run build
 npm test
+npm run test:difficulty
 ```
 
-The report records full-precision states, selection and holdout counts for every opening. The game embeds only approved IDs, eight reference layouts and the deterministic generator. Generating a flight selects uniformly from the 4,096 IDs and reconstructs its two pieces. Route searches and qualification run offline.
-
-## Earlier DB1 replays
-
-The original 4,096 DB1 codes still load the original single-family trajectories, including `DB1-007C5282`. That catalog accepted 4,096 of 45,654 candidates. Its held-out manual soft-capture totals were 129,505 / 131,072 in Straight-Line and 130,758 / 131,072 in Orbital. To reproduce the historical catalog, run the original study.
-
-```sh
-node studies/dodgeball-catalog.cjs .local/DB1-study.json 4096 assets/dodgeball-seeds.json
-```
-
-## Reading the approach charts
-
-Tommi follows the solid mint path. The orange long dashes trace the cover and the violet dots trace the frame. Arrowheads follow each object's direction of travel. Each row in the key gives the smallest three-dimensional gap between the suit and that piece's collision box, plus the elapsed time at that pass. Two paths can cross in the V-bar/R-bar projection at different times or heights. Both Dodgeball scenarios show their flight's debris on both log projections. The flight card uses the orbital-plane projection.
+The first two commands regenerate the shipping assets. The audit reports counts for each layout from those assets. The tests check the immutable catalog bytes, all valid challenge-code combinations, actual game geometry and inventory rules, and unpowered coasts. The four-viewport browser checks exercise setup, flight, hints, retry, logs and sharing. See the [station geometry](station-assembly.md), [debris geometry](debris-assembly.md) and [open playtests](playtests.md).

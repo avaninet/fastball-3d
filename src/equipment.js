@@ -93,7 +93,7 @@ const Equipment = (() => {
     // The hand is ahead of and below the release-time visor. Both cameras see
     // one world position, including if the pilot immediately turns around.
     const hand=add(state.pos.p,add(scale(aim.forward,.72),add(scale(aim.up,-.18),scale(aim.right,.07))));
-    if(Station.crosses(state.pos.p,hand))return;
+    if(Station.crosses(state.pos.p,hand,state.pose))return;
     const speed=Flight.gear[tool].speed*power/100;
     const start={p:hand,v:add(state.pos.v,scale(aim.forward,speed))};
     state.objects.push({tool,start,time:state.time,updated:state.time,p:hand,range:Flight.norm(Flight.sub(hand,state.pos.p)),hidden:false});
@@ -112,12 +112,12 @@ const Equipment = (() => {
         if(state.mode==='Orbital'){
           for(let t=obj.updated+1;t<now;t++){
             const next=Flight.motion(obj.start,t-obj.time,state.mode).p;
-            if(Station.crosses(prev,next)){hit=true;break;}
+            if(Station.crosses(prev,next,state.pose)){hit=true;break;}
             prev=next;
           }
         }
-        if(hit||Station.crosses(prev,p))continue;
-        obj.p=p;obj.updated=now;obj.range=range;obj.hidden=Station.crosses(state.pos.p,p);
+        if(hit||Station.crosses(prev,p,state.pose))continue;
+        obj.p=p;obj.updated=now;obj.range=range;obj.hidden=Station.crosses(state.pos.p,p,state.pose);
       }
       state.objects[count++]=obj;
     }
