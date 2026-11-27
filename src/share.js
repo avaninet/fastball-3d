@@ -52,6 +52,11 @@ el('copyCode').onclick=()=>{const r=loadSetupSeed();if(r)Replays.copy(Challenge.
 el('copySetupSeed').onclick=()=>{const replay=loadSetupSeed();if(replay)copyReplay(replay,el('seedPreview'));};
 el('seedTag').onclick=()=>copyReplay(flight,el('message'));
 el('copyEndSeed').onclick=()=>copyReplay(flight,el('endShareStatus'));
+for(const query of ['(min-width: 680px)','(min-width: 680px) and (max-height: 480px)']){
+  matchMedia(query).addEventListener('change',()=>{
+    if(el('shareCard').open)el('cardArt').innerHTML=FlightLog.card(flight);
+  });
+}
 el('openShareCard').onclick=()=>{
   el('cardArt').innerHTML=FlightLog.card(flight);
   el('cardStatus').textContent='';el('shareCard').showModal();

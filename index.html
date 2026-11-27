@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg">
     <meta name="twitter:image:alt" content="Fastball 3D mission patch and title beside a visor view of a yellow power drill floating toward the space station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-oCWfSSAuMWjmvN1Ap6cpp5a1tL2lbSNC4/bnJ7gH2L0=' 'sha256-fvwDB0Tv+yc68uyoMUy0/KX9WWXIQ78bYvRmA+CyryY=' 'sha256-d3AHc81PPlHH+6igLPWI42fmiHpZvMEAdxEcVM2LTkw=' 'sha256-T50w7wV8bQgmWIy9QNmgCi3UlGo0BxPt+GybgHB9Gvc=' 'sha256-0szdOCa/MFy1YObnsRbzvTlFNYxx80vvXAdJp52liAc=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-vMi5Y/sN0TuOIz9Vpk1xe/QryD14Iu56+CxO7NiADp0=' 'sha256-KBC4oao9R5WE3cr6tXb2f11Ys2sl8BOazesG3fwnwJk=' 'sha256-5EOif7pm9LUCRw6f+202ziwo6eq89iGLGSNVdfvvWY0=' 'sha256-1PISpmk4aLM9NPTB4uN1YXBjrUs5Rz8vUDNH280bYGM=' 'sha256-cujvrwvKK8jwjQy7YvjlBH09L+vhjeYSspaVN8D+LgI=' 'sha256-bv3sNkSlYpswHKXG8qxXMael1u4aSjGOahyJh3MRPeA=' 'sha256-/JN8PaGC3im7TMh19n9WStquWyEGg7BlCyUl1mrE5/8=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-M35q3zuw3qAJtfFsvTU158J/iiCpXy1RXNc7qnUbmeM='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-oCWfSSAuMWjmvN1Ap6cpp5a1tL2lbSNC4/bnJ7gH2L0=' 'sha256-fvwDB0Tv+yc68uyoMUy0/KX9WWXIQ78bYvRmA+CyryY=' 'sha256-d3AHc81PPlHH+6igLPWI42fmiHpZvMEAdxEcVM2LTkw=' 'sha256-T50w7wV8bQgmWIy9QNmgCi3UlGo0BxPt+GybgHB9Gvc=' 'sha256-0szdOCa/MFy1YObnsRbzvTlFNYxx80vvXAdJp52liAc=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-vMi5Y/sN0TuOIz9Vpk1xe/QryD14Iu56+CxO7NiADp0=' 'sha256-KBC4oao9R5WE3cr6tXb2f11Ys2sl8BOazesG3fwnwJk=' 'sha256-Y4acsTPTS0MD+CdfuLydjwS4h+kRxf/B42xR4xJns7M=' 'sha256-7mdxM9qhgB3G1iU8/h/v0YW66+f2kBb075mWRI/mV8M=' 'sha256-u50v7ZDsOhmjxsmmTWDLx/YvEsheEwAolp9VwsHWLzc=' 'sha256-EsrDwh00KW/d8u5byW1icr907YufhIdPD3W86IDhU/s=' 'sha256-9ByzbYFYE4s3boQo7C9OTZufdrikVOsAJHo6kvM9k3U=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-5QkIm6oKjPD2oT0pnNybXGsU4odJ+twPQcWrnbVBx38='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.4 · EVA return simulator</title>
@@ -895,38 +895,71 @@ input[type=radio],input[type=checkbox] {
   color: var(--green);
 }
 
-#debriefShare {
-  border-top: 1px solid var(--line);
-  margin-top: 16px;
+#debrief[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+#debrief .dialogBody { overflow: auto; min-height: 0; }
+#debriefShare { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 10px; }
+.shareHeading { display: flex; align-items: baseline; gap: 12px; }
+.shareHeading h3, #shareIntro { margin: 0; }
+#debriefShare h3 { margin: 0; }
+#shareIntro { margin-top: 4px; }
+#endSeed { color: var(--green); font: 600 13px var(--mono); }
+#endShareStatus, #cardStatus { color: var(--green); font-size: 13px; margin: 4px 0 0; }
+#cardStatus:empty, #endShareStatus:empty { display: none; }
 
-#endSeed {
-  color: var(--green);
-  margin-right: auto;
-  font: 600 14px var(--mono);
+.actionSprites { position: absolute; pointer-events: none; }
+.actionIcon {
+  width: 18px; height: 18px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
 }
-
+#debrief .endActions {
+  display: grid; grid-template-columns: repeat(3,minmax(0,1fr));
+  flex: none; gap: 6px; padding: 10px clamp(10px,3vw,23px);
+}
+.endActions button, .cardActions button {
+  display: flex; align-items: center; justify-content: flex-start;
+  gap: 8px; min-height: 38px; padding: 6px 10px;
+  font-size: 14px; line-height: 1.2; text-align: left;
+}
+.endActions .actionIcon, .cardActions button:not(.primary) .actionIcon { color: var(--green); }
 #shareCard {
-  width: min(95vw,480px);
-  max-height: 95dvh;
+  width: min(814px,calc(100% - 20px)); max-width: calc(100vw - 12px);
+  max-height: calc(100dvh - 16px);
+  padding: 12px; overflow: hidden;
 }
-
-#shareCard .dialogBody {
-  padding: 12px;
+#shareCard[open] {
+  display: grid;
+  grid-template: "title actions close" auto "art art art" minmax(0,1fr) "status status status" auto / minmax(0,1fr) auto auto;
+  column-gap: 12px; align-items: center;
 }
-
-#shareCard .dialogHead {
-  margin-bottom: 8px;
+#cardTitle { grid-area: title; margin: 0; color: var(--gold); font-size: 21px; line-height: 1.15; }
+#shareCard .x { grid-area: close; }
+.cardActions { grid-area: actions; display: flex; gap: 6px; }
+.cardActions button { justify-content: center; }
+#cardArt { grid-area: art; align-self: stretch; min-height: 0; overflow: auto; margin-top: 10px; }
+#cardArt svg { display: block; width: 100%; height: auto; }
+#cardStatus { grid-area: status; }
+@media (max-width: 679px) {
+  #shareCard { width: min(486px,calc(100% - 12px)); padding: 8px; }
+  #shareCard[open] {
+    grid-template: "title close" auto "art art" minmax(0,1fr) "actions actions" auto "status status" auto / 1fr auto;
+  }
+  #cardArt { margin-block: 6px; }
+  .cardActions { justify-content: flex-end; }
 }
-
-#cardArt svg {
-  display: block;
-  width: 100%;
-  height: auto;
+@media (min-width: 680px) and (max-height: 480px) {
+  #shareCard { width: min(780px,calc(100% - 12px)); padding: 5px; max-height: calc(100dvh - 4px); }
+  #shareCard .cardActions button { min-height: 32px; }
+  #cardArt { margin-top: 4px; }
 }
-
-#cardStatus:empty,#endShareStatus:empty {
-  display: none;
+@media (max-width: 430px) {
+  #debrief .endActions { padding: 8px; gap: 5px; }
+  .endActions button { gap: 5px; padding-inline: 6px; font-size: 13px; min-height: 42px; }
+  .endActions .actionIcon { width: 16px; height: 16px; }
 }
 
 #copyText {
@@ -2705,6 +2738,32 @@ main {
     </symbol>
   </defs>
 </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false" class="actionSprites">
+  <symbol id="act-log" viewBox="0 0 24 24">
+    <path d="M6 3.5h12.5v17H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2ZM8 4v16M11 8h4.5M11 12h4.5M11 16h3"/>
+  </symbol>
+  <symbol id="act-retry" viewBox="0 0 24 24">
+    <path d="M4 10a8 8 0 1 1 .7 6M4 4v6h6"/>
+  </symbol>
+  <symbol id="act-new" viewBox="0 0 24 24">
+    <path d="m2.5 10.2 18-6.7-5.9 17-4.1-6.8-8-3.5Zm8 3.5 10-10.2"/>
+  </symbol>
+  <symbol id="act-card" viewBox="0 0 24 24">
+    <rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="M3 9h18M6 15.5l3.5-3 3 2 4-3"/>
+  </symbol>
+  <symbol id="act-link" viewBox="0 0 24 24">
+    <path d="m9.5 14.5 5-5m-6.8 2-2 2a3.8 3.8 0 0 0 5.4 5.4l3-3a3.8 3.8 0 0 0 0-5.4m2.2 2 2-2a3.8 3.8 0 0 0-5.4-5.4l-3 3a3.8 3.8 0 0 0 0 5.4"/>
+  </symbol>
+  <symbol id="act-next" viewBox="0 0 24 24">
+    <path d="M3 12h13m-5-5 5 5-5 5m9-12v14"/>
+  </symbol>
+  <symbol id="act-save" viewBox="0 0 24 24">
+    <path d="M12 3v11m-4.5-4.5L12 14l4.5-4.5M4 15v4.5h16V15"/>
+  </symbol>
+  <symbol id="act-copy" viewBox="0 0 24 24">
+    <rect x="8.5" y="8" width="11.5" height="13" rx="1.5"/><path d="M15.5 5V3.5H4v13h1.5"/>
+  </symbol>
+</svg>
     <dialog id="setup" aria-labelledby="setupTitle">
       <form id="setupForm">
         <div id="setupBody" class="dialogBody">
@@ -2948,21 +3007,18 @@ main {
           <div id="endStats"></div>
         </div>
         <section id="debriefShare" hidden aria-labelledby="shareHeading">
-          <h3 id="shareHeading">Share</h3>
-          <p id="shareIntro">Share the challenge link to give a friend the same opening and starting settings. Compare the aids, throws and grab speeds on your flight cards.</p>
-          <div class="seedActions">
-            <code id="endSeed"></code>
-            <button id="copyEndSeed">Copy link</button>
-            <button id="openShareCard">View flight card</button>
-          </div>
+          <div class="shareHeading"><h3 id="shareHeading">Share</h3><code id="endSeed"></code></div>
+          <p id="shareIntro">Share this opening and its starting settings with a friend.</p>
           <p id="endShareStatus" role="status"></p>
         </section>
       </div>
-      <div class="dialogFoot">
-        <button id="viewLog">View flight log</button>
-        <button id="retry">Retry</button>
-        <button id="nextLesson" hidden></button>
-        <button id="again">New flight</button>
+      <div class="dialogFoot endActions">
+        <button id="viewLog"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-log"/></svg><span>Flight log</span></button>
+        <button id="retry"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-retry"/></svg><span>Retry</span></button>
+        <button id="again"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-new"/></svg><span>New flight</span></button>
+        <button id="openShareCard" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-card"/></svg><span>Flight card</span></button>
+        <button id="copyEndSeed" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-link"/></svg><span>Copy link</span></button>
+        <button id="nextLesson" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-next"/></svg><span>Next lesson</span></button>
       </div>
     </dialog>
     <dialog id="flightLog" aria-labelledby="logTitle">
@@ -2985,18 +3041,14 @@ main {
       </div>
     </dialog>
     <dialog id="shareCard" aria-labelledby="cardTitle">
-      <div class="dialogBody">
-        <div class="dialogHead">
-          <h2 id="cardTitle">Share flight card</h2>
-          <button class="x close" aria-label="Back to debrief">×</button>
-        </div>
-        <div id="cardArt"></div>
-        <p id="cardStatus" role="status"></p>
+      <h2 id="cardTitle">Share flight card</h2>
+      <button class="x close" aria-label="Back to debrief">×</button>
+      <div id="cardArt"></div>
+      <div class="cardActions">
+        <button id="saveCard"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-save"/></svg><span>Save image</span></button>
+        <button id="copyChallenge" class="primary"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-copy"/></svg><span>Copy challenge</span></button>
       </div>
-      <div class="dialogFoot">
-        <button id="saveCard">Save image</button>
-        <button id="copyChallenge" class="primary">Copy challenge</button>
-      </div>
+      <p id="cardStatus" role="status"></p>
     </dialog>
     <dialog id="copyDialog" aria-labelledby="copyTitle">
       <div class="dialogBody">
@@ -4608,7 +4660,10 @@ const Visor = (() => {
     if(surface!==canvas&&(surface.width!==width||surface.height!==Math.round(sceneHeight*ratio))){
       surface.width=width;surface.height=Math.round(sceneHeight*ratio);
     }
-    const ctx=surface.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
+    // The backing bitmap has whole pixels. At fractional display scales the
+    // requested ratio can stop the new frame halfway through the last row.
+    const ctx=surface.getContext('2d',{alpha:false});
+    ctx.setTransform(surface.width/w,0,0,surface.height/sceneHeight,0,0);
     const cam=camera(state.pos.p,az,el,w,h,small,!!state.forecast.debris,small?1:state.visorLens);
     EarthSky.draw(ctx,w,sceneHeight,h/2,cam);
     drawStars(ctx,cam,w,h,state,sceneHeight);
@@ -4783,7 +4838,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids()
 const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools',overspeed:'Too fast to grab',collision:'Debris collision'};
 function finish(result) {
   running=false;flight.done=result;flight.finishedAt=new Date();invalidateInput();dirty=true;
-  el('retry').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
+  el('retry').querySelector('span').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
   const won=result==='capture',drill=!flight.skippedGuidance&&!flight.log.releases.some(r=>r.tool===4);
   el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
   el('upmassHero').hidden=!(won&&drill);
@@ -4814,7 +4869,8 @@ function finish(result) {
   el('endBudget').textContent=budget;
   el('endStats').textContent=speed+' · '+Readout.aids(flight)+' · '+clock(flight.time)+' flight time · '+Readout.count(flight.throws,'throw')+(flight.misses?' · '+Readout.count(flight.misses,'fast entry','fast entries'):'');
   setMsg(el('endTitle').textContent+'. '+budget+' · '+el('endStats').textContent);
-  el('debriefShare').hidden=flight.lesson!==null||flight.skippedGuidance;
+  const hideShare=flight.lesson!==null||flight.skippedGuidance;
+  el('debriefShare').hidden=el('copyEndSeed').hidden=el('openShareCard').hidden=hideShare;
   el('endSeed').textContent=Challenge.encode(flight);
   el('endShareStatus').textContent='';
   if(!won){
@@ -5633,12 +5689,11 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
       speed:(rescued?'Grab speed ':'Final relative speed ')+Readout.speed(Flight.norm(flight.pos.v),flight.soft)+' m/s'
     };
   }
-  function card(flight){
+  function card(flight,wide=matchMedia('(min-width: 680px)').matches){
     const {segments,closest,tracks}=reconstruct(flight);
     const date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
     const name=flight.initial.name??'Random drift',result=outcomes[flight.done];
     const seed=Challenge.encode(flight);
-    const keyHeight=tracks.length?66:0;
     const rules=[flight.mode,flight.story?'Story':'Manual',Readout.capture(flight.soft),
       flight.pose?.id?flight.pose.label:''].filter(Boolean).join(' · ');
     const elapsed=precise(flight.time),oxygen=Readout.clock(Math.ceil(flight.limit-flight.time));
@@ -5646,29 +5701,62 @@ if(earth.complete&&earth.naturalWidth)loadSky();else earth.onload=loadSky;
     const clearance=flight.done==='capture'?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
     const passCount=flight.misses?Readout.count(flight.misses,'fast entry','fast entries'):'';
     const passDetails=[clearance,passCount].filter(Boolean).join('   ·   ');
-    const recordY=529+keyHeight+(passDetails?20:0);
-    const records=releases.slice(0,9).map((r,i)=>(i+1)+'.  '+Readout.clock(r.time)+'  '+Flight.gear[r.tool].name+'  '+r.power+'%');
-    if(releases.length>9)records.push('10. ...and then some');
-    const rows=Math.max(1,Math.min(5,records.length)),height=recordY+10+rows*17;
+    const short=wide && matchMedia('(max-height: 480px)').matches;
+    const records=releases.slice(0,9);
+    const count=Math.min(releases.length,10),width=wide?780:470;
+    const chartScale=short ? .73 : 1,chartTop=short?49:wide?92:104;
+    const chartBottom=chartTop+chartScale*(307+(!short&&tracks.length?62:0));
+    const infoX=short?365:wide?474:18,infoY=wide?chartTop+(short?13:18):chartBottom+22;
+    const toolCount=flight.story?Readout.count(releases.length,'throw'):releases.length+'/'+Flight.gear.length+' tools used';
+    const leading=short?18:20,recordY=infoY+4*leading+(short?3:7)+(passDetails?leading:0);
+    const columns=wide&&!short?1:2,rows=Math.max(1,Math.ceil(count/columns));
+    const lineHeight=short?18:wide?20:17;
+    const recordBottom=recordY+rows*lineHeight;
+    const height=Math.ceil(Math.max(chartBottom,recordBottom+(short&&tracks.length?57:0)))+(short?5:15);
     const label=(x,y,text,size,color,attrs='')=>'<text x="'+x+'" y="'+y+'" font-size="'+size+'" fill="'+color+'" '+attrs+'>'+escape(text)+'</text>';
     const description='Fastball 3D · AvaniNet · '+date+' · '+[name,seed].filter(Boolean).join(' ')+' · '+rules+'\n'+
       [result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',budget,speed,Readout.aids(flight),clearance,passCount].filter(Boolean).join(' · ');
-    const parts=['<svg xmlns="http://www.w3.org/2000/svg" width="470" height="'+height+'" viewBox="0 0 470 '+height+'" role="img" aria-labelledby="flightCardTitle flightCardDesc" font-family="'+escape(cockpitFonts.sans)+'">',
+    const parts=['<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'" role="img" aria-labelledby="flightCardTitle flightCardDesc" font-family="'+escape(cockpitFonts.sans)+'">',
       '<title id="flightCardTitle">'+escape(name)+' · '+escape(result)+'</title><desc id="flightCardDesc">'+escape(description)+'</desc>',
-      '<rect width="470" height="'+height+'" rx="9" fill="#101a20"/>',
-      label(20,27,'FASTBALL 3D · AvaniNet',14,'#f7bc62','font-weight="bold" letter-spacing="1.8"'),label(450,27,date,13,'#c5d1d0','text-anchor="end"'),
-      label(20,62,result,28,'#f4f1e8','font-weight="bold"'),label(20,84,[name,seed].filter(Boolean).join('  /  '),15,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
-      label(20,104,rules,13,'#c5d1d0'),'<rect x="12" y="115" width="446" height="309" rx="5" fill="#0b141b" stroke="#354046"/>',
-      label(22,136,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),
-      '<g transform="translate(20 143)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments,flight.pose),0,true,tracks)+'</g>',
-      tracks.length?'<g transform="translate(20 429)">'+debrisKey(tracks)+'</g>':'',
-      label(20,446+keyHeight,budget,15,'#a8e4d0','font-weight="bold"'),label(20,466+keyHeight,speed,14,'#a8e4d0'),
-      label(20,486+keyHeight,elapsed+' elapsed   ·   '+oxygen+' oxygen   ·   '+(flight.story?Readout.count(releases.length,'throw'):releases.length+'/'+Flight.gear.length+' tools used'),14,'#f4f1e8')];
-    parts.push(label(20,506+keyHeight,Readout.aids(flight),13,'#c5d1d0'));
-    if(passDetails)parts.push(label(20,526+keyHeight,passDetails,14,'#c5d1d0'));
-    parts.push(label(20,recordY,'Release record',13,'#f7bc62','font-weight="bold"'));
-    if(!releases.length)parts.push(label(20,recordY+19,'No tools released',12,'#c5d1d0'));
-    records.forEach((text,i)=>parts.push(label(i<5?20:245,recordY+19+17*(i%5),text,12,'#d7dfe1')));
+      '<rect width="'+width+'" height="'+height+'" rx="7" fill="#101a20"/>',
+      label(18,short?16:23,'FASTBALL 3D · AvaniNet',short?12:13,'#f7bc62','font-weight="bold" letter-spacing="1.6"'),
+      label(short?345:width-18,short?16:23,date,13,'#c5d1d0','text-anchor="end"'),
+      label(18,short?41:wide?55:53,result,short?21:27,'#f4f1e8','font-weight="bold"')];
+    if(short){
+      parts.push(label(infoX,17,name+'   /   '+seed,14,'#a8e4d0'),
+        label(infoX,39,rules,12,'#c5d1d0'));
+    }else if(wide){
+      parts.push(label(width-18,54,seed,16,'#a8e4d0','text-anchor="end" font-family="'+escape(cockpitFonts.mono)+'"'),
+        label(18,77,name+'   ·   '+rules,14,'#c5d1d0'));
+    }else{
+      parts.push(label(18,74,name+'   /   '+seed,14,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
+        label(18,94,rules,13,'#c5d1d0'));
+    }
+    parts.push('<g transform="translate(0 '+chartTop+') scale('+chartScale+')">',
+      '<rect x="12" y="0" width="446" height="305" rx="5" fill="#0b141b" stroke="#354046"/>',
+      label(22,20,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),
+      '<g transform="translate(20 26)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments,flight.pose),0,true,tracks)+'</g></g>');
+    if(tracks.length){
+      const position=short?'translate('+infoX+' '+(recordBottom+4)+') scale(.91)':'translate(20 '+(chartTop+310)+')';
+      parts.push('<g transform="'+position+'">'+debrisKey(tracks)+'</g>');
+    }
+    parts.push(label(infoX,infoY,budget,short?13:14,'#a8e4d0','font-weight="bold"'),
+      label(infoX,infoY+leading,speed,short?13:14,'#a8e4d0'),
+      label(infoX,infoY+2*leading,elapsed+' elapsed · '+oxygen+' oxygen · '+toolCount,13,'#f4f1e8'),
+      label(infoX,infoY+3*leading,Readout.aids(flight),13,'#c5d1d0'));
+    if(passDetails)parts.push(label(infoX,infoY+4*leading,passDetails,13,'#c5d1d0'));
+    parts.push('<path d="M '+infoX+' '+(recordY-(short?13:18))+' H '+(width-18)+'" stroke="#354046"/>',
+      label(infoX,recordY,'Release record',13,'#f7bc62','font-weight="bold"'));
+    if(!records.length)parts.push(label(infoX,recordY+lineHeight,'No tools released',13,'#c5d1d0'));
+    for(let i=0;i<count;i++){
+      const columnWidth=(width-infoX-18)/columns;
+      const x=infoX+Math.floor(i/rows)*columnWidth,y=recordY+lineHeight*(1+i%rows);
+      const r=records[i],size=wide&&!short?14:13;
+      if(!r){parts.push(label(x,y,'10. ...and then some',size,'#c5d1d0'));continue;}
+      parts.push(label(x,y,(i+1)+'.  '+Readout.clock(r.time),size,'#c5d1d0'),
+        label(x+(columns===1?63:53),y,Flight.gear[r.tool].name,size,'#f1f2ef'),
+        label(x+columnWidth-(columns===1?0:10),y,r.power+'%',size,'#c5d1d0','text-anchor="end"'));
+    }
     return parts.join('')+'</svg>';
   }
   function show(flight){
@@ -5754,6 +5842,11 @@ el('copyCode').onclick=()=>{const r=loadSetupSeed();if(r)Replays.copy(Challenge.
 el('copySetupSeed').onclick=()=>{const replay=loadSetupSeed();if(replay)copyReplay(replay,el('seedPreview'));};
 el('seedTag').onclick=()=>copyReplay(flight,el('message'));
 el('copyEndSeed').onclick=()=>copyReplay(flight,el('endShareStatus'));
+for(const query of ['(min-width: 680px)','(min-width: 680px) and (max-height: 480px)']){
+  matchMedia(query).addEventListener('change',()=>{
+    if(el('shareCard').open)el('cardArt').innerHTML=FlightLog.card(flight);
+  });
+}
 el('openShareCard').onclick=()=>{
   el('cardArt').innerHTML=FlightLog.card(flight);
   el('cardStatus').textContent='';el('shareCard').showModal();
@@ -5868,7 +5961,7 @@ function scheduleHalfwayCheck(){
 function updateLessonEnd(){
   const next=el('nextLesson'),i=flight.lesson;
   next.hidden=i===null || !lessons[i+1] || flight.done!=='capture';
-  if(!next.hidden)next.textContent=lessons[i+1].title;
+  if(!next.hidden)next.title='Next lesson · '+lessons[i+1].title;
 }
 function stagedPitchMatches(){
   const staged=flight.stagedPitch;

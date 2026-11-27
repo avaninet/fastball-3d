@@ -409,7 +409,10 @@ const Visor = (() => {
     if(surface!==canvas&&(surface.width!==width||surface.height!==Math.round(sceneHeight*ratio))){
       surface.width=width;surface.height=Math.round(sceneHeight*ratio);
     }
-    const ctx=surface.getContext('2d',{alpha:false});ctx.setTransform(ratio,0,0,ratio,0,0);
+    // The backing bitmap has whole pixels. At fractional display scales the
+    // requested ratio can stop the new frame halfway through the last row.
+    const ctx=surface.getContext('2d',{alpha:false});
+    ctx.setTransform(surface.width/w,0,0,surface.height/sceneHeight,0,0);
     const cam=camera(state.pos.p,az,el,w,h,small,!!state.forecast.debris,small?1:state.visorLens);
     EarthSky.draw(ctx,w,sceneHeight,h/2,cam);
     drawStars(ctx,cam,w,h,state,sceneHeight);

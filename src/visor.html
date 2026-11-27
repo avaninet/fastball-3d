@@ -199,6 +199,7 @@ __COCKPIT_STYLE__</style>
       </section>
     </main>
     __SCENARIO_SPRITES__
+    __ACTION_SPRITES__
     <dialog id="setup" aria-labelledby="setupTitle">
       <form id="setupForm">
         <div id="setupBody" class="dialogBody">
@@ -442,21 +443,18 @@ __COCKPIT_STYLE__</style>
           <div id="endStats"></div>
         </div>
         <section id="debriefShare" hidden aria-labelledby="shareHeading">
-          <h3 id="shareHeading">Share</h3>
-          <p id="shareIntro">Share the challenge link to give a friend the same opening and starting settings. Compare the aids, throws and grab speeds on your flight cards.</p>
-          <div class="seedActions">
-            <code id="endSeed"></code>
-            <button id="copyEndSeed">Copy link</button>
-            <button id="openShareCard">View flight card</button>
-          </div>
+          <div class="shareHeading"><h3 id="shareHeading">Share</h3><code id="endSeed"></code></div>
+          <p id="shareIntro">Share this opening and its starting settings with a friend.</p>
           <p id="endShareStatus" role="status"></p>
         </section>
       </div>
-      <div class="dialogFoot">
-        <button id="viewLog">View flight log</button>
-        <button id="retry">Retry</button>
-        <button id="nextLesson" hidden></button>
-        <button id="again">New flight</button>
+      <div class="dialogFoot endActions">
+        <button id="viewLog"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-log"/></svg><span>Flight log</span></button>
+        <button id="retry"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-retry"/></svg><span>Retry</span></button>
+        <button id="again"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-new"/></svg><span>New flight</span></button>
+        <button id="openShareCard" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-card"/></svg><span>Flight card</span></button>
+        <button id="copyEndSeed" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-link"/></svg><span>Copy link</span></button>
+        <button id="nextLesson" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-next"/></svg><span>Next lesson</span></button>
       </div>
     </dialog>
     <dialog id="flightLog" aria-labelledby="logTitle">
@@ -479,18 +477,14 @@ __COCKPIT_STYLE__</style>
       </div>
     </dialog>
     <dialog id="shareCard" aria-labelledby="cardTitle">
-      <div class="dialogBody">
-        <div class="dialogHead">
-          <h2 id="cardTitle">Share flight card</h2>
-          <button class="x close" aria-label="Back to debrief">×</button>
-        </div>
-        <div id="cardArt"></div>
-        <p id="cardStatus" role="status"></p>
+      <h2 id="cardTitle">Share flight card</h2>
+      <button class="x close" aria-label="Back to debrief">×</button>
+      <div id="cardArt"></div>
+      <div class="cardActions">
+        <button id="saveCard"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-save"/></svg><span>Save image</span></button>
+        <button id="copyChallenge" class="primary"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-copy"/></svg><span>Copy challenge</span></button>
       </div>
-      <div class="dialogFoot">
-        <button id="saveCard">Save image</button>
-        <button id="copyChallenge" class="primary">Copy challenge</button>
-      </div>
+      <p id="cardStatus" role="status"></p>
     </dialog>
     <dialog id="copyDialog" aria-labelledby="copyTitle">
       <div class="dialogBody">

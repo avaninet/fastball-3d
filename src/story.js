@@ -89,7 +89,7 @@ function scheduleHalfwayCheck(){
 function updateLessonEnd(){
   const next=el('nextLesson'),i=flight.lesson;
   next.hidden=i===null || !lessons[i+1] || flight.done!=='capture';
-  if(!next.hidden)next.textContent=lessons[i+1].title;
+  if(!next.hidden)next.title='Next lesson · '+lessons[i+1].title;
 }
 function stagedPitchMatches(){
   const staged=flight.stagedPitch;

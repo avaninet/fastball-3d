@@ -867,38 +867,71 @@ input[type=radio],input[type=checkbox] {
   color: var(--green);
 }
 
-#debriefShare {
-  border-top: 1px solid var(--line);
-  margin-top: 16px;
+#debrief[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+#debrief .dialogBody { overflow: auto; min-height: 0; }
+#debriefShare { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 10px; }
+.shareHeading { display: flex; align-items: baseline; gap: 12px; }
+.shareHeading h3, #shareIntro { margin: 0; }
+#debriefShare h3 { margin: 0; }
+#shareIntro { margin-top: 4px; }
+#endSeed { color: var(--green); font: 600 13px var(--mono); }
+#endShareStatus, #cardStatus { color: var(--green); font-size: 13px; margin: 4px 0 0; }
+#cardStatus:empty, #endShareStatus:empty { display: none; }
 
-#endSeed {
-  color: var(--green);
-  margin-right: auto;
-  font: 600 14px var(--mono);
+.actionSprites { position: absolute; pointer-events: none; }
+.actionIcon {
+  width: 18px; height: 18px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.7;
+  stroke-linecap: round; stroke-linejoin: round;
 }
-
+#debrief .endActions {
+  display: grid; grid-template-columns: repeat(3,minmax(0,1fr));
+  flex: none; gap: 6px; padding: 10px clamp(10px,3vw,23px);
+}
+.endActions button, .cardActions button {
+  display: flex; align-items: center; justify-content: flex-start;
+  gap: 8px; min-height: 38px; padding: 6px 10px;
+  font-size: 14px; line-height: 1.2; text-align: left;
+}
+.endActions .actionIcon, .cardActions button:not(.primary) .actionIcon { color: var(--green); }
 #shareCard {
-  width: min(95vw,480px);
-  max-height: 95dvh;
+  width: min(814px,calc(100% - 20px)); max-width: calc(100vw - 12px);
+  max-height: calc(100dvh - 16px);
+  padding: 12px; overflow: hidden;
 }
-
-#shareCard .dialogBody {
-  padding: 12px;
+#shareCard[open] {
+  display: grid;
+  grid-template: "title actions close" auto "art art art" minmax(0,1fr) "status status status" auto / minmax(0,1fr) auto auto;
+  column-gap: 12px; align-items: center;
 }
-
-#shareCard .dialogHead {
-  margin-bottom: 8px;
+#cardTitle { grid-area: title; margin: 0; color: var(--gold); font-size: 21px; line-height: 1.15; }
+#shareCard .x { grid-area: close; }
+.cardActions { grid-area: actions; display: flex; gap: 6px; }
+.cardActions button { justify-content: center; }
+#cardArt { grid-area: art; align-self: stretch; min-height: 0; overflow: auto; margin-top: 10px; }
+#cardArt svg { display: block; width: 100%; height: auto; }
+#cardStatus { grid-area: status; }
+@media (max-width: 679px) {
+  #shareCard { width: min(486px,calc(100% - 12px)); padding: 8px; }
+  #shareCard[open] {
+    grid-template: "title close" auto "art art" minmax(0,1fr) "actions actions" auto "status status" auto / 1fr auto;
+  }
+  #cardArt { margin-block: 6px; }
+  .cardActions { justify-content: flex-end; }
 }
-
-#cardArt svg {
-  display: block;
-  width: 100%;
-  height: auto;
+@media (min-width: 680px) and (max-height: 480px) {
+  #shareCard { width: min(780px,calc(100% - 12px)); padding: 5px; max-height: calc(100dvh - 4px); }
+  #shareCard .cardActions button { min-height: 32px; }
+  #cardArt { margin-top: 4px; }
 }
-
-#cardStatus:empty,#endShareStatus:empty {
-  display: none;
+@media (max-width: 430px) {
+  #debrief .endActions { padding: 8px; gap: 5px; }
+  .endActions button { gap: 5px; padding-inline: 6px; font-size: 13px; min-height: 42px; }
+  .endActions .actionIcon { width: 16px; height: 16px; }
 }
 
 #copyText {

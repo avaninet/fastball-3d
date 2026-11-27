@@ -225,12 +225,11 @@ const FlightLog = (() => {
       speed:(rescued?'Grab speed ':'Final relative speed ')+Readout.speed(Flight.norm(flight.pos.v),flight.soft)+' m/s'
     };
   }
-  function card(flight){
+  function card(flight,wide=matchMedia('(min-width: 680px)').matches){
     const {segments,closest,tracks}=reconstruct(flight);
     const date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
     const name=flight.initial.name??'Random drift',result=outcomes[flight.done];
     const seed=Challenge.encode(flight);
-    const keyHeight=tracks.length?66:0;
     const rules=[flight.mode,flight.story?'Story':'Manual',Readout.capture(flight.soft),
       flight.pose?.id?flight.pose.label:''].filter(Boolean).join(' · ');
     const elapsed=precise(flight.time),oxygen=Readout.clock(Math.ceil(flight.limit-flight.time));
@@ -238,29 +237,62 @@ const FlightLog = (() => {
     const clearance=flight.done==='capture'?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
     const passCount=flight.misses?Readout.count(flight.misses,'fast entry','fast entries'):'';
     const passDetails=[clearance,passCount].filter(Boolean).join('   ·   ');
-    const recordY=529+keyHeight+(passDetails?20:0);
-    const records=releases.slice(0,9).map((r,i)=>(i+1)+'.  '+Readout.clock(r.time)+'  '+Flight.gear[r.tool].name+'  '+r.power+'%');
-    if(releases.length>9)records.push('10. ...and then some');
-    const rows=Math.max(1,Math.min(5,records.length)),height=recordY+10+rows*17;
+    const short=wide && matchMedia('(max-height: 480px)').matches;
+    const records=releases.slice(0,9);
+    const count=Math.min(releases.length,10),width=wide?780:470;
+    const chartScale=short ? .73 : 1,chartTop=short?49:wide?92:104;
+    const chartBottom=chartTop+chartScale*(307+(!short&&tracks.length?62:0));
+    const infoX=short?365:wide?474:18,infoY=wide?chartTop+(short?13:18):chartBottom+22;
+    const toolCount=flight.story?Readout.count(releases.length,'throw'):releases.length+'/'+Flight.gear.length+' tools used';
+    const leading=short?18:20,recordY=infoY+4*leading+(short?3:7)+(passDetails?leading:0);
+    const columns=wide&&!short?1:2,rows=Math.max(1,Math.ceil(count/columns));
+    const lineHeight=short?18:wide?20:17;
+    const recordBottom=recordY+rows*lineHeight;
+    const height=Math.ceil(Math.max(chartBottom,recordBottom+(short&&tracks.length?57:0)))+(short?5:15);
     const label=(x,y,text,size,color,attrs='')=>'<text x="'+x+'" y="'+y+'" font-size="'+size+'" fill="'+color+'" '+attrs+'>'+escape(text)+'</text>';
     const description='Fastball 3D · AvaniNet · '+date+' · '+[name,seed].filter(Boolean).join(' ')+' · '+rules+'\n'+
       [result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',budget,speed,Readout.aids(flight),clearance,passCount].filter(Boolean).join(' · ');
-    const parts=['<svg xmlns="http://www.w3.org/2000/svg" width="470" height="'+height+'" viewBox="0 0 470 '+height+'" role="img" aria-labelledby="flightCardTitle flightCardDesc" font-family="'+escape(cockpitFonts.sans)+'">',
+    const parts=['<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'" role="img" aria-labelledby="flightCardTitle flightCardDesc" font-family="'+escape(cockpitFonts.sans)+'">',
       '<title id="flightCardTitle">'+escape(name)+' · '+escape(result)+'</title><desc id="flightCardDesc">'+escape(description)+'</desc>',
-      '<rect width="470" height="'+height+'" rx="9" fill="#101a20"/>',
-      label(20,27,'FASTBALL 3D · AvaniNet',14,'#f7bc62','font-weight="bold" letter-spacing="1.8"'),label(450,27,date,13,'#c5d1d0','text-anchor="end"'),
-      label(20,62,result,28,'#f4f1e8','font-weight="bold"'),label(20,84,[name,seed].filter(Boolean).join('  /  '),15,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
-      label(20,104,rules,13,'#c5d1d0'),'<rect x="12" y="115" width="446" height="309" rx="5" fill="#0b141b" stroke="#354046"/>',
-      label(22,136,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),
-      '<g transform="translate(20 143)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments,flight.pose),0,true,tracks)+'</g>',
-      tracks.length?'<g transform="translate(20 429)">'+debrisKey(tracks)+'</g>':'',
-      label(20,446+keyHeight,budget,15,'#a8e4d0','font-weight="bold"'),label(20,466+keyHeight,speed,14,'#a8e4d0'),
-      label(20,486+keyHeight,elapsed+' elapsed   ·   '+oxygen+' oxygen   ·   '+(flight.story?Readout.count(releases.length,'throw'):releases.length+'/'+Flight.gear.length+' tools used'),14,'#f4f1e8')];
-    parts.push(label(20,506+keyHeight,Readout.aids(flight),13,'#c5d1d0'));
-    if(passDetails)parts.push(label(20,526+keyHeight,passDetails,14,'#c5d1d0'));
-    parts.push(label(20,recordY,'Release record',13,'#f7bc62','font-weight="bold"'));
-    if(!releases.length)parts.push(label(20,recordY+19,'No tools released',12,'#c5d1d0'));
-    records.forEach((text,i)=>parts.push(label(i<5?20:245,recordY+19+17*(i%5),text,12,'#d7dfe1')));
+      '<rect width="'+width+'" height="'+height+'" rx="7" fill="#101a20"/>',
+      label(18,short?16:23,'FASTBALL 3D · AvaniNet',short?12:13,'#f7bc62','font-weight="bold" letter-spacing="1.6"'),
+      label(short?345:width-18,short?16:23,date,13,'#c5d1d0','text-anchor="end"'),
+      label(18,short?41:wide?55:53,result,short?21:27,'#f4f1e8','font-weight="bold"')];
+    if(short){
+      parts.push(label(infoX,17,name+'   /   '+seed,14,'#a8e4d0'),
+        label(infoX,39,rules,12,'#c5d1d0'));
+    }else if(wide){
+      parts.push(label(width-18,54,seed,16,'#a8e4d0','text-anchor="end" font-family="'+escape(cockpitFonts.mono)+'"'),
+        label(18,77,name+'   ·   '+rules,14,'#c5d1d0'));
+    }else{
+      parts.push(label(18,74,name+'   /   '+seed,14,'#a8e4d0','font-family="'+escape(cockpitFonts.mono)+'"'),
+        label(18,94,rules,13,'#c5d1d0'));
+    }
+    parts.push('<g transform="translate(0 '+chartTop+') scale('+chartScale+')">',
+      '<rect x="12" y="0" width="446" height="305" rx="5" fill="#0b141b" stroke="#354046"/>',
+      label(22,20,'Orbital plane · V-bar / R-bar',13,'#f4f1e8','font-weight="bold"'),
+      '<g transform="translate(20 26)" font-family="'+escape(cockpitFonts.mono)+'">'+plot(flight,segments,layout(segments,flight.pose),0,true,tracks)+'</g></g>');
+    if(tracks.length){
+      const position=short?'translate('+infoX+' '+(recordBottom+4)+') scale(.91)':'translate(20 '+(chartTop+310)+')';
+      parts.push('<g transform="'+position+'">'+debrisKey(tracks)+'</g>');
+    }
+    parts.push(label(infoX,infoY,budget,short?13:14,'#a8e4d0','font-weight="bold"'),
+      label(infoX,infoY+leading,speed,short?13:14,'#a8e4d0'),
+      label(infoX,infoY+2*leading,elapsed+' elapsed · '+oxygen+' oxygen · '+toolCount,13,'#f4f1e8'),
+      label(infoX,infoY+3*leading,Readout.aids(flight),13,'#c5d1d0'));
+    if(passDetails)parts.push(label(infoX,infoY+4*leading,passDetails,13,'#c5d1d0'));
+    parts.push('<path d="M '+infoX+' '+(recordY-(short?13:18))+' H '+(width-18)+'" stroke="#354046"/>',
+      label(infoX,recordY,'Release record',13,'#f7bc62','font-weight="bold"'));
+    if(!records.length)parts.push(label(infoX,recordY+lineHeight,'No tools released',13,'#c5d1d0'));
+    for(let i=0;i<count;i++){
+      const columnWidth=(width-infoX-18)/columns;
+      const x=infoX+Math.floor(i/rows)*columnWidth,y=recordY+lineHeight*(1+i%rows);
+      const r=records[i],size=wide&&!short?14:13;
+      if(!r){parts.push(label(x,y,'10. ...and then some',size,'#c5d1d0'));continue;}
+      parts.push(label(x,y,(i+1)+'.  '+Readout.clock(r.time),size,'#c5d1d0'),
+        label(x+(columns===1?63:53),y,Flight.gear[r.tool].name,size,'#f1f2ef'),
+        label(x+columnWidth-(columns===1?0:10),y,r.power+'%',size,'#c5d1d0','text-anchor="end"'));
+    }
     return parts.join('')+'</svg>';
   }
   function show(flight){

@@ -20,6 +20,18 @@
     click(id);if(el('confirmRescue').open)click('replaceFlight');
   }
   function checkDebriefSpacing(){
+    const buttons=[...el('debrief').querySelectorAll('.endActions button:not([hidden])')];
+    const expected=['viewLog','retry','again'];
+    if(!el('debriefShare').hidden)expected.push('openShareCard','copyEndSeed');
+    if(!el('nextLesson').hidden)expected.push('nextLesson');
+    eq(buttons.map(button=>button.id).join()===expected.join(),'applicable debrief actions in keyboard order');
+    const rects=buttons.map(button=>button.getBoundingClientRect());
+    eq(rects[1].left>=rects[0].right && rects[2].left>=rects[1].right,'three distinct debrief columns');
+    rects.forEach((rect,i)=>{
+      eq(Math.abs(rect.top-rects[i<3?0:3].top)<1,'actions align in rows');
+      eq(Math.abs(rect.left-rects[i%3].left)<1 && Math.abs(rect.width-rects[0].width)<1,'actions align in equal columns');
+      if(i>=3)eq(rect.top>=rects[0].bottom,'second action row below first');
+    });
     let previousBottom;
     for(const p of el('debrief').querySelectorAll('p')){
       if(!p.getClientRects().length || !p.textContent.trim())continue;
@@ -210,6 +222,37 @@
         eq(look(180,0,0,small).size===0,'Earth occludes the starfield');
       }
     }finally{canvas.remove();}
+  });
+  test('Fractional display scale repaints every pixel along the visor edges',()=>{
+    const canvas=document.createElement('canvas'),backdrop=document.createElement('canvas');
+    // Odd logical dimensions put the bottom and right edges on half pixels.
+    const density=Object.getOwnPropertyDescriptor(window,'devicePixelRatio');
+    try{
+      Object.defineProperty(window,'devicePixelRatio',{configurable:true,value:1.5});
+      for(const [surface,height] of [[canvas,261],[backdrop,303]]){
+        surface.style.cssText='position:fixed;left:-1000px;top:0;width:451px;height:'+height+'px';
+        document.body.append(surface);
+      }
+      for(const extended of [false,true]){
+        const surface=extended?backdrop:canvas;
+        const render=()=>Visor.render(canvas,127.06,-18.8,flight,false,extended?backdrop:null);
+        render();
+        const ctx=surface.getContext('2d'),width=surface.width,height=surface.height;
+        const transform=ctx.getTransform();
+        close(transform.a*surface.clientWidth,width,.0001);
+        close(transform.d*surface.clientHeight,height,.0001);
+        const edge=color=>{
+          ctx.save();ctx.resetTransform();ctx.fillStyle=color;ctx.fillRect(0,0,width,height);ctx.restore();
+          render();
+          return [...ctx.getImageData(0,height-1,width,1).data,...ctx.getImageData(width-1,0,1,height).data];
+        };
+        const red=edge('#f00'),blue=edge('#00f');
+        eq(red.every((c,i)=>c===blue[i]),'edges are independent of the previous frame');
+      }
+    }finally{
+      canvas.remove();backdrop.remove();
+      if(density)Object.defineProperty(window,'devicePixelRatio',density);else delete window.devicePixelRatio;
+    }
   });
   test('Both lenses sample the native city lights and aurora at the correct bearings',()=>{
     const image=el('earthArt'),source=document.createElement('canvas');
@@ -569,7 +612,6 @@
       eq(art.textContent.includes('27 throws')&&art.textContent.includes('10. ...and then some'),'compact overflow line and actual count');
       eq(art.querySelectorAll('.releaseMark').length===9&&art.querySelectorAll('polyline').length===28,'first nine callouts on the full chart');
       eq(![...art.querySelectorAll('text')].some(t=>t.textContent.startsWith('11.  ')),'no eleventh record');
-      const cardHeight=art.querySelector('svg').getAttribute('height');
       for(const length of [0,1,5,6,9,10,27]){
         const short={...flight,log:{...flight.log,releases:flight.log.releases.slice(0,length)}};
         const svg=new DOMParser().parseFromString(FlightLog.card(short),'image/svg+xml').documentElement;
@@ -578,10 +620,13 @@
         eq(svg.textContent.includes('10. ...and then some')===(length>9),'overflow starts on throw ten');
         for(const [i,row] of rows.entries()){
           eq(row.textContent.startsWith((i+1)+'. '),'reading order');
-          eq(+row.getAttribute('x')===(i<5?20:245),'throws 1–5 left and 6–10 right');
-          eq(+row.getAttribute('y')===+rows[0].getAttribute('y')+17*(i%5),'records run down each column');
+          const wide=svg.viewBox.baseVal.width>470,short=wide && innerHeight<=480,columns=wide&&!short?1:2;
+          const perColumn=Math.ceil(rows.length/columns),left=short?365:wide?474:18;
+          const stride=(svg.viewBox.baseVal.width-left-18)/columns;
+          eq(+row.getAttribute('x')===left+Math.floor(i/perColumn)*stride,'record column');
+          const y=+rows[0].getAttribute('y')+(short?18:wide?20:17)*(i%perColumn);
+          eq(+row.getAttribute('y')===y && y<svg.viewBox.baseVal.height,'record visible in reading order');
         }
-        if(length>=5)eq(svg.getAttribute('height')===cardHeight,'at most five rows high');
       }
       el('shareCard').close();click('retry');
       eq(flight.story&&flight.throws===0&&el('budget').textContent.includes('Unlimited'),'retry resets history and keeps Story rules');

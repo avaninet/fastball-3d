@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false" class="actionSprites">
+  <symbol id="act-log" viewBox="0 0 24 24">
+    <path d="M6 3.5h12.5v17H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2ZM8 4v16M11 8h4.5M11 12h4.5M11 16h3"/>
+  </symbol>
+  <symbol id="act-retry" viewBox="0 0 24 24">
+    <path d="M4 10a8 8 0 1 1 .7 6M4 4v6h6"/>
+  </symbol>
+  <symbol id="act-new" viewBox="0 0 24 24">
+    <path d="m2.5 10.2 18-6.7-5.9 17-4.1-6.8-8-3.5Zm8 3.5 10-10.2"/>
+  </symbol>
+  <symbol id="act-card" viewBox="0 0 24 24">
+    <rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="M3 9h18M6 15.5l3.5-3 3 2 4-3"/>
+  </symbol>
+  <symbol id="act-link" viewBox="0 0 24 24">
+    <path d="m9.5 14.5 5-5m-6.8 2-2 2a3.8 3.8 0 0 0 5.4 5.4l3-3a3.8 3.8 0 0 0 0-5.4m2.2 2 2-2a3.8 3.8 0 0 0-5.4-5.4l-3 3a3.8 3.8 0 0 0 0 5.4"/>
+  </symbol>
+  <symbol id="act-next" viewBox="0 0 24 24">
+    <path d="M3 12h13m-5-5 5 5-5 5m9-12v14"/>
+  </symbol>
+  <symbol id="act-save" viewBox="0 0 24 24">
+    <path d="M12 3v11m-4.5-4.5L12 14l4.5-4.5M4 15v4.5h16V15"/>
+  </symbol>
+  <symbol id="act-copy" viewBox="0 0 24 24">
+    <rect x="8.5" y="8" width="11.5" height="13" rx="1.5"/><path d="M15.5 5V3.5H4v13h1.5"/>
+  </symbol>
+</svg>

@@ -114,7 +114,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids()
 const outcomes={capture:'Grab bars secured',oxygen:'Oxygen exhausted',stranded:'Out of tools',overspeed:'Too fast to grab',collision:'Debris collision'};
 function finish(result) {
   running=false;flight.done=result;flight.finishedAt=new Date();invalidateInput();dirty=true;
-  el('retry').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
+  el('retry').querySelector('span').textContent=flight.skippedGuidance?'Retry manual opening':'Retry';
   const won=result==='capture',drill=!flight.skippedGuidance&&!flight.log.releases.some(r=>r.tool===4);
   el('endTitle').textContent=(won?'':'Game over · ')+outcomes[result];
   el('upmassHero').hidden=!(won&&drill);
@@ -145,7 +145,8 @@ function finish(result) {
   el('endBudget').textContent=budget;
   el('endStats').textContent=speed+' · '+Readout.aids(flight)+' · '+clock(flight.time)+' flight time · '+Readout.count(flight.throws,'throw')+(flight.misses?' · '+Readout.count(flight.misses,'fast entry','fast entries'):'');
   setMsg(el('endTitle').textContent+'. '+budget+' · '+el('endStats').textContent);
-  el('debriefShare').hidden=flight.lesson!==null||flight.skippedGuidance;
+  const hideShare=flight.lesson!==null||flight.skippedGuidance;
+  el('debriefShare').hidden=el('copyEndSeed').hidden=el('openShareCard').hidden=hideShare;
   el('endSeed').textContent=Challenge.encode(flight);
   el('endShareStatus').textContent='';
   if(!won){
