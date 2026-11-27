@@ -1583,8 +1583,11 @@
     eq(el('captureRule').querySelector('[value="firm"]').textContent==='Firm capture ≤ 0.120 m/s','public Firm capture option');
     eq(guide.includes('Firm (up to 0.120 m/s)'),'guide explains the Firm limit');
     eq(['presumed irretrievable','Newton’s third law','wrench','“unmanned” X-99 orbital spaceplane','night of the new moon','reserve oxygen'].every(s=>guide.includes(s)),'guide premise and backstory');
-    eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere','credit line');
-    eq(el('guide').querySelector('.credits a').getAttribute('href')==='mailto:avani@avaninet.com','credit contact');
+    const [release,dedication,contact]=el('guide').querySelectorAll('.credits p');
+    const version=document.querySelector('.brand .version').textContent.slice(1);
+    eq(release.textContent==='Fastball 3D version '+version+' · last updated '+el('gameUpdated').textContent,'version and date lead the credits');
+    eq(dedication.textContent==='an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere','credit line');
+    eq(contact.textContent==='avani@avaninet.com'&&contact.querySelector('a').getAttribute('href')==='mailto:avani@avaninet.com','credit contact');
     enterLesson('replayLesson');
     eq(['Newton’s third law','recoil pushes her back','Face away','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
     eq(['Mission specialist Capt. Tommi Dylan','former high-school star pitcher','cold-reboot an inference server'].every(s=>el('brief').textContent.includes(s)),'character in opening');
