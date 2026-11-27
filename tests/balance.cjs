@@ -3,7 +3,7 @@ const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 const src=html.match(/<script id="physics">([\s\S]+?)<\/script>/)[1];
 const F=vm.runInNewContext(src+';Flight',{Math,Catalog:require('../studies/catalog-data.cjs')}), modes=['Straight-Line','Orbital'];
-const {norm,scale,unit,add,clamp}=F;
+const {norm,scale,unit,add}=F;
 // Propagate backwards from a known crossing on each face, then forecast the
 // entire flight. All four speeds used to lose entries to face rounding.
 for(const [speed,time] of [[1.5,5.037035],[3,5.037035],[8,5.012345],[12,5.012345]]){
@@ -49,7 +49,7 @@ function perturb(c,angle,pct,draw) {
   const v=F.direction(c.az,c.el),a=draw()*2*Math.PI,b=Math.acos(1-draw()*(1-Math.cos(angle*F.rad)));
   const side=F.direction(c.az+90,0),up=F.direction(c.az,c.el+90);
   const direction=add(scale(v,Math.cos(b)),scale(add(scale(side,Math.cos(a)),scale(up,Math.sin(a))),Math.sin(b)));
-  return {...c,dir:direction,power:clamp(Math.round(c.power+(draw()*2-1)*pct),10,100)};
+  return {...c,dir:direction,power:F.snapPower(c.power+(draw()*2-1)*pct)};
 }
 function runPlan(s,mode,mask,left,soft,actions,angle,pct,draw) {
   let elapsed=0;

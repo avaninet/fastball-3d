@@ -8,16 +8,16 @@ You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan ba
 
 ## The service call
 
-BOREX sent Capt. Tommi Dylan (she/they) outside to cold-reboot an inference server. Yes, it takes all nine tools. Then the tether parts and the thruster valves stick closed. Commander Julian Bern can still see her radar track. Tommi can still put a hand on the wrench pouch.
+Private space contractor BOREX designed its first spacesuit for the people who would maintain fleets of commercial datacenter satellites. The lightweight suit gives a technician more freedom to maneuver, and its automatic return system is intended to bring them home if they come loose. On the first outing, **mission specialist Capt. Tommi Dylan (she/they)** - rumored test pilot of the classified "unmanned" X-99 orbital spaceplane, and former star pitcher of her high school baseball team - is making the orbital equivalent of a service call to cold-reboot an inference server. Yes, it takes all nine tools.
 
-Tommi is widely rumored to have been the test pilot of the classified “unmanned” X-99 orbital spaceplane. “Let’s just say she’s set records she can never brag about.” &mdash;&nbsp;Commander&nbsp;Julian&nbsp;Bern
+The tether parts. The thruster valves stick closed. Ten minutes reserve oxygen. An astronaut drifting away without a tether or working emergency thrusters is _presumed irretrievable_. Station commander Julian Bern can still see Tommi's radar track. Newton’s third law gives her one last option: Fling a wrench as hard as she can out into space and the wrench pushes her back.
 
-The habit that comes back to her now is older than that. She was a high-school star pitcher. She still plays Saturdays with her friends. On a dusty field in the bright sun, this is the moment the crowd goes quiet. Out here she has to pitch her way home. The crew would like their drill back.
+It’s the night of the new moon. From here in Earth’s shadow, the planet hides sun and moon alike. A few stars hang above the dark curve of Earth, the station a little farther away with every second. Tommi looks down the throat of death and decides she’s going to pitch her way home.
 
 ## Fly your first rescue
 
 1. Choose **First rescue** for a guided first pitch. To fly on your own, start with **Tether separation** and **Straight-Line**.
-2. Face away from the station and throw. The tool goes through the forward crosshair and your suit recoils the other way. Look for the station in the aft camera.
+2. Face away from the station and throw the spare battery at its starting power of 95%. The tool goes through the forward crosshair and your suit recoils the other way. Look for the station in the aft camera.
 3. Check **Current coast**. **Contact in** means your present path will bring you to the bars. If it says **Miss by**, try a light tool and use **Preview throw** to see where the correction would take you. Open **Guide** in the cockpit for controls, braking and strategy.
 
 ## Choose a challenge

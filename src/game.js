@@ -251,6 +251,7 @@ function updateRack() {
   el('throw').disabled=selected<0||!canPitch();el('power').disabled=selected<0||!canPitch();
   el('prograde').disabled=flight.sightOnly||!canPitch()||norm(flight.pos.v)<.00001;
   el('powerValue').textContent=power+'%';
+  el('power').setAttribute('aria-valuetext',power+'%');
   updateRecoilReadout();
 }
 function updateRecoilReadout(){
@@ -330,7 +331,7 @@ function nav(status) {
       if(aim){
         const [az,elev]=Flight.angles(aim.dir);
         a.textContent=trimHint(aim.dir,yaw,pitch)+' Throw '+Flight.gear[aim.tool].name.toLowerCase()+
-          ' at 100%. '+Readout.bearing(az,elev)+'.';
+          ' at '+aim.power+'%. '+Readout.bearing(az,elev)+'.';
       }else a.textContent='No clear single throw found by Coach. Try an oblique brake in Preview throw.';
     }
     return;
@@ -531,7 +532,7 @@ function invalidateInput(){
   if(drag && visor.hasPointerCapture(drag.id))visor.releasePointerCapture(drag.id);
   drag=null;document.body.classList.remove('dragging');
 }
-function changePower(value){if(canPitch())power=clamp(value,10,100);el('power').value=power;updateRack();}
+function changePower(value){if(canPitch())power=Flight.snapPower(value);el('power').value=power;updateRack();}
 function snap(vector){if(flight.story&&!flight.sightOnly&&canPitch())setView(vector);}
 el('toStation').onclick=()=>snap(stationDirection());el('away').onclick=()=>snap(flight.pos.p);el('prograde').onclick=()=>{
   if(flight.sightOnly || !canPitch() || !sync() || !canPitch() || norm(flight.pos.v)<.00001)return;
@@ -557,6 +558,7 @@ el('clockRate').oninput=()=>{
   if(!flight.sightOnly && requested && hazard && hazard.t-flight.age<=Debris.warningLead)showDebrisBrake(hazard);
   else setClockStop(requested);
 };
+for(let stop=10;stop<=100;stop+=Flight.powerStep)el('powerStops').append(new Option('',String(stop)));
 el('power').oninput=()=>changePower(sliderPress && sliderPress.epoch!==inputEpoch?power:Number(el('power').value));
 
 // Tie browser-generated activation to the press that began it. Pause, dialogs,
@@ -666,7 +668,7 @@ document.addEventListener('keydown',e=>{
   }
   if(target===el('power'))sliderPress=null;
   const step=e.shiftKey?.25:2;
-  if(decrease||increase){e.preventDefault();changePower(power+(decrease?-1:1));return;}
+  if(decrease||increase){e.preventDefault();changePower(power+(decrease?-Flight.powerStep:Flight.powerStep));return;}
   if(digit){e.preventDefault();choose(rackOrder[Number(digit)-1]);return;}
   if(key==='enter'&&visorOrInput){e.preventDefault();if(!e.repeat)throwTool();return;}
   if(!key.startsWith('arrow'))return;

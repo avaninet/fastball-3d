@@ -27,6 +27,8 @@ const Flight = (() => {
   const dot = (a,b) => a.reduce((s,x,i)=>s+x*b[i],0);
   const unit = a => scale(a,1/(norm(a)||1));
   const clamp = (x,lo,hi) => Math.max(lo,Math.min(hi,x));
+  const powerStep = 5;
+  const snapPower = value => clamp(Math.round(value/powerStep)*powerStep,10,100);
   const rad = Math.PI/180;
   function direction(az,el) {
     return [Math.cos(el*rad)*Math.cos(az*rad),Math.cos(el*rad)*Math.sin(az*rad),Math.sin(el*rad)];
@@ -40,7 +42,7 @@ const Flight = (() => {
     budgets[mask]=Math.max(...gear.map((_,i)=>(mask & (1<<i)) ? impulse(i,mask)+budgets[mask^(1<<i)] : 0));
   }
   function release(s,tool,power,dir,mask) {
-    return {p:s.p.slice(),v:sub(s.v,scale(unit(dir),impulse(tool,mask)*clamp(power,10,100)/100))};
+    return {p:s.p.slice(),v:sub(s.v,scale(unit(dir),impulse(tool,mask)*snapPower(power)/100))};
   }
   function motion(s,t,mode) {
     if (mode==='Straight-Line') return {p:add(s.p,scale(s.v,t)),v:s.v.slice()};
@@ -238,7 +240,7 @@ const Flight = (() => {
   }
   function command(dv,tool,mask) {
     const [az,el]=angles(scale(dv,-1));
-    return {tool,az:Math.round(az),el:Math.round(el),power:clamp(Math.round(100*norm(dv)/impulse(tool,mask)),10,100)};
+    return {tool,az:Math.round(az),el:Math.round(el),power:snapPower(100*norm(dv)/impulse(tool,mask))};
   }
   function applyCommand(s,c,mask) {return release(s,c.tool,c.power,direction(c.az,c.el),mask);}
   function manualOpening(base){
@@ -257,5 +259,5 @@ const Flight = (() => {
     return story?base:manualOpening(base);
   }
   return {gear,fullRack,named,opening,poses,half,limit,captureLimit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,rackAfterThrow,impulse,budgets,
-    release,motion,nearest,clearance,inside,softEnough,canGrab,entries,alongTrackCrossings,forecast,coastPass,coastStatus,seedStream,transfer,command,applyCommand,manualOpening};
+    powerStep,snapPower,release,motion,nearest,clearance,inside,softEnough,canGrab,entries,alongTrackCrossings,forecast,coastPass,coastStatus,seedStream,transfer,command,applyCommand,manualOpening};
 })();

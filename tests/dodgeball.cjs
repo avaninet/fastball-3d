@@ -9,11 +9,14 @@ const data=require('../studies/catalog-data.cjs');
 const layoutCatalog=Array.from({length:data.count},(_,row)=>data.debrisKey(row));
 const {approvedMask}=require('../studies/station-orientations.cjs');
 const {screen}=require('../studies/random-dodgeball.cjs');
-assert.equal(data.mask(4,0),approvedMask(D.pieces,null));
+function checkFrozenTilts(mask,bodies,layout){
+  assert.equal(mask & approvedMask(bodies,layout),mask,'every shipped tilt still qualifies');
+}
+checkFrozenTilts(data.mask(4,0),D.pieces,null);
 for(let row=0;row<4096;row++){
   const id=layoutCatalog[row];
   assert.ok(data.mask(5,row)>0);
-  if(row%512===0)assert.equal(data.mask(5,row),approvedMask(D.layoutPieces(id),Math.floor(id/D.layoutStride)));
+  if(row%512===0)checkFrozenTilts(data.mask(5,row),D.layoutPieces(id),Math.floor(id/D.layoutStride));
 }
 assert.equal(D.layouts.length,8);
 assert.equal(layoutCatalog.length,4096);

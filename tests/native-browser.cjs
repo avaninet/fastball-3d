@@ -41,6 +41,24 @@ async function main() {
       await button('#pause', 'space');
       assert.equal(await read("el('pause').textContent"), label);
     }
+    const slider=await post('/element',{using:'css selector',value:'#power'});
+    const offset=await read('Math.round(el("power").getBoundingClientRect().width*.2)');
+    const mouse=actions=>post('/actions',{actions:[{type:'pointer',id:'power-drag',parameters:{pointerType:'mouse'},actions}]});
+    const move=x=>({type:'pointerMove',origin:slider,x,y:0,duration:60});
+    await mouse([move(-offset),{type:'pointerDown',button:0}]);
+    assert.equal(await read('power'),35);
+    await mouse([move(offset)]);
+    assert.deepEqual(await read('[power,el("power").valueAsNumber,el("powerValue").textContent]'),[75,75,'75%']);
+    await mouse([{type:'pointerUp',button:0}]);
+    assert.equal(await read('power'),75);
+    await post('/actions',{actions:[{type:'key',id:'cockpit',actions:[
+      {type:'keyDown',value:'\uE012'},{type:'keyUp',value:'\uE012'}]}]});
+    assert.equal(await read('power'),70,'focused slider arrow moves one stop');
+    const touch=actions=>post('/actions',{actions:[{type:'pointer',id:'power-touch',parameters:{pointerType:'touch'},actions}]});
+    await touch([move(offset),{type:'pointerDown',button:0},move(-offset)]);
+    assert.equal(await read('power'),35,'touch drag snaps while the finger is down');
+    await touch([{type:'pointerUp',button:0}]);
+    assert.equal(await read('power'),35);
     for (const [slot,id] of ['power','clockRate','showPreview'].entries()) {
       await button('#'+id, 'click');
       assert.equal(await read('document.activeElement.id'), id);
@@ -50,7 +68,7 @@ async function main() {
         keys.flatMap(value=>[{type:'keyDown',value},{type:'keyUp',value}])}]});
       assert.equal(await read('flight.throws'), throws+1);
       assert.equal(await read('flight.log.releases.at(-1).tool'), await read('rackOrder['+slot+']'));
-      assert.equal(await read('flight.log.releases.at(-1).power'), power+(power===100?-1:1));
+      assert.equal(await read('flight.log.releases.at(-1).power'), power+(power===100?-5:5));
     }
     await button('#manual', 'space');
     await button('#guide summary', 'space');

@@ -115,7 +115,7 @@ function routes(){
 function pickTool(wanted,mask){
   const tools=toolOrder.filter(i=>mask&(1<<i));
   const tool=tools.find(i=>F.impulse(i,mask)>=wanted)??tools.at(-1);
-  return {tool,power:F.clamp(Math.round(100*wanted/F.impulse(tool,mask)),10,100)};
+  return {tool,power:F.snapPower(100*wanted/F.impulse(tool,mask))};
 }
 function perturb(dir,azError,elError){
   const [az,el]=F.angles(dir);
@@ -153,7 +153,7 @@ function pilot(initial,bodies,mode,story,rule,drawSeed,aids){
     let dir,tool,power;
     if(hazard){
       const coach=aids.includes('coach')&&D.avoidance(state,mask,mode,time,left,hazard,bodies);
-      if(coach){dir=coach.dir;tool=coach.tool;power=100;}
+      if(coach){dir=coach.dir;tool=coach.tool;power=coach.power;}
       else{
         const rel=F.sub(hazard.body.v,state.v);
         dir=F.unit([rel[1],-rel[0],.04]);({tool,power}=pickTool(.035,mask));
@@ -169,7 +169,7 @@ function pilot(initial,bodies,mode,story,rule,drawSeed,aids){
       ({tool,power}=pickTool(wanted*(1+.4*errors[2]),mask));
     }
     dir=perturb(dir,6*errors[0],6*errors[1]);
-    power=F.clamp(Math.round(power+4*errors[3]),10,100);
+    power=F.snapPower(power+4*errors[3]);
     let adjustments=0;
     if(aids.includes('preview')){
       const angles=[[0,0],[8,0],[-8,0],[0,8],[0,-8],[0,0],[0,0]];

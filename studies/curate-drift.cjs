@@ -15,11 +15,12 @@ function candidate(rng){
 }
 // Midcourse corrections use fresh measured state. The pilot uses integer aim
 // and power settings, legal release times and the actual inventory after each throw.
-function rescue(initial,mode,story,trial){
+const usualTimes=[12,42,155,330,455,508],extraTrimTimes=[12,42,155,195,330,455,508];
+function rescue(initial,mode,story,trial,times=usualTimes){
   const rng=F.seedStream(trial+0x741921),error=amplitude=>trial<0?0:(2*rng()-1)*amplitude;
   const arrival=520;
   let state=initial,time=0,mask=F.fullRack,throws=0;
-  for(const at of [12,42,155,330,455,508]){
+  for(const at of times){
     const t=at+error(5);
     state=F.motion(state,t-time,mode);time=t;
     const dv=at===508?F.scale(F.unit(state.v),-Math.max(0,F.norm(state.v)-.061)):
@@ -31,19 +32,25 @@ function rescue(initial,mode,story,trial){
     const tool=available.find(i=>F.impulse(i,mask)>=magnitude)??available.at(-1);
     const cmd=F.command(dv,tool,mask);
     const dir=F.direction(cmd.az+error(3),F.clamp(cmd.el+error(3),-90,90));
-    state=F.release(state,tool,F.clamp(Math.round(cmd.power+error(3)),10,100),dir,mask);
+    state=F.release(state,tool,F.snapPower(cmd.power+error(3)),dir,mask);
     mask=F.rackAfterThrow(mask,tool,story);throws++;
   }
   const end=F.motion(state,arrival-time,mode);
   return {win:F.norm(end.p)<1.59 && F.norm(end.v)<.079,throws};
 }
-function qualify(c){
+function qualify(c,schedules=[]){
   let mask=0xffff;
   for(const story of [false,true])for(const mode of modes){
     const s=story?c.base:c.manual;
-    if(F.entries(s,600,mode).length || !rescue(s,mode,story,-1).win)return 0;
-    let failures=0;
-    for(let trial=0;trial<16;trial++)if(!rescue(s,mode,story,trial).win && ++failures>1)return 0;
+    if(F.entries(s,600,mode).length)return 0;
+    const schedule=[usualTimes,extraTrimTimes].find(times=>{
+      if(!rescue(s,mode,story,-1,times).win)return false;
+      let failures=0;
+      for(let trial=0;trial<16;trial++)if(!rescue(s,mode,story,trial,times).win && ++failures>1)return false;
+      return true;
+    });
+    if(!schedule)return 0;
+    schedules.push(schedule);
     for(const pose of F.poses.slice(1)){
       const bit=1<<(pose.id-1);
       if((mask&bit) && F.entries(s,600,mode,false,false,pose).length)mask&=~bit;
@@ -66,15 +73,15 @@ function generate(){
     let n=0;
     for(const c of group){
       screened++;
-      const mask=qualify(c);
+      const schedules=[],mask=qualify(c,schedules);
       if(!mask)continue;
       selected.push({...c,mask});
       for(const story of [false,true])for(const [j,mode] of modes.entries()){
         const s=story?c.base:c.manual,k=2*Number(story)+j;
-        const nominal=rescue(s,mode,story,-1);
+        const nominal=rescue(s,mode,story,-1,schedules[k]);
         tools[0]=Math.min(tools[0],nominal.throws);tools[1]=Math.max(tools[1],nominal.throws);
         for(let trial=2000;trial<2016;trial++){
-          wins[k]+=Number(rescue(s,mode,story,trial).win);totals[k]++;
+          wins[k]+=Number(rescue(s,mode,story,trial,schedules[k]).win);totals[k]++;
         }
       }
       if(++n===256)break;
@@ -91,5 +98,23 @@ function generate(){
   console.log(JSON.stringify({screened,selected:selected.length,wins,totals,tools,demand:range('demand'),sideways:range('sideways'),bend:range('bend'),
     tilted:selected.reduce((n,c)=>n+c.mask.toString(2).replaceAll('0','').length,0)}));
 }
-if(require.main===module)generate();
+function verifyFrozen(){
+  const catalog=require('./catalog-data.cjs'),wins=[0,0,0,0],extraTrim=[];
+  for(let row=0;row<catalog.count;row++){
+    const base=catalog.drift(row),manual=F.manualOpening(base),schedules=[];
+    if(qualify({base,manual},schedules)!==catalog.mask(3,row))throw Error('Drift qualification or tilt mask mismatch on row '+row);
+    for(const story of [false,true])for(const [m,mode] of modes.entries()){
+      const k=2*Number(story)+m,times=schedules[k];
+      if(times===extraTrimTimes)extraTrim.push({row,mode,story});
+      for(let trial=2000;trial<2016;trial++)wins[k]+=Number(rescue(story?base:manual,mode,story,trial,times).win);
+    }
+  }
+  console.log(JSON.stringify({rows:catalog.count,extraTrim,n:catalog.count*16,wins}));
+}
+if(require.main===module){
+  const action=process.argv[2]??'--verify';
+  if(action==='--verify')verifyFrozen();
+  else if(action==='--generate')generate();
+  else throw Error('Use --verify for the frozen catalog or --generate to replace it.');
+}
 module.exports={rescue,qualify};

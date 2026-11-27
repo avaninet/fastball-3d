@@ -62,8 +62,8 @@ function showLossCall(result) {
 
 const lessons=[
   {title:'First rescue',index:0,mode:'Straight-Line',soft:false,
-    brief:'Capt. Tommi Dylan (she/they) pitches on Saturdays. Rumor has it she flew the classified “unmanned” X-99 orbital spaceplane. Today her tether snaps and her suit thrusters jam.',
-    cue:'Without a tether or thrusters, a drifting astronaut is presumed lost. Newton’s third law gives Tommi one last pitch. Fling a wrench away from the station as hard as you can and it pushes you back. For this gap, choose Face away and throw the heavier battery at 95%.'},
+    brief:'Mission specialist Capt. Tommi Dylan (she/they), a former high-school star pitcher, is out to cold-reboot an inference server. The tether parts. The thruster valves stick closed. She has ten minutes of reserve oxygen.',
+    cue:'Bern still has Tommi on radar. Newton’s third law gives her one last pitch. Throw a tool away from the station and its recoil pushes her back. Choose Face away and throw the spare battery at 95%.'},
   {title:'Trim an oblique miss',index:1,mode:'Straight-Line',soft:false,
     cue:'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss, then line up a correction.'},
   {title:'Brake for the bars',index:1,mode:'Straight-Line',soft:true,
@@ -157,9 +157,13 @@ function storyCorrection(){
     }
     for(const dv of candidates){
       const command=Flight.command(dv,i,flight.mask);
-      const next=Flight.applyCommand(s,command,flight.mask);
-      const contacts=Flight.entries(next,left,flight.mode,Flight.inside(s.p,flight.pose)&&flight.misses>0,flight.soft,flight.pose);
-      if(contacts.some(entry=>Flight.canGrab(entry,flight.soft)))return command;
+      const nearest=command.power;
+      for(const power of [nearest,nearest-Flight.powerStep,nearest+Flight.powerStep]){
+        if(power<10 || power>100)continue;
+        const pitch={...command,power},next=Flight.applyCommand(s,pitch,flight.mask);
+        const contacts=Flight.entries(next,left,flight.mode,Flight.inside(s.p,flight.pose)&&flight.misses>0,flight.soft,flight.pose);
+        if(contacts.some(entry=>Flight.canGrab(entry,flight.soft)))return pitch;
+      }
     }
   }
   // Story reloads the battery. Aim its strongest impulse toward an intercept,

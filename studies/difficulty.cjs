@@ -12,7 +12,7 @@ function coast(state,left,mode,soft){
 function choosePitch(wanted,mask){
   const available=tools.filter(i=>mask&(1<<i));
   const tool=available.find(i=>F.impulse(i,mask)>=wanted)??available.at(-1);
-  return {tool,power:clamp(Math.round(100*wanted/F.impulse(tool,mask)),10,100)};
+  return {tool,power:F.snapPower(100*wanted/F.impulse(tool,mask))};
 }
 function newPilot(initial,mode,soft,deadline,record=false,rack=F.fullRack,story=false){
   const actions=[];
@@ -71,7 +71,7 @@ function flyImperfect(p,route,draw){
     const [az,el]=F.angles(action.dir),angle=2*Math.PI*draw();
     const tangent=add(scale(F.direction(az+90,0),Math.cos(angle)),scale(F.direction(az,el+90),Math.sin(angle)));
     const error=Math.acos(1-draw()*(1-Math.cos(3*F.rad)));
-    p.pitch(action.tool,clamp(Math.round(action.power+6*draw()-3),10,100),
+    p.pitch(action.tool,F.snapPower(action.power+6*draw()-3),
       add(scale(action.dir,Math.cos(error)),scale(tangent,Math.sin(error))));
   }
 }

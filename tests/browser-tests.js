@@ -329,16 +329,18 @@
         const committed=flight.forecast,rack=flight.mask,heavy=predictThrow();
         click('tool6');const light=predictThrow();
         eq(norm(sub(light.pos.v,flight.pos.v))<norm(sub(heavy.pos.v,flight.pos.v)),'selected mass');
-        set('power',45);const low=predictThrow();
+        eq(el('power').step==='5'&&el('power').list.options.length===19&&power===95,'19-stop range starts at 95%');
+        set('power',43);const low=predictThrow();
+        eq(power===45&&el('powerValue').textContent==='45%','range input snaps before release');
         close(norm(sub(low.pos.v,flight.pos.v))/norm(sub(light.pos.v,flight.pos.v)),45/95);
         keys('ArrowLeft');eq(norm(sub(predictThrow().pos.v,low.pos.v))>1e-6,'reticle heading');
-        click('tool5');set('power',95);click('away');
+        click('tool5');changePower(96);click('away');
         const preview=predictThrow();
         paintVisors();eq(!el('previewResult').hidden&&el('previewResult').textContent===describePreview(preview),'visible readout');
         eq(flight.forecast===committed&&flight.mask===rack&&!flight.throws&&!flight.log.releases.length,'no simulated release committed');
         click('throw');
         eq(JSON.stringify(flight.forecast)===JSON.stringify(preview.forecast),'full sampled coast, entries and nearest pass match');
-        eq(flight.log.releases.length===1&&norm(sub(flight.pos.v,preview.pos.v))<1e-10,'real recoil matches');
+        eq(flight.log.releases.length===1&&flight.log.releases[0].power===95&&norm(sub(flight.pos.v,preview.pos.v))<1e-10,'logged stop and real recoil match');
         advance(20);const later=predictThrow();
         eq(later.forecast.path.at(-1).t===flight.limit-flight.time,'uses remaining oxygen');
         eq(norm(sub(later.anchor.p,flight.pos.p))<1e-10,'starts from current position');
@@ -724,9 +726,9 @@
     send('keydown','&','Digit1');eq(selected===rackOrder[0],'unshifted French number row');
     send('keydown','4','Numpad4');eq(selected===rackOrder[3],'numpad selection');
     const before=power;
-    send('keydown','ü','BracketLeft');eq(power===before-1,'physical left bracket');
+    send('keydown','ü','BracketLeft');eq(power===before-5,'physical left bracket');
     send('keydown','+','NumpadAdd');eq(power===before,'numpad power');
-    send('keydown',']','Digit9',{ctrlKey:true,altKey:true});eq(power===before+1&&selected===rackOrder[3],'AltGr bracket changes power');
+    send('keydown',']','Digit9',{ctrlKey:true,altKey:true});eq(power===before+5&&selected===rackOrder[3],'AltGr bracket changes power');
     eq(send('keydown','1','Digit1',{ctrlKey:true})&&selected===rackOrder[3],'browser tab shortcut');
     click('pause');
     for(const key of ['F5','F11','F12',' ','PageDown','Home','Escape','a','Tab']){
@@ -757,7 +759,7 @@
       const target=document.activeElement,before=flight.throws;
       eq(target===input,'keyboard focus on '+id);
       keys('3',false,target);eq(selected===rackOrder[2],'tool shortcut on '+id);
-      set('power',80);keys(']',false,target);eq(power===81,'power shortcut on '+id);
+      set('power',80);keys(']',false,target);eq(power===85,'power shortcut on '+id);
       if(input.type==='range'){
         const bearing=yaw;
         eq(keys('ArrowRight',false,target) && yaw===bearing,'native slider arrow');
@@ -1501,12 +1503,12 @@
     click('manual');const guide=el('guide').textContent.replace(/\s+/g,' ');
     eq(el('captureRule').querySelector('[value="firm"]').textContent==='Firm capture ≤ 0.120 m/s','public Firm capture option');
     eq(guide.includes('Firm (up to 0.120 m/s)'),'guide explains the Firm limit');
-    eq(['presumed lost','Newton’s third law','wrench','widely rumored','“unmanned” X-99 orbital spaceplane','next town'].every(s=>guide.includes(s)),'guide premise and backstory');
+    eq(['presumed irretrievable','Newton’s third law','wrench','“unmanned” X-99 orbital spaceplane','night of the new moon','reserve oxygen'].every(s=>guide.includes(s)),'guide premise and backstory');
     eq(el('guide').querySelector('.credits p').textContent==='an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywhere','credit line');
     eq(el('guide').querySelector('.credits a').getAttribute('href')==='mailto:avani@avaninet.com','credit contact');
     enterLesson('replayLesson');
-    eq(['presumed lost','Newton’s third law','wrench','pushes you back','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
-    eq(['Saturdays','Rumor','X-99'].every(s=>el('brief').textContent.includes(s)),'character in opening');
+    eq(['Newton’s third law','recoil pushes her back','Face away','95%'].every(s=>el('lessonCue').textContent.includes(s)),'opening explanation and control');
+    eq(['Mission specialist Capt. Tommi Dylan','former high-school star pitcher','cold-reboot an inference server'].every(s=>el('brief').textContent.includes(s)),'character in opening');
   });
   test('New flight keeps the scenario grid and launch controls usable',()=>{
     click('new');

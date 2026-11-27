@@ -223,21 +223,21 @@ const Debris = (() => {
   }
   function avoidance(s,mask,mode,epoch,end,hazard,bodies=pieces,pose){
     if(!mask)return null;
-    const relative=sub(s.v,motion(hazard.body,epoch,mode).v);
+    const power=100,relative=sub(s.v,motion(hazard.body,epoch,mode).v);
     const dirs=[[0,0,-1],[0,0,1],[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],unit(relative)];
     const tools=Flight.gear.map((_,i)=>i).filter(i=>mask&(1<<i)).sort((a,b)=>Flight.impulse(a,mask)-Flight.impulse(b,mask));
     let best=null;
     for(const tool of tools){
       for(const dir of dirs){
         if(norm(dir)<.9)continue;
-        const next=Flight.release(s,tool,100,dir,mask);
+        const next=Flight.release(s,tool,power,dir,mask);
         // Verify the suggested pitch against both pieces, out to expiry. A
         // later throw to return to the bars is a separate player decision.
         const check=forecast(next,epoch,end,mode,bodies);
         if(check.hit || check.nearest.gap<.30)continue;
         const at=motion(next,Math.min(end,hazard.t+35),mode).p;
         const score=Math.min(check.nearest.gap,1.4)-.045*Flight.clearance(at,pose);
-        if(!best || score>best.score)best={tool,dir,score};
+        if(!best || score>best.score)best={tool,power,dir,score};
       }
       if(best)return best;
     }

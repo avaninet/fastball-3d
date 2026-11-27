@@ -22,7 +22,7 @@ New sight-only starts use the F2 prefix with the same catalogs and payload. F2 s
 
 The check digit is CRC-5 over the uppercase ASCII prefix and five payload digits, excluding the hyphen. It uses polynomial x⁵+x²+1, MSB first, initial and final XOR zero. Decode checks the checksum, reserved values, scenario and pose permissions before launching. Opening a share link stages the flight so each player can start their own clock.
 
-Each Drift row stores six little-endian float64 values and a 16-bit approved-tilt mask (50 bytes). Each Dodgeball row stores a 32-bit deterministic debris key and a 16-bit mask (6 bytes). Bit zero of either mask identifies pose 1. The two binaries total 224 KiB before base64 embedding. The standalone game reconstructs the selected row locally. A frozen row ordering, debris generator, tilt definitions and flight rules give F1 its meaning. Use a new version for revisions that change a code's challenge.
+Each Drift row stores six little-endian float64 values and a 16-bit approved-tilt mask (50 bytes). Each Dodgeball row stores a 32-bit deterministic debris key and a 16-bit mask (6 bytes). Bit zero of either mask identifies pose 1. The two binaries total 224 KiB before base64 embedding. The standalone game reconstructs the selected row locally. Both code families use the current cockpit rules, including a 95% starting power and 5-point stops on every throw.
 
 ## Random Drift
 
@@ -37,7 +37,7 @@ The generator makes a deterministic pool of 16,384 starting positions and veloci
 
 Every accepted opening passes in single-use and Story inventory and in both motion models. An unpowered entry into the bars at any point in 600 seconds disqualifies that opening or tilt. For powered recovery a pilot makes legal pitches, adjusting to the measured state between throws. Its target is within 1.59 m of the station centre at less than 0.079 m/s by 520 s. This sphere fits inside the grab envelope at every orientation. All 4,096 standard openings and 65,520 additional row/tilt pairs qualify. Sixteen of the possible tilted pairs would admit an unpowered catch.
 
-Selection required 15 wins from 16 perturbed trials per configuration. In a separate set of 16 trials per opening, model and inventory the pilot succeeded **262,144 / 262,144** times. Errors were up to 3° in heading and elevation, three power points and five seconds. In a separate comparison using 128 single-use Orbital Soft openings, a pilot following the on-screen directional hints won 117, while the same pilot trimming straight back toward the station won 28. This gives players a reason to read the approach.
+Qualification requires 15 wins from 16 perturbed trials per configuration. With 5-point stops, single-use Orbital row 4052 uses an extra opportunity to trim at 195 seconds. All other rows pass on the original schedule. The pilot succeeded **262,144 / 262,144** times on 16 held-out trials per opening, model and inventory. Aim varies by up to 3° in heading and elevation and release time by five seconds. A power error of up to three percentage points is applied to the intended stop and the result snaps to the nearest legal stop. On a separate set of 128 single-use Orbital Soft openings, a pilot following the directional hints won 120, while a pilot trimming straight back toward the station won 28.
 
 ## Random Dodgeball
 
@@ -45,14 +45,14 @@ Tommi always starts at station-relative (13.67, -24.80, 8.33) m, with 600 s of o
 
 | Layout | Openings | Approved tilted pairs | Example tilted Orbital Soft code | Final audit, single-use Orbital wins / 8,192 |
 | --- | ---: | ---: | --- | ---: |
-| Left cover | 512 | 7,366 | `F1B-0011G0` | 8,173 |
-| Right cover | 512 | 6,971 | `F1B-1011GA` | 8,179 |
-| High cover | 512 | 6,977 | `F1B-2011GM` | 8,052 |
+| Left cover | 512 | 7,366 | `F1B-0011G0` | 8,167 |
+| Right cover | 512 | 6,971 | `F1B-1011GA` | 8,182 |
+| High cover | 512 | 6,977 | `F1B-2011GM` | 8,091 |
 | Low cover | 512 | 7,252 | `F1B-3011GY` | 8,192 |
-| Far frame | 512 | 6,938 | `F1B-4011GD` | 8,189 |
-| Near frame | 512 | 6,765 | `F1B-5011G7` | 8,074 |
+| Far frame | 512 | 6,938 | `F1B-4011GD` | 8,190 |
+| Near frame | 512 | 6,765 | `F1B-5011G7` | 8,110 |
 | Upper frame | 512 | 2,250 | `F1B-600SGS` | 7,585 |
-| Lower frame | 512 | 2,115 | `F1B-700VGG` | 7,961 |
+| Lower frame | 512 | 2,115 | `F1B-700VGG` | 7,973 |
 
 The candidate generator offsets the reference positions, adjusts velocities around the intended crossing and varies crossing time. Selection examined 10,852 pairs. Each approved row and pose meets these checks in **both motion models**.
 
@@ -60,16 +60,16 @@ The candidate generator offsets the reference positions, adjusts velocities arou
 - The full ten-minute unpowered coast misses the bars. During the first 90 seconds, the suit has at least 1 m of clearance from either debris box. Across the shipped rows the smallest measured gap, allowing for the 0.012 m closest-pass search tolerance, exceeds **8.29 m**.
 - Both pieces clear each other and the oriented station assembly throughout the flight. The reference approach gives at least 45 s of warning before the first threatened hit. After the dodge, the second threat gives at least 70 s of warning.
 - Three legal pitches reach a Soft grab within nine minutes, with at least 0.25 m of suit clearance, in both single-use and Story inventory.
-- Each row passes at least 14 of 16 perturbed single-use flights per model in standard orientation. Each approved tilt passes that test and an additional 30 of 32 perturbed flights per model. Errors vary aim by up to 3° within a cone, power by three points and release time by five seconds.
+- Each row passes at least 14 of 16 perturbed single-use flights per model in standard orientation. Each approved tilt passes that test and an additional 30 of 32 perturbed flights per model. Errors vary aim by up to 3° within a cone and release time by five seconds. Power error is snapped to the same stops as in Random Drift.
 
-The upper-frame Orbital approach had the lowest error tolerance in the first pass. Tightening tilt admission replaced nine base openings and retained 4,087 of the previous 4,096 debris states. All rows offer 2–16 tilts (median 14), for **46,634 additional row/tilt pairs**. A 32-draw single-use check on one approved tilt per row landed 130,589/131,072 Straight-Line flights and 128,311/131,072 Orbital flights.
+All rows offer 2–16 tilts (median 14), for **46,634 additional row/tilt pairs**. The 5-point qualification verified all 50,730 standard and tilted configurations against the frozen catalog. The offline pilot adjusts one pitch in 31 upper-frame and 26 lower-frame Orbital approaches. It chooses the first route that meets the clearance, warning and capture criteria and passes the error trials, including 30 of 32 additional Orbital trials for an alternate. The fixed Dodgeball Challenge qualifies in its standard pose and all six approved tilts with a 95% final Orbital pitch.
 
 The **final audit** used a separate pool of 256 error patterns. It flew 16 patterns per row, model and inventory, half in the standard pose and half distributed among approved tilts. The checker reads the packed catalog and never changes it.
 
 | Final audit | Straight-Line Soft | Orbital Soft |
 | --- | ---: | ---: |
-| Single-use | 65,419 / 65,536 (99.82%) | 64,405 / 65,536 (98.27%) |
-| Story | 65,388 / 65,536 (99.77%) | 64,279 / 65,536 (98.08%) |
+| Single-use | 65,374 / 65,536 (99.75%) | 64,490 / 65,536 (98.40%) |
+| Story | 65,346 / 65,536 (99.71%) | 64,320 / 65,536 (98.14%) |
 
 These rates describe errors while following a known route. The upper-frame Orbital opening remains a good human playtest of whether players can discover the detour. Compare it with the low-cover opening, then try the paired near-frame codes above to isolate how the angle changes the visible grab profile.
 
@@ -78,12 +78,11 @@ These rates describe errors while following a known route. The upper-frame Orbit
 From the repository root with Node 18 or newer:
 
 ```sh
-node studies/curate-drift.cjs
-node studies/station-orientations.cjs
-node studies/station-orientations.cjs --audit
+node studies/curate-drift.cjs --verify
+node studies/station-orientations.cjs --verify
 npm run build
 npm test
 npm run test:difficulty
 ```
 
-The first two commands regenerate the shipping assets. The audit reports counts for each layout from those assets. The tests check the immutable catalog bytes, all valid challenge-code combinations, actual game geometry and inventory rules, and unpowered coasts. The four-viewport browser checks exercise setup, flight, hints, retry, logs and sharing. See the [station geometry](station-assembly.md), [debris geometry](debris-assembly.md) and [open playtests](playtests.md).
+Both scripts default to verifying the shipping assets. The Dodgeball verifier checks all approved poses and runs the separate held-out audit. Append a layout number from 0 to 7 or `fixed` to verify one family. Use `--generate` only when curating a replacement catalog. The tests check the frozen catalog bytes, challenge codes, geometry, inventory and unpowered coasts. The five-viewport browser checks exercise setup, flight, hints, retry, logs and sharing. See the [station geometry](station-assembly.md), [debris geometry](debris-assembly.md) and [open playtests](playtests.md).
