@@ -41,28 +41,37 @@ async function main() {
       await button('#pause', 'space');
       assert.equal(await read("el('pause').textContent"), label);
     }
-    const slider=await post('/element',{using:'css selector',value:'#power'});
-    const offset=await read('Math.round(el("power").getBoundingClientRect().width*.2)');
-    const mouse=actions=>post('/actions',{actions:[{type:'pointer',id:'power-drag',parameters:{pointerType:'mouse'},actions}]});
-    const move=x=>({type:'pointerMove',origin:slider,x,y:0,duration:60});
-    await mouse([move(-offset),{type:'pointerDown',button:0}]);
+    const chrome=(cmd,params)=>post('/goog/cdp/execute',{cmd,params});
+    const point=(id,fraction=.5)=>read(`(()=>{
+      const node=el(${JSON.stringify(id)});node.scrollIntoView({block:'nearest'});
+      const r=node.getBoundingClientRect();
+      return {x:r.left+r.width*${fraction},y:r.top+r.height/2};
+    })()`);
+    const low=await point('power',.3),high=await point('power',.7);
+    // Send the held-button state on each native event so we can inspect the
+    // slider mid-drag without relying on separate WebDriver actions requests.
+    const mouse=(type,position,buttons)=>chrome('Input.dispatchMouseEvent',{
+      type,...position,button:'left',buttons,clickCount:1
+    });
+    await mouse('mousePressed',low,1);
     assert.equal(await read('power'),35);
-    await mouse([move(offset)]);
+    await mouse('mouseMoved',high,1);
     assert.deepEqual(await read('[power,el("power").valueAsNumber,el("powerValue").textContent]'),[75,75,'75%']);
-    await mouse([{type:'pointerUp',button:0}]);
+    await mouse('mouseReleased',high,0);
     assert.equal(await read('power'),75);
     await post('/actions',{actions:[{type:'key',id:'cockpit',actions:[
       {type:'keyDown',value:'\uE012'},{type:'keyUp',value:'\uE012'}]}]});
     assert.equal(await read('power'),70,'focused slider arrow moves one stop');
-    const touch=actions=>post('/actions',{actions:[{type:'pointer',id:'power-touch',parameters:{pointerType:'touch'},actions}]});
-    await touch([move(offset),{type:'pointerDown',button:0},move(-offset)]);
+    await chrome('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+    const touch=(type,position)=>chrome('Input.dispatchTouchEvent',{type,touchPoints:position?[position]:[]});
+    await touch('touchStart',high);
+    await touch('touchMove',low);
     assert.equal(await read('power'),35,'touch drag snaps while the finger is down');
-    await touch([{type:'pointerUp',button:0}]);
+    await touch('touchEnd');
     assert.equal(await read('power'),35);
     const bearing=await read('Flight.direction(yaw,pitch)');
     async function tap(id){
-      const origin=await post('/element',{using:'css selector',value:'#'+id});
-      await touch([{type:'pointerMove',origin,x:0,y:0},{type:'pointerDown',button:0},{type:'pointerUp',button:0}]);
+      await touch('touchStart',await point(id));await touch('touchEnd');
     }
     await tap('turnAft');
     assert.ok(await read('Flight.dot(Flight.direction(yaw,pitch),'+JSON.stringify(bearing)+')<-.999999'));
@@ -72,6 +81,7 @@ async function main() {
     assert.equal(await read("el('tool5').querySelector('small').textContent"),await read("(Flight.impulse(5,flight.mask)*power/100).toFixed(3)+' m/s'"));
     await tap('throw');
     assert.equal(await read('flight.throws'),1,'touch releases the selected tool once');
+    await chrome('Emulation.setTouchEmulationEnabled',{enabled:false});
 
     for (const [slot,id] of ['power','clockRate','showPreview'].entries()) {
       await button('#'+id, 'click');
