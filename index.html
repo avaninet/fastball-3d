@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg">
     <meta name="twitter:image:alt" content="Fastball 3D mission patch and title beside a visor view of a yellow power drill floating toward the space station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-7H/LX8O4HKwi/Dte1tENNZkLpUy3VeOUcdqO+2GShoo=' 'sha256-Ek9ifQVq0P+p2vjpWiqEW8Z5C64aK4pFxp0kY6QpLrg=' 'sha256-/XXf4/w6tCbRUX6T4EDrmTavt/iDfI12yks7GzXfVVo=' 'sha256-C1OrisqYuTWwRLc/30HCqBIfdpMmEDEVh38z/6XiW6k=' 'sha256-0szdOCa/MFy1YObnsRbzvTlFNYxx80vvXAdJp52liAc=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-Yrw+LvfZ6suRnxH1ivAVBcVcp+YIzNf4TZ882r6NDWI=' 'sha256-4sNrKOtg66RkdMHGZLko7bJGGAU6VLbpbygFq2sxGso=' 'sha256-uJ+9tmqXDLWs36krDnebWl7YWnUPoL3i/KznzW0sahk=' 'sha256-5YEGEaFjHucb7Oqq2CY+QifQG9kIWdfVvH270ErAexQ=' 'sha256-8qhUJqrFthk0ho0hyXepRkH4XaQe4mF7sQ9TDowe31I=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-8QgrahPA6onyFZeF448WrUq8Camb+SL42skfZ7g6z4c='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-7H/LX8O4HKwi/Dte1tENNZkLpUy3VeOUcdqO+2GShoo=' 'sha256-Ek9ifQVq0P+p2vjpWiqEW8Z5C64aK4pFxp0kY6QpLrg=' 'sha256-/XXf4/w6tCbRUX6T4EDrmTavt/iDfI12yks7GzXfVVo=' 'sha256-C1OrisqYuTWwRLc/30HCqBIfdpMmEDEVh38z/6XiW6k=' 'sha256-0szdOCa/MFy1YObnsRbzvTlFNYxx80vvXAdJp52liAc=' 'sha256-1f0PeeD8uYr54El6q6bUMslp8uORtsHztw2C0ZQzdzU=' 'sha256-pbqfVqyasre9FTHibss+FRrITqRtBrmyQsym97f+1Sc=' 'sha256-DM2NkM9UR3WzHp5IuQUsGd97dLiIvmmqotBONB5H+os=' 'sha256-Yrw+LvfZ6suRnxH1ivAVBcVcp+YIzNf4TZ882r6NDWI=' 'sha256-miMm0TMpoXZSnSNA6eJriQ6JNhy2wMDN0HRNbLM9iGA=' 'sha256-uJ+9tmqXDLWs36krDnebWl7YWnUPoL3i/KznzW0sahk=' 'sha256-5YEGEaFjHucb7Oqq2CY+QifQG9kIWdfVvH270ErAexQ=' 'sha256-Ac6UcEShiDpEOHqwS2xPuQ7k6soc01o/J1iudLGJnZ0=' 'sha256-TdQZ7UDYZeoz2sKcG62+MjNphGQGxU8FEUtMHQl8dVE='; style-src 'sha256-8QgrahPA6onyFZeF448WrUq8Camb+SL42skfZ7g6z4c='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.4 · EVA return simulator</title>
@@ -2218,7 +2218,7 @@ main {
           <span id="storyTag" class="tag" hidden>Story</span>
           <span id="modeTag" class="tag mode"></span>
           <span id="captureTag" class="tag"></span>
-          <button id="seedTag" class="tag" type="button" title="Copy this flight replay" hidden></button>
+          <button id="seedTag" class="tag" type="button" title="Copy the opening and its starting settings" hidden></button>
         </div>
       </section>
       <section id="flightDeck" class="deck" aria-label="Flight cameras and navigation">
@@ -2232,7 +2232,7 @@ main {
           <div class="aimBtns" id="assists">
             <button id="toStation">Face station</button>
             <button id="away">Face away</button>
-            <button id="prograde" title="Aim along suit drift to line up a braking throw">Face drift</button>
+            <button id="prograde" title="Aim along your current drift. Press Throw when ready to brake.">Face drift</button>
           </div>
           <div class="clockGroup">
             <div class="clockControls">
@@ -2304,7 +2304,7 @@ main {
             </article>
             <div class="previewControl">
               <label title="Show the suit’s predicted coast if you release the selected tool now"><input id="showPreview" type="checkbox" aria-describedby="previewResult">Preview throw</label>
-              <label id="coachControl" hidden><input id="dodgeCoach" type="checkbox">Dodgeball Coach</label>
+              <label id="coachControl" title="Suggest an avoidance throw during a collision warning" hidden><input id="dodgeCoach" type="checkbox">Dodgeball Coach</label>
               <output id="previewResult" for="showPreview power" aria-live="off" hidden></output>
             </div>
             <div class="velocity">
@@ -2765,7 +2765,7 @@ main {
             <option value="firm">Firm capture · 0.120 m/s (playtest)</option>
             <option value="soft">Soft capture · 0.080 m/s</option>
           </select>
-          <label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small>Unlimited auto-reloading tools, assisted bearings and paused aiming. Drift scenarios start closer to the bars.</small></span></label>
+          <label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small>Tools reload. Aim while paused, or use Face station and Face away. Drift scenarios start closer to the bars.</small></span></label>
         </div>
         <div class="dialogFoot">
           <button type="button" class="close">Cancel</button>
@@ -2794,9 +2794,16 @@ main {
         <p>Fastball 3D is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. <strong>Do not try this on orbit.</strong></p>
         <h3>Your first pitch</h3>
         <p><strong>The tool goes through the crosshair. You recoil the other way.</strong> On Tether separation, face
-        away from the station before you throw. Look aft to see where you’re going. In the flight instruments,
+        away from the station before you throw. Look for the station in the aft camera. In the flight instruments,
         <strong>Current coast</strong> tells you whether you’ll reach the bars. Its directional hint tells you where
-        to aim the next tool in the forward visor.</p>
+        to aim the next tool in the forward visor. Before your first manual throw, check the recoil note beside
+        Throw to see which way the pitch will push you relative to the station.</p>
+        <h3>Choose a grab rule</h3>
+        <p>In <strong>New flight</strong>, choose one of the six illustrated openings, then Straight-Line or Orbital.
+        <strong>Any-speed</strong> is the default and accepts a grab at any speed. Try <strong>Firm</strong>
+        (playtest, up to 0.120 m/s) to practice braking, then <strong>Soft</strong> (up to
+        <span data-soft-limit></span> m/s) for a gentler catch. For example, crossing the bars at 0.100 m/s earns
+        a Firm grab. In Soft you’ll pass through unless you slow enough while still within reach.</p>
         <details>
           <summary>Tommi and the BOREX suit</summary>
           <p>Mission specialist Capt. Tommi Dylan (she/they) is widely rumored to have been the test pilot of the
@@ -2840,11 +2847,18 @@ main {
         m outline (X × Y × Z, with the thin side along track) is within reach, including the gaps between panels.</p>
         <h3>Trim and brake</h3>
         <p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you
-        which way to aim in the forward visor. If it says to aim up and right, a light pitch that way nudges the suit
-        down and left. Match the suggested trim size to the recoil shown by the power slider. The DRIFT edge arrow leads to your suit’s direction of travel. Face drift lines up a braking throw. On a clear, fast approach, prepare early and brake in the last 30 seconds. Fast-forward returns to 1x at that cue. Soft capture allows up to <span data-soft-limit></span> m/s anywhere inside the bars. The Firm playtest allows up to 0.120 m/s. After a fast entry, brake
-        while still within reach or coast through and return. In manual flight, after the last throw the flight ends
-        if the coast misses the bars or every remaining chance to grab is too fast. If Orbital drift will slow you
-        enough within reach, keep coasting. If a debris collision is forecast, the clock runs to impact.</p>
+        which way to aim in the forward visor. A pitch up and right nudges the suit down and left. If you reach the
+        top or bottom of the visor, turn along the horizon toward the heading in the hint. On a future miss,
+        match the estimated trim to the recoil beside <strong>Throw power</strong>. Manual flight selects the
+        lightest remaining tool after each release and keeps your power setting. Check both before you throw.</p>
+        <p><strong>Fast entry in</strong> gives your projected speed at the bars. The gauge shows your speed now.
+        Follow the mint <strong>DRIFT</strong> cue or press <strong>Face drift</strong> to aim along your motion.
+        On a clear Firm or Soft approach, line up early and aim to brake in the final 30 seconds before entry.
+        Fast-forward returns to 1× for that cue when you have a tool left. Press Throw to brake, then check
+        Current coast again. If you enter fast, you can still brake inside the bars or circle back.</p>
+        <p>After your last manual throw, a miss or an unavoidable fast entry ends the flight at release.
+        A later eligible grab keeps the clock running, including an Orbital slowdown inside the bars.
+        A forecast debris collision plays out to impact.</p>
         <h3>Time and controls</h3>
         <p>Straight-Line holds velocity between releases. Orbital bends the coast in a rotating frame. Every flight
         starts with 10:00 of oxygen, including First rescue. Play speed stops at 1×, 10×, 20× and 30×. Throwing
@@ -2853,25 +2867,36 @@ main {
         and plus change power by one point. Enter throws from the visor, either slider or a cockpit checkbox. A focused slider keeps its arrow keys. Heading increases as you turn left. P controls the clock.</p>
         <h3>Compare rescues</h3>
         <p>Δv (delta-v) is how much more you could change your speed or direction with the tools aboard. Manual
-        flights score the remaining tool budget at rescue. A lost suit brings home zero. In Story, compare throw
-        count and grab speed. Grab speed measures how gently you reached the bars, including sideways motion.</p>
+        flights start with 0.456 m/s available. A throw at any power spends that tool. Your score is the budget
+        still aboard at rescue. A lost suit brings home zero. In Story, compare throw count and grab speed.
+        Grab speed includes sideways motion. A hard Any-speed catch can earn an extra line in the debrief.</p>
         <p>Each of the six openings has a different radio call for a Straight-Line and an Orbital rescue. Bring
         the original drill home to hear the <strong>Upmass Hero</strong> epilogue after the call. A Story reload
         gives you a replacement drill. Finishing a guided lesson after choosing Skip guidance also skips the award.</p>
-        <h3>Dodgeball Challenge</h3>
+        <h3>Flying through debris</h3>
         <p>A platform mount gives way and takes Tommi’s tether anchor with it. The loose cover and bent frame drift independently. A hit to Tommi’s suit ends the flight. Both Dodgeball modes keep the same opening geometry in Story and manual flight. Both flight models and all three grab rules work here.</p>
         <p>Follow the short trails to see where each piece is heading. An amber box surrounds the piece your current coast would hit. The box moves with it and extends 4 cm past each side. Steer your whole suit outside the box, including around the frame’s open middle. The blue × marks where your suit would first touch the box, with a countdown. Violet shows the predicted contact for a previewed throw. You can also slow down and let a piece cross ahead.</p>
-        <p>Switch on Dodgeball Coach for a suggested tool and throw bearing during a collision warning. Your suit moves in the opposite direction. Fast-forward drops to 1× with up to 65 seconds to react. You can accelerate again once the coast clears.</p>
+        <p>If the impact point leaves the forward view or sits behind a panel, the <strong>COVER HIT</strong> or
+        <strong>FRAME HIT</strong> arrow points toward it. A collision warning takes priority over station braking.
+        Fast-forward drops to 1× with up to 65 seconds to react. Dodgeball Coach can suggest a tool, power and
+        bearing to clear both pieces. Use Preview throw to check where that dodge leaves you relative to the bars.
+        When Current coast says a piece clears in a few seconds, hold the coast through the pass, then trim home.</p>
         <h3>Share a seeded flight</h3>
-        <p>In New flight, choose Random drift or Random Dodgeball and generate a seed. Random Dodgeball draws from eight debris layouts with 512 openings each. The seed preview names the layout and gives the distance from Tommi to each piece. Paste a friend's code or replay link in either scenario and the matching scenario is selected. Copy replay
-        includes the flight model, grab rule, Story setting and starting Preview and Coach settings. The debrief, log and card list any optional aids used. In an offline copy, paste the shared replay into
-        Load seed. The debrief also has a flight card you can save as an image.</p>
+        <p>The two right-hand scenario buttons open the seed controls. Random Drift shows Tommi’s opening gap
+        and speed. Random Dodgeball draws from eight layouts with 512 variations each. Its preview names the
+        layout and gives the distance to each piece. Choose <strong>Generate seed</strong> for a new challenge,
+        or paste a friend’s code or link and choose <strong>Load seed</strong>.</p>
+        <p>A bare code uses your current settings. <strong>Copy replay</strong> shares the opening, flight model,
+        grab rule, Story setting and starting Preview and Coach settings. Your friend flies the throws.
+        The debrief, log and flight card record Preview and Coach if enabled at any point, even if you turned
+        them off before the grab. Using Face drift in manual flight is recorded too. Retry keeps your current
+        Preview and Coach choices. You can save the flight card as an image.</p>
         <h3>Story / guided rescue</h3>
         <p>First rescue starts a fresh Straight-Line lesson. Every Story throw reloads the selected tool. Suit mass
         stays constant, so repeating a pitch at the same power gives the same recoil. You can line up while paused
         and snap to measured bearings. First rescue pauses for one halfway check. In later lessons, choose when to
         line up a correction. Throw starts or resumes the clock at 1×. Skip guidance gives you single-use tools for
-        the rest of this assisted flight. Retry starts a standard manual opening eligible for a Δv score. Choose
+        the rest of this assisted flight. After skipping, Retry starts a manual opening eligible for a Δv score. Choose
         Story flight in setup to use these assists on another opening.</p>
         <section class="credits" aria-labelledby="creditsTitle">
           <h3 id="creditsTitle">Credits</h3>
@@ -2918,7 +2943,7 @@ main {
         </div>
         <section id="debriefShare" hidden aria-labelledby="shareHeading">
           <h3 id="shareHeading">Share</h3>
-          <p id="shareIntro">Share this opening with a friend. Compare your approach charts, throw counts and grab speeds.</p>
+          <p id="shareIntro">Copy the replay to challenge a friend on this opening. Compare the aids, throws and grab speeds on your flight cards.</p>
           <div class="seedActions">
             <code id="endSeed"></code>
             <button id="copyEndSeed">Copy replay</button>
@@ -4766,7 +4791,7 @@ function finish(result) {
   setMsg(el('endTitle').textContent+'. '+budget+' · '+el('endStats').textContent);
   el('debriefShare').hidden=!isSeeded(flight.index) && flight.index!==4;
   el('copyEndSeed').hidden=el('endSeed').hidden=!isSeeded(flight.index);
-  el('shareIntro').textContent=flight.index===4?'Your flight card shows Tommi’s route and both debris tracks.':'Share this opening with a friend. Compare your approach charts, throw counts and grab speeds.';
+  el('shareIntro').textContent=flight.index===4?'Your flight card shows Tommi’s route and both debris tracks.':'Copy the replay to challenge a friend on this opening. Compare the aids, throws and grab speeds on your flight cards.';
   el('copyChallenge').textContent=flight.index===4?'Copy flight summary':'Copy challenge';
   el('endSeed').textContent=isSeeded(flight.index)?seedLabel(flight.seed):'';
   el('endShareStatus').textContent='';
@@ -5273,7 +5298,7 @@ function updateSetup() {
   const idx=Number(setupScenarios.value),isRandom=isSeeded(idx);
   el('seedGroup').hidden=!isRandom;el('seed').required=isRandom;el('seed').disabled=!isRandom;
   const opening=idx===3?null:Flight.opening(idx,0,true);
-  el('setupBrief').textContent=opening?(opening.briefing??opening.brief):'Share the opening and flight rules with a friend, or load their replay.';
+  el('setupBrief').textContent=opening?(opening.briefing??opening.brief):'The seed sets your starting position and drift. Check the opening speed and leave room for a braking throw if you choose Firm or Soft.';
 }
 function openSetup(){
   setupAids=currentAids();
@@ -5890,7 +5915,7 @@ function updateLessonCue(status=Flight.coastStatus(flight)){
   }else if(status.kind==='grab'){
     cue='The coast enters the full grab-bar envelope. Check the entry speed and coast to the grab.';label='Coast to grab';
   }else if(status.kind==='fastEntry'){
-    cue='The grab will be too fast. A pitch along the measured drift slows the suit. Line up the brake, then throw. To experience a fast entry, let the clock run and coast clear for another entry.';
+    cue='This coast reaches the bars above the Soft limit. Aim along your drift and brake in the last 30 seconds before entry. Choose Line up brake to stage the pitch. You can also coast through to practice a slower return.';
     label='Line up brake';
   }else if(status.kind==='inside'){
     cue='You are within reach. Throw along the measured drift to slow down for a grab, or coast through and return.';

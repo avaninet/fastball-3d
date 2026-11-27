@@ -1,6 +1,6 @@
 # Dodgeball debris assembly
 
-Dimensions are in metres. Both objects use the station X (radial), Y (along-track), and Z (orbit-normal) axes. Positions below refer to their centres at separation. In Orbital flight, each centre follows its own orbital coast. Both pieces retain their orientation in station coordinates.
+Dimensions are in metres. Both objects use the station X (radial), Y (along-track), and Z (orbit-normal) axes. The table gives centres and velocities at separation for the fixed Dodgeball Challenge. Random Dodgeball uses the same shapes and collision boxes. Its starting positions and velocities depend on the seed. See the [eight Random Dodgeball layouts](random-dodgeball-study.md). In Orbital flight, each centre follows its own orbital coast. Both pieces retain their orientation in station coordinates.
 
 | Piece | Initial XYZ (m) | Initial velocity XYZ (m/s) | Dimensions |
 | --- | --- | --- | --- |
@@ -26,4 +26,4 @@ The frame is a U-channel with one bent upright. The two broad skins lie at Y = �
 
 The sill between Z = −0.72 and −0.44 runs through both heels. The uprights join it across their full width at Z = −0.44. Between F and E the exposed top of the sill is 1.325 m wide. Each perimeter edge connects the two skins with one wall. A single skin spans each joint, so no internal end faces or overlapping seams appear at a heel.
 
-Each piece has one enclosing rectangular prism in its own axes. Each face lies 4 cm past the outermost metal on that side. The cover box measures 1.94 × 1.10 × 0.25 m in width, height and depth. The frame box measures 1.97 × 1.52 × 0.42 m and spans the open middle. The contact solver tests the suit's 0.45 m radius against the nearest point on this box. When the coast predicts contact, each camera draws the box's visible silhouette in amber and the folds between visible faces in fine translucent dashes. A blue cross and countdown identify the future point of contact. The hypothetical throw uses a violet cross.
+Each piece has one enclosing rectangular prism in its own axes. Each face lies 4 cm past the outermost metal on that side. The cover box measures 1.94 × 1.10 × 0.25 m in width, height and depth. The frame box measures 1.97 × 1.52 × 0.42 m and spans the open middle. The contact solver tests the suit's 0.45 m radius against the nearest point on this box. When the coast predicts contact, each camera draws the box's visible silhouette in amber and the folds between visible faces in fine translucent dashes. A blue cross and countdown identify the future point of contact. If the predicted impact is outside the forward view or behind an instrument panel, the COVER HIT or FRAME HIT arrow points toward it. A violet cross shows the predicted contact for a previewed throw.

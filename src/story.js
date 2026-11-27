@@ -121,7 +121,7 @@ function updateLessonCue(status=Flight.coastStatus(flight)){
   }else if(status.kind==='grab'){
     cue='The coast enters the full grab-bar envelope. Check the entry speed and coast to the grab.';label='Coast to grab';
   }else if(status.kind==='fastEntry'){
-    cue='The grab will be too fast. A pitch along the measured drift slows the suit. Line up the brake, then throw. To experience a fast entry, let the clock run and coast clear for another entry.';
+    cue='This coast reaches the bars above the Soft limit. Aim along your drift and brake in the last 30 seconds before entry. Choose Line up brake to stage the pitch. You can also coast through to practice a slower return.';
     label='Line up brake';
   }else if(status.kind==='inside'){
     cue='You are within reach. Throw along the measured drift to slow down for a grab, or coast through and return.';

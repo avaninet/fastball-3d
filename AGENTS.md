@@ -31,6 +31,7 @@ Work in this repository on the dedicated 3D game. Use `REVIEW.md` and `DIFFICULT
 | `reference/` | Flight examples, station measurements and the Alpha manual |
 | `tests/dodgeball.cjs` | Dodgeball collisions and playable routes under both flight models |
 | `tests/difficulty.cjs` | Reproducible pilot study on the original drift families |
+| `studies/capture-speed.cjs` | Paired Firm and Soft simulations for all six scenarios, including each of the eight DB2 layouts. Results and reproduction steps are in the [capture-speed playtest](reference/capture-speed-playtest.md). |
 | `tests/balance.cjs` | Named routes, seeded pilot errors, fast-entry and recovery exercises against the built game’s physics |
 | `tests/native-browser.cjs` | ChromeDriver checks for native Space activation, clipboard handling and PNG export |
 | `tests/browser-tests.js` | Browser assertions exercised through the game controls and simulation clock |

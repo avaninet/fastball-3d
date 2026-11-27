@@ -2,9 +2,9 @@
 
 You have ten minutes of oxygen, nine tools and one job. Get Capt. Tommi Dylan back within reach of the station’s grab bars.
 
-[Play Fastball 3D v0.4 in your browser](https://avaninet.github.io/fastball-3d/) · [Download the standalone v0.4 game](https://raw.githubusercontent.com/avaninet/fastball-3d/v0.4/index.html)
+[Play the published game](https://avaninet.github.io/fastball-3d/) · [Download the standalone game from main](https://raw.githubusercontent.com/avaninet/fastball-3d/main/index.html) · [Open this checkout’s build](index.html)
 
-**New in v0.4.** Dodgeball Challenge puts a loose service cover and a bent frame across your route home. Random Dodgeball offers eight debris layouts with 512 replayable variations each. High-speed Orbital approaches now register at the grab bars, and First rescue can guide you home after a wrong-way opening pitch.
+**New in v0.4.** Pick one of six illustrated openings in **New flight**. Dodgeball Challenge puts a loose service cover and a bent frame across your route home. Random Dodgeball offers eight layouts with 512 replayable variations each. The optional **Firm capture** rule gives you room to practice braking before trying Soft. **Face drift** is available in manual flight, and First rescue can guide you home after a wrong-way opening pitch.
 
 Fastball 3D is a very generous and forgiving approximation of a space emergency scenario that has fortunately never occurred. **Do not try this on orbit.**
 
@@ -30,12 +30,12 @@ The crew would like their drill back. It’s the only one aboard until resupply,
 
 1. For a manual flight, leave **Tether separation**, **Straight-Line** and the default any-speed grab selected. **Begin flight** starts the clock and unlocks aiming. For a guided pitch with time to line up, choose **First rescue** in the header instead.
 2. Turn the forward visor, choose a tool from the rack, set the power and press **Throw**. Turning your head only changes where the next tool will go. Your existing drift carries on.
-3. Read **Current coast** after each throw. **Contact in** means your present path reaches the bars. You can keep the tools you have left and advance the clock. **Miss by** gives the clearance at the nearest pass and a direction for a correction. Try a light tool while the pass is still ahead.
-4. Reach any part of the outlined **14 × 3.2 × 14 m** volume (X × Y × Z, with the thin side along track), including the gaps between panels. The grab happens automatically. You have **10:00** in every mode. In manual flight, after your last throw a miss or an unavoidable overspeed ends the flight at release. If a debris collision is forecast, the clock runs to impact. Both visors fade to **GAME OVER**, then the debrief explains why. In Orbital, even a fast entry can still lead to a soft grab if you slow enough inside the bars. Let that coast play out.
+3. Read **Current coast** after each throw. **Contact in** means your present path reaches the bars at an eligible speed. You can keep your remaining tools and advance the clock. **Miss by** gives the clearance at the nearest pass and the direction to throw for a correction. For a small miss, try a light trim while the pass is still ahead.
+4. Reach any part of the outlined **14 × 3.2 × 14 m** volume (X × Y × Z, with the thin side along track), including the gaps between panels. The grab happens automatically under your selected rule. You have **10:00** in every mode. After the last manual throw, a miss or an unavoidable overspeed ends the flight at release. A predicted debris collision runs to impact. In Orbital, a fast entry can still lead to a Firm or Soft grab if the coast slows enough inside the bars.
 
 ## Choose the challenge
 
-Use **New flight** to combine an opening, a flight model and a capture rule. **Story flight** adds assistance independently.
+In **New flight**, pick an illustrated scenario, a flight model and a **Grab rule**. The two right-hand buttons open the seed controls for Random Drift and Random Dodgeball. With a scenario button focused, **↑** or **↓** switches between rows in the same column. **Story flight** works with every combination.
 
 | Setting | What changes |
 | --- | --- |
@@ -44,22 +44,21 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 | Wide separation | You start farther out. An early throw buys time to spot and correct a miss. |
 | Dodgeball Challenge | A failed work platform tears away Tommi’s tether anchor. A loose service cover and a bent equipment frame cross the return route. Both pieces follow the chosen flight model. |
 | Random drift | A seed fixes the starting position and velocity. Friends can fly the same opening. |
-| Random Dodgeball | A DB2 seed selects one of 4,096 qualified openings. Four layouts send the cover across the initial approach first, and four send the frame first. Use either flight model, any grab rule, and either inventory mode. |
+| Random Dodgeball | A DB2 seed sets both pieces’ starting positions and velocities. On the tested approach, four layouts bring the cover across first and four bring the frame across first. Your first throw can change which piece you meet. |
 | Straight-Line / Orbital | In Straight-Line, velocity stays constant between throws. In Orbital, the path can bend relative to the orbiting station. Watch the committed coast. |
-| Grab rule | Any-speed is the default. Soft allows **0.080 m/s** or slower. The optional Firm playtest allows **0.120 m/s** or slower. Both limits apply anywhere within the bars. You can brake inside the volume or come back around. |
+| Grab rule | **Any-speed** (default) accepts any contact with the grab envelope. **Firm** (playtest) accepts **0.120 m/s or slower**. **Soft** accepts **0.080 m/s or slower**. At 0.100 m/s, for example, Firm catches you and Soft gives you a fast entry. You can still slow down inside the envelope or return for another pass. |
 | Story flight | Unlimited auto-reloading tools with **Face station**, **Face away** and **Face drift**. Drift scenarios start closer to the bars. Both Dodgeball modes keep the same starting geometry in Story and manual flight. Line up before the clock starts or while paused. **Throw** starts or resumes flight at 1×. |
 
-**Manual approach.** Face drift aligns the visor for a braking pitch while the clock runs. A mint edge arrow points toward drift when it leaves the forward view. On a fast approach, the clock returns to 1x in the final 30 seconds so you can brake. Check the changed coast after each throw.
+**Flying around debris.** An amber box outlines the piece your suit would hit. The blue cross marks the contact point. If it leaves the forward view or a panel covers it, follow **COVER HIT** or **FRAME HIT**. Fast-forward drops to 1× with up to 65 seconds to react. **Dodgeball Coach** can suggest a tool and bearing for a dodge. In **Preview throw**, check both the debris clearance and the result at the bars. A clear dodge can still miss the station. If **Current coast** tells you to hold for a close pass, let the piece go by before trimming home. All 4,096 Random Dodgeball openings have a verified Soft return in each flight model. The same routes also qualify under Firm. [How the openings were tested](reference/random-dodgeball-study.md)
 
-**Flying around debris.** The amber box marks the piece on your collision course. The blue cross shows where your suit would hit it. Switch on **Preview throw** to see whether a pitch clears the box. **Dodgeball Coach** suggests a tool and bearing during a warning, and fast-forward drops to 1× with up to 65 seconds to react. [How the Random Dodgeball openings were tested](reference/random-dodgeball-study.md)
-
-**First rescue** is the optional walkthrough with exact pitches. It stages a first throw, pauses for a halfway course check, then offers an oblique miss, a braking lesson and an Orbital comparison. Only **First rescue** pauses automatically for a course check. In later lessons you can choose when to stage a correction. If the first battery goes toward the station, **Line up correction** stages a full-power battery to counter the outward drift. Throw it, then line up the return pitch. **Skip guidance** gives you manual control with the nine tools currently aboard. Each can then be thrown once. A flight that starts in the lesson is scored as assisted even if you skip before the first throw. Compare throw count and speed on that flight. **Retry** after skipping starts the standard manual opening with a full rack and a fresh clock. Replay the lesson anytime from **Guide**.
+**First rescue** is the optional walkthrough with exact pitches. Choose **Face away**, then throw the 95% battery to start the clock. The lesson pauses halfway to the bars. After the rescue, you can try an oblique miss, a braking lesson and an Orbital comparison. Only **First rescue** pauses automatically for a course check. In later lessons you can choose when to stage a correction. If the first battery goes toward the station, **Line up correction** stages a full-power battery to counter the outward drift. Throw it, then line up the return pitch. **Skip guidance** gives you manual control with the nine tools currently aboard. Each can then be thrown once. A flight that starts in the lesson is scored as assisted even if you skip before the first throw. Compare throw count and speed on that flight. **Retry** after skipping starts the standard manual opening with a full rack and a fresh clock. Replay the lesson anytime from **Guide**.
 
 ## Cockpit controls
 
 | Action | Mouse, touch or keyboard |
 | --- | --- |
 | Look / aim | Drag the forward visor or tap a point to center it. Arrow keys turn 2°. Heading increases when you turn left. Hold **Shift** for 0.25° steps. Use the **STN** cue to find the station when it’s off-screen. |
+| Face drift | Align the forward crosshair with your current station-relative velocity. In manual flight the clock must be running. Story also lets you line up while staged or paused. Press **Throw** separately when you want to brake. |
 | Select equipment | Click or tap the rack, or press **1–9** on the number row or numpad in ascending weight order. Manual flight selects the lightest remaining tool after a release. Story keeps the reloaded tool selected. |
 | Set power and release | Drag **Throw power**, or use the two key positions immediately to the right of **P** (US **[** and **]**). Numpad **−** and **+** also change power in one-point steps. Press **Throw**, or **Enter** with the forward visor, either slider or a cockpit checkbox focused. A focused slider keeps its arrow keys. In Story, every tool reloads immediately. Suit and gear mass stays constant, so a repeat throw at the same power gives the same recoil. |
 | Preview the next throw | Tick **Preview throw** under **Current coast** in either flight model. The solid violet path shows where the suit would coast with this aim, tool and power. The dashed mint path shows where it’s already going. Turn the preview off at any time. |
@@ -69,15 +68,15 @@ Use **New flight** to combine an opening, a flight model and a capture rule. **S
 ## Read the approach
 
 - **Look for the miss early.** The mint marks in both cameras trace your committed coast. The brighter, thicker dashes are closer to your suit. Arrowheads get smaller with distance. Looking straight down a Straight-Line coast, you see a ring with the distance to contact or to your predicted position at oxygen expiry. Read the time and distance in **Current coast** to tell a future pass from one already behind you. Its aiming hint follows the forward visor as you turn.
-- **Check speed as well as distance.** A negative **Range rate** means the gap to the nearest bars is shrinking. You can still slide past them sideways. **Relative speed** includes motion in all three directions. The gauge marks the soft-capture threshold, and the velocity panel below breaks the motion into radial, along-track and cross-track components.
-- **Save a small correction.** A heavy tool can reverse outward drift. A light tool can shift a near miss without undoing that first pitch. **Throw power** shows the recoil for your selected tool and power. Once **Current coast** predicts a good grab, another throw can spoil it.
-- **Brake along your drift.** If **Current coast** warns of a fast entry, throw in the direction the suit is moving. The recoil will slow you. When you are crossing the station face, that bearing can be quite different from the bearing to the station.
+- **Read the speed at the right time.** A negative **Range rate** means the bars are getting closer. Sideways motion still counts toward grab speed. **Relative speed** is your speed now. **Current coast** gives projected speed when it predicts contact. The gauge marks the selected Firm or Soft limit. In Any-speed it shows 0.080 m/s as a reference.
+- **Size the trim.** For a future miss, follow the forward visor hint and match the estimated recoil to the value beside **Throw power**. If the hint calls for about 0.02 m/s, look for a tool and power near that value. Check the new coast before spending another tool. Near the top or bottom of the visor, follow the horizontal turn to the indicated heading.
+- **Time the brake.** On a clear Firm or Soft approach with **Fast entry in**, follow the mint **DRIFT** cue or use **Face drift**. Aim to release in the final 30 seconds before entry. With a tool aboard, fast-forward returns to 1× for that braking window. The throw changes your course as well as your speed, especially in Orbital. Check the new station approach. In Dodgeball, check clearance from both pieces as well.
 
 ## What makes a better rescue?
 
 First, get Tommi home. In Story, compare throw count or grab speed. In manual flight, compare **Δv brought home**. Delta-v is how much more you could change your velocity with the tools still aboard. The debrief shows the remaining budget out of the original **0.456 m/s** and the percentage you recovered. Keeping the battery leaves a different reserve from keeping the tether clip, even though each counts as one tool. A lost suit brings home zero, including when it runs out of oxygen with equipment aboard.
 
-For the gentlest return, compare **Grab speed**, the suit’s total speed relative to the station at the instant of capture. Lower is gentler. A loss shows **Final relative speed**.
+For the gentlest return, compare **Grab speed**, the suit’s total speed relative to the station at the instant of capture. Lower is gentler. A hard Any-speed grab can still earn a rescue and a line about Tommi’s catching hand. A loss shows **Final relative speed**. For a fair comparison, match the seed, flight model, grab rule, inventory and aids. Even a low-power manual throw spends the whole tool. Firm can let you bring a braking tool home with the same starting Δv budget. [Capture-speed playtest results](reference/capture-speed-playtest.md)
 
 Tommi and Julian have twelve rescue calls between them, one for each opening and flight model. Bring the original drill home and Julian adds **Upmass Hero** after the call. A Story reload supplies a replacement drill. Choosing **Skip guidance** during a lesson makes that flight ineligible for the award.
 
@@ -96,11 +95,13 @@ _Back on Earth, the drill gets a ticker-tape parade. Tommi has a game that Satur
 
 ## Challenge a friend
 
-In **New flight**, choose **Random drift** or **Random Dodgeball**. **Generate seed** draws from the selected scenario. Pasting a code or replay link selects the matching scenario automatically. A bare seed uses your current settings. A replay restores the sender's flight model, grab rule, Story setting and starting Preview and Dodgeball Coach settings. The debrief, flight log and card record which optional aids were enabled during the flight, including manual Face drift when used. You can change those settings after loading the link. Dodgeball codes such as `DB2-00500007` restore both debris trajectories. Earlier DB1 codes still replay their original openings. The [catalog study](reference/random-dodgeball-study.md) gives one playable code for each layout. New `E-` seeds include sideways crossings and require at least one throw to reach the bars within ten minutes in either flight model, in manual and Story flight. Existing `D-` and plain hexadecimal seeds replay their original openings.
+In **New flight**, pick **Random Drift** or **Random Dodgeball**, then **Generate seed**. Random Drift shows the opening gap and suit speed, with a warning if the suit starts above your chosen grab limit. Random Dodgeball names the layout and shows how far the cover and frame are from Tommi. Codes such as `DB2-00500007` restore both debris trajectories. New `E-` openings require at least one throw to reach the bars in either flight model and inventory. Earlier DB1, `D-` and plain hexadecimal codes retain their original openings. [One playable DB2 code per layout](reference/random-dodgeball-study.md)
 
-**Copy replay** works in setup, in the cockpit and in the debrief. The link uses Alpha’s fragment format, for example `#seed=E-00019919&level=Orbital&goal=soft&story=1`. An offline copy shares the fragment for a friend to paste into **Load seed**. A hosted copy includes the web address.
+**Copy replay** shares a seeded opening from setup, the cockpit or the debrief. Paste a bare seed to use your own settings. A replay link also restores the sender’s flight model, grab rule, Story setting and starting Preview and Coach settings. For example, `#seed=DB2-00500007&level=Orbital&goal=firm&preview=1&coach=1` starts manual Orbital Random Dodgeball with Firm capture and both aids enabled. In the offline game, paste the fragment into **Load seed**. Each pilot flies their own throws.
 
-After a random flight, win or lose, open **Share → View flight card** for the seed, local finish date, V-bar/R-bar chart and abbreviated flight log. The card lists throws 1–5 down the left and 6–9 down the right. Longer flights get a tenth line reading “...and then some” and the chart traces the entire approach. **Save image** exports a PNG. **Copy challenge** shares the result and the replay together. [Example flight card](reference/random-drift-card.png)
+The debrief, log and card record Preview or Coach if enabled at any point and Face drift if used in manual flight. Turning an aid off later keeps it on that flight’s record. **Retry** keeps the current Preview and Coach choices.
+
+After a seeded flight, win or lose, open **Share → View flight card** for the seed, local finish date, V-bar/R-bar chart and abbreviated flight log. The card lists throws 1–5 down the left and 6–9 down the right. Longer flights get a tenth line reading “...and then some” and the chart traces the entire approach. **Save image** exports a PNG. **Copy challenge** shares the result and the replay together. The fixed Dodgeball Challenge also has a flight card with both debris tracks and a **Copy flight summary** button. [Example flight card](reference/random-drift-card.png)
 
 ## Build and check
 
@@ -130,4 +131,4 @@ an AvaniNet game © 2026 // dedicated to the legends of tgirl baseball everywher
 
 [avani@avaninet.com](mailto:avani@avaninet.com)
 
-[Capture-speed playtest results](reference/capture-speed-playtest.md) · [License and permissions](LICENSE)
+[License and permissions](LICENSE)

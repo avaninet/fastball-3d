@@ -151,7 +151,7 @@ function finish(result) {
   setMsg(el('endTitle').textContent+'. '+budget+' · '+el('endStats').textContent);
   el('debriefShare').hidden=!isSeeded(flight.index) && flight.index!==4;
   el('copyEndSeed').hidden=el('endSeed').hidden=!isSeeded(flight.index);
-  el('shareIntro').textContent=flight.index===4?'Your flight card shows Tommi’s route and both debris tracks.':'Share this opening with a friend. Compare your approach charts, throw counts and grab speeds.';
+  el('shareIntro').textContent=flight.index===4?'Your flight card shows Tommi’s route and both debris tracks.':'Copy the replay to challenge a friend on this opening. Compare the aids, throws and grab speeds on your flight cards.';
   el('copyChallenge').textContent=flight.index===4?'Copy flight summary':'Copy challenge';
   el('endSeed').textContent=isSeeded(flight.index)?seedLabel(flight.seed):'';
   el('endShareStatus').textContent='';
@@ -658,7 +658,7 @@ function updateSetup() {
   const idx=Number(setupScenarios.value),isRandom=isSeeded(idx);
   el('seedGroup').hidden=!isRandom;el('seed').required=isRandom;el('seed').disabled=!isRandom;
   const opening=idx===3?null:Flight.opening(idx,0,true);
-  el('setupBrief').textContent=opening?(opening.briefing??opening.brief):'Share the opening and flight rules with a friend, or load their replay.';
+  el('setupBrief').textContent=opening?(opening.briefing??opening.brief):'The seed sets your starting position and drift. Check the opening speed and leave room for a braking throw if you choose Firm or Soft.';
 }
 function openSetup(){
   setupAids=currentAids();

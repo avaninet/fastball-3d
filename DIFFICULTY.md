@@ -2,9 +2,9 @@
 
 For the v0.4 cockpit and the matched 0.080 and 0.120 m/s playtest across all six scenarios, see the [capture-speed study](reference/capture-speed-playtest.md). This earlier study covers Random drift. The debris routes and trial results for Random Dodgeball are documented in the [debris catalog study](reference/random-dodgeball-study.md).
 
-**Playtest recommendation.** Keep the ten-minute clock and the directional hints. Reserve the longer, faster opening for a separately seeded **any-speed Random drift** trial. A third-party study recorded two wins in 14,400 simulated soft flights in the 57–81 m band. The original soft-capture planner results below describe attainable routes. On the current settings, the hint-following pilot rescued Tommi on 115 of 128 openings, usually with four tools and over four minutes of oxygen remaining. On a second set it won 121 of 128. A single straight-back battery throw is already a poor shortcut on these seeds. The forgiving part is how much room remains to read the miss and correct it.
+**Playtest recommendation.** Keep the ten-minute clock and the directional hints. Reserve the longer, faster opening for a separately seeded **any-speed Random drift** trial. A third-party study recorded two wins in 14,400 simulated soft flights in the 57–81 m band. The original soft-capture planner results below describe attainable routes. In the manual Orbital Soft trial, the hint-following pilot rescued Tommi on 115 of 128 openings, usually with four tools and over four minutes of oxygen remaining. On a second set it won 121 of 128. A single straight-back battery throw is already a poor shortcut on these seeds. The forgiving part is how much room remains to read the miss and correct it.
 
-## How the modes compare today
+## Original Any-speed and Soft comparison
 
 Each row uses the same 128 generated `D-` seeds. The two win columns use the same opening pitch, braking rule, power estimates and clock. The comparison pilot aims subsequent trims straight away from the station. The hint pilot interprets the visor’s directional words. These are automated strategies.
 
@@ -19,11 +19,11 @@ Each row uses the same 128 generated `D-` seeds. The two win columns use the sam
 | Story Orbital | Any speed | 128 | 115 | 3 | 4:07 |
 | Story Orbital | Soft | 128 | 77 | 3 | 4:22 |
 
-**First rescue** should remain dependable. Its staged pitch and halfway check teach recoil and how to recognize a safe coast. On the three named openings the hint pilot won all model and capture-rule combinations. Their roles are distinct. In manual Straight-Line soft capture, Tether separation took one throw, Lateral drift took three, and Wide separation took two with only about three seconds of oxygen left. On that same Wide opening the planner found a soft grab around 5:36. A close finish can reflect the chosen strategy as well as the geometry. The original plain-hex seed family also stayed forgiving, with 128 of 128 hint wins on manual Orbital soft capture.
+**First rescue** should remain dependable. Its staged pitch and halfway check teach recoil and how to recognize a safe coast. On the three named openings the hint pilot won in both flight models under Any-speed and Soft. Their roles are distinct. In manual Straight-Line soft capture, Tether separation took one throw, Lateral drift took three, and Wide separation took two with only about three seconds of oxygen left. On that same Wide opening the planner found a soft grab around 5:36. A close finish can reflect the chosen strategy as well as the geometry. The original plain-hex seed family also stayed forgiving, with 128 of 128 hint wins on manual Orbital soft capture.
 
 ## What makes the hard case harder?
 
-**Time alone accounts for little of the current win rate.** Holding today’s geometry and rack fixed and cutting the deadline from 10:00 to 7:30 changed manual Orbital soft hint wins from 115 to 111. On the second set the change was 121 to 119. The planner found a return on every current opening at either deadline.
+**Time alone accounts for little of the baseline win rate.** Holding the original geometry and rack fixed and cutting the deadline from 10:00 to 7:30 changed manual Orbital soft hint wins from 115 to 111. On the second set the change was 121 to 119. The planner found a return on every baseline opening at either deadline.
 
 **Distance and transverse speed do different jobs.** Starting 35% farther from the bars raised the first set’s median hint finish from 5:46 to 6:52, with 108 wins. Multiplying drift speed by 1.8 at the original distances cut wins to 50, but the median fastest route found was still 4:06. Tilting the velocity outward while preserving its magnitude gave 119 hint wins. Making the drift point more directly away can make a straight-back throw *easier* to interpret. Longer gaps create clock pressure. Substantial sideways motion makes the opening throw, trim and brake compete for inventory.
 
@@ -33,7 +33,7 @@ All rows below use the second set of 128 seeds, the ten-minute clock, manual Orb
 
 | Opening | Exact planned wins | Planned wins with execution error and one replan | Hint wins | Fewest tools found | Fastest grab found | Tools / finish on hint wins |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Current | 128 | 127 | 121 | 2 | 4:07 | 4 / 5:24 |
+| Original geometry | 128 | 127 | 121 | 2 | 4:07 | 4 / 5:24 |
 | 54–77 m gap | 126 | 114 | 33 | 4 | 7:53 | 7 / 9:11 |
 | **57–81 m gap** | **121** | **102** | **25** | **5** | **8:21** | **7 / 9:33** |
 
