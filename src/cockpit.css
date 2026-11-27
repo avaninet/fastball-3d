@@ -2127,10 +2127,14 @@ main {
   }
 }
 
-@media (min-width:600px) and (max-width:760px) and (max-height:400px) {
+/* Keep the visor and throw controls above the scenario heading on short landscape screens. */
+@media (min-width:600px) and (max-height:400px) {
   .flightHead {
     order: 1;
   }
+}
+
+@media (min-width:600px) and (max-width:760px) and (max-height:400px) {
   .camTitle {
     gap: 4px;
   }
