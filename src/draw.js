@@ -227,7 +227,7 @@ const Visor = (() => {
     }
     return {heads,visible,behind:dot(state.pos.v,cam.forward)<0};
   }
-  function course(ctx,cam,state,small,w,h,label,preview=false) {
+  function course(ctx,cam,state,small,w,h,label,aftCues,preview=false) {
     if(!preview&&!state.time&&!state.throws)return;
     const m=state.forecast;
     const stationHit=preview&&state.soft?m.hits.find(entry=>Flight.canGrab(entry,state.soft)):m.hits[state.hitIndex];
@@ -259,6 +259,8 @@ const Visor = (() => {
         ctx.beginPath();ctx.moveTo(x,y-radius);ctx.lineTo(x+radius,y);ctx.lineTo(x,y+radius);ctx.lineTo(x-radius,y);ctx.closePath();
         ctx.lineWidth=1.8;ctx.strokeStyle='#e1b3ff';ctx.stroke();
         label(x,clamp(y-radius-5,14,h-5),'AFTER THROW','#eed5ff','center');
+      }else if(!small && !visible && behind){
+        aftCues.push('Preview');
       }else if(!visible){
         const where=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
         label(w/2,small?14:h/2-30,'PREVIEW '+where,'#eed5ff','center');
@@ -279,6 +281,8 @@ const Visor = (() => {
       const below=visible[1]+22;
       const y=clamp(below+height<=h-4?below:visible[1]-13-height,13,h-4-height);
       lines.forEach((s,i)=>label(x,y+i*14,s,'#b4f7df','center'));
+    }else if(!small && !visible && behind && norm(state.pos.v)>1e-7){
+      aftCues.push('Coast');
     }else if(!visible && norm(state.pos.v)>1e-7){
       const direction=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
       label(w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');
@@ -316,7 +320,7 @@ const Visor = (() => {
     ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
     for(const {body,center} of objects){
       if(Station.crosses(cam.p,center,state.pose))continue;
-      if(state.sightOnly){
+      if(state.sightOnly || state.done){
         debrisMesh(ctx,cam,body,center);
         continue;
       }
@@ -376,12 +380,13 @@ const Visor = (() => {
     label(x+10,y+(preview?17:-9),title+' +'+remaining,color);
     ctx.restore();
   }
-  function targetMarker(ctx,cam,covers,w,h,small,label) {
+  function targetMarker(ctx,cam,covers,w,h,small,label,aftCues) {
     const q=cam.world([0,0,0]),xy=q[2]>near?cam.screen(q):null;
     if(xy && xy[0]>20 && xy[0]<w-20 && xy[1]>24 && xy[1]<h-20){
       if(small)return;
       if(!behindPanel(xy,covers))return;
     }
+    if(!small && q[2]<0){aftCues.push('STN');return;}
     edgeMarker(ctx,q,w,h,label,'STN','#dcffe9',small?Infinity:Math.min(w*.13,h*.19,92));
   }
   function edgeMarker(ctx,q,w,h,label,text,color,radius){
@@ -392,6 +397,20 @@ const Visor = (() => {
     const ex=w/2+x*t,ey=h/2+y*t,angle=Math.atan2(y,x);
     ctx.save();ctx.translate(ex,ey);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-5,-4);ctx.lineTo(-5,4);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.restore();
     label(clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),text,color,'center');
+  }
+  function aftCaption(ctx,w,h,covers,label,cues){
+    const full='AFT · '+cues.join(' / ');
+    ctx.font='600 12px '+cockpitFonts.sans;
+    for(const text of [full,'See aft camera']){
+      const width=ctx.measureText(text).width+8;
+      for(const y of [h-10,18,h*.78,h*.22]){
+        for(const x of [w/2,w/3,2*w/3]){
+          const l=x-width/2,r=x+width/2;
+          if(l<2 || r>w-2 || covers.some(b=>l<b.right && r>b.left && y+4>b.top && y-13<b.bottom))continue;
+          label(x,y,text,'#b4f7df','center');return;
+        }
+      }
+    }
   }
   function drawStars(ctx,cam,w,h,state,sceneHeight){
     // Inertial bearings rotate into the station frame as it follows its orbit.
@@ -410,8 +429,9 @@ const Visor = (() => {
     }
   }
   function navigationOverlay(ctx,cam,state,small,w,h,label,covers,preview,coachAim) {
-    if(preview)course(ctx,cam,preview,small,w,h,label,true);
-    course(ctx,cam,state,small,w,h,label);
+    const aftCues=[];
+    if(preview)course(ctx,cam,preview,small,w,h,label,aftCues,true);
+    course(ctx,cam,state,small,w,h,label,aftCues);
     if(state.forecast.debris){
       encounterMarker(ctx,cam,preview?.forecast.debris?.hit,small,label,true,0,w,h,covers);
       encounterMarker(ctx,cam,state.forecast.debris.hit,small,label,false,state.age,w,h,covers);
@@ -435,15 +455,18 @@ const Visor = (() => {
       ctx.strokeStyle='#b0e6cc';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.stroke();
       stroke(ctx,[x-9,y],[x-4,y],'#b0e6cc');stroke(ctx,[x+4,y],[x+9,y],'#b0e6cc');stroke(ctx,[x,y-8],[x,y-4],'#b0e6cc');
       if(!small && x>15&&x<w-55&&y>30&&y<h-24)label(x+12,y+4,'DRIFT','#b0e6cc');
+    }else if(!small && norm(state.pos.v)>1e-6 && drift[2]<0){
+      aftCues.push('Drift');
     }else if(!small && norm(state.pos.v)>1e-6){
-      edgeMarker(ctx,drift,w,h,label,drift[2]<0?'DRIFT AFT':'DRIFT','#b0e6cc',Math.min(w*.21,h*.28,138));
+      edgeMarker(ctx,drift,w,h,label,'DRIFT','#b0e6cc',Math.min(w*.21,h*.28,138));
     }
     if(!small){
       ctx.strokeStyle='#c1d7d530';ctx.lineWidth=.8;
       for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(cx,cy,r,i*Math.PI/2+.17,(i+1)*Math.PI/2-.17);ctx.stroke();}
       for(let i=0;i<48;i++){const a=i*Math.PI/24,k=i%4===0?6:2.5;stroke(ctx,[cx+Math.cos(a)*r,cy+Math.sin(a)*r],[cx+Math.cos(a)*(r+k),cy+Math.sin(a)*(r+k)],i%4===0?'#c8dcd885':'#849b9a55',.8);}
     }
-    targetMarker(ctx,cam,covers,w,h,small,label);
+    targetMarker(ctx,cam,covers,w,h,small,label,aftCues);
+    if(aftCues.length)aftCaption(ctx,w,h,covers,label,aftCues);
   }
   function render(canvas,az,el,state,small=false,backdrop=null,preview=null,coachAim=null) {
     const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
@@ -465,10 +488,11 @@ const Visor = (() => {
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const covers=small?[]:cockpitPanels.get(canvas)??[];
     const label=captions(ctx,covers,w);
-    station(ctx,cam,state.pose,!state.sightOnly);
+    const navigationLive=!state.sightOnly && !state.done;
+    station(ctx,cam,state.pose,navigationLive);
     if(state.forecast.debris)debrisScene(ctx,cam,state,small);
     Equipment.draw(ctx,cam,w,sceneHeight,state.objects,small);
-    if(!state.sightOnly)navigationOverlay(ctx,cam,state,small,w,h,label,covers,preview,coachAim);
+    if(navigationLive)navigationOverlay(ctx,cam,state,small,w,h,label,covers,preview,coachAim);
     const cx=w/2,cy=h/2;
     const span=small?8:17,inner=small?3:5;
     ctx.beginPath();

@@ -52,6 +52,27 @@ function orientation(az,el){
   return {forward,right,up,local};
 }
 
+// A transfer estimates recoil for a point in the grab volume. Preview evaluates the
+// actual release, including the selected power stop, grab rule and debris.
+function missTrim(pos,near,untilPass,oxygenLeft,mode,pose,mask,story){
+  const {transfer,norm,scale}=Flight;
+  const dv=transfer(pos,near.bar,untilPass,mode),recoil=norm(dv);
+  const strongest=Math.max(0,...Flight.gear.map((_,i)=>mask&(1<<i)?Flight.impulse(i,mask):0));
+  if(recoil<=strongest)return {bearing:scale(dv,-1),recoil,message:''};
+
+  const budget=story?Infinity:Flight.budgets[mask];
+  let best=recoil,bearing=null;
+  for(const fraction of [.55,.75,.9]){
+    const t=oxygenLeft*fraction;
+    if(t<=untilPass+1)continue;
+    const target=Flight.nearest(Flight.motion(pos,t,mode).p,pose);
+    const later=transfer(pos,target,t,mode),cost=norm(later);
+    if(cost<best && cost<=budget){best=cost;bearing=scale(later,-1);}
+  }
+  const message=recoil>budget?'This pass needs more recoil than the remaining rack.':'This pass needs more than one throw.';
+  return {bearing,recoil:null,message:message+' Try a later approach.'};
+}
+
 // The displacement runs from the nearest grab bar to the predicted miss.
 // Point the tool to that side so recoil pushes the suit back toward the bars.
 function trimHint(displacement,az,elevation){

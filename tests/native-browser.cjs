@@ -59,6 +59,20 @@ async function main() {
     assert.equal(await read('power'),35,'touch drag snaps while the finger is down');
     await touch([{type:'pointerUp',button:0}]);
     assert.equal(await read('power'),35);
+    const bearing=await read('Flight.direction(yaw,pitch)');
+    async function tap(id){
+      const origin=await post('/element',{using:'css selector',value:'#'+id});
+      await touch([{type:'pointerMove',origin,x:0,y:0},{type:'pointerDown',button:0},{type:'pointerUp',button:0}]);
+    }
+    await tap('turnAft');
+    assert.ok(await read('Flight.dot(Flight.direction(yaw,pitch),'+JSON.stringify(bearing)+')<-.999999'));
+    await post('/actions',{actions:[{type:'key',id:'cockpit',actions:[{type:'keyDown',value:'v'},{type:'keyUp',value:'v'}]}]});
+    assert.ok(await read('Flight.dot(Flight.direction(yaw,pitch),'+JSON.stringify(bearing)+')>.999999'));
+    await tap('tool5');
+    assert.equal(await read("el('tool5').querySelector('small').textContent"),await read("(Flight.impulse(5,flight.mask)*power/100).toFixed(3)+' m/s'"));
+    await tap('throw');
+    assert.equal(await read('flight.throws'),1,'touch releases the selected tool once');
+
     for (const [slot,id] of ['power','clockRate','showPreview'].entries()) {
       await button('#'+id, 'click');
       assert.equal(await read('document.activeElement.id'), id);

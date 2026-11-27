@@ -472,6 +472,20 @@ input[type=radio],input[type=checkbox] {
   background: #ffe2b3;
 }
 
+.securedFlag { display: none; }
+.is-secured .securedFlag {
+  display: block; position: absolute; left: 50%; top: 55%; transform: translateX(-50%);
+  white-space: nowrap; padding: 3px 8px; color: #b1e8c4; background: #101e24;
+  font-weight: 650; pointer-events: none;
+}
+#turnAft {
+  position: absolute; inset: 0; width: 100%; height: 100%; padding: 0;
+  border: 0; border-radius: 0; background: transparent; touch-action: manipulation;
+}
+/* Keep a power drag on the range and let the next tap activate a cockpit control immediately. */
+#power { touch-action: none; }
+.deck button { touch-action: manipulation; }
+#turnAft:focus-visible { outline: 2px solid #8bf5ff; outline-offset: -2px; }
 .gameOverFlag {
   display: none;
 }
@@ -671,6 +685,7 @@ input[type=radio],input[type=checkbox] {
   box-shadow: 0 0 0 1px #152026;
 }
 
+#speedGauge.unlimited::after { display: none; }
 #speedGauge.over i {
   background: var(--red);
 }
@@ -867,6 +882,10 @@ input[type=radio],input[type=checkbox] {
   font-weight: 650;
   text-align: center;
 }
+.scenarioCaption small {
+  position: absolute; inset: 3px auto auto 3px; padding: 1px 4px; border-radius: 2px;
+  background: #101c24; color: #f5d49e; font: 600 11px/1.2 var(--sans);
+}
 .scenarioTile:has(:checked) .scenarioCaption { color: #ffd390; }
 
 @media (max-width:560px) {
@@ -892,6 +911,7 @@ input[type=radio],input[type=checkbox] {
   #setup .dialogHead { margin: 0; padding-bottom: 3px; }
   .scenarioGrid { gap: 4px; }
   .scenarioArt svg { max-height: clamp(22px,8dvh,56px); }
+  .scenarioCaption small { display: none; }
   .scenarioCaption { padding: 2px; font-size: 12px; }
   #setupBrief,#setup #seedPreview { font-size: 12px; line-height: 1.25; }
   #setupBrief { margin: 4px 0 0; }
@@ -1104,6 +1124,7 @@ main {
 }
 
 .deck {
+  user-select: none;
   --inset: clamp(10px,1.3vw,24px);
   --hud-surface: rgb(9 19 26 / 91%);
   --hud-line: #51636b;
@@ -1858,7 +1879,7 @@ main {
   }
   .tool b {
     font-size: 12px;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
   }
   .tool small {
     font-size: 11px;
@@ -2214,6 +2235,21 @@ main {
   }
 }
 
+/* The instrument column can grow during warnings without resizing the aiming or release area. */
+@media (min-width:741px) and (min-height:501px) {
+  .hudStage .metrics { position: absolute; inset: 0 0 auto auto; max-height: 100%; overflow-y: auto; contain: layout; scrollbar-width: thin; }
+  .statusLine { height: 2.6em; overflow-y: auto; }
+}
+@media (max-width:740px) and (min-height:501px) {
+  .hudStage .metrics { contain: size; overflow-y: auto; scrollbar-width: thin; }
+  .rack .heading { flex-direction: row; align-items: baseline; flex-wrap: wrap; }
+  .tool b { font-size: clamp(11px,3vw,12px); }
+}
+@media (max-width:740px) and (min-height:501px) and (max-height:800px) {
+  .flightHead { order: 1; }
+  .lesson { grid-area: 4/1/5/-1; }
+}
+
 /* On short phones the visor and the release must fit together. Keep the
    instruments readable by letting their own column scroll independently. */
 @media (max-width:740px) and (min-height:501px) and (max-height:700px) {
@@ -2331,6 +2367,8 @@ main {
   contain: none;
 }
 .sightOnly .metricStrip { grid-template-columns: 1fr; }
+.sightOnly .navToggles label:has(#showPreview),.sightOnly #coachControl { display: none; }
+.is-secured .metrics .metric:not(.clock),.is-secured .driftData,.is-secured .velocity { display: none; }
 @media (pointer: coarse) {
   .previewControl label { min-height: 32px; }
 }
@@ -2349,6 +2387,7 @@ main {
   .coastPanel { order: -2; }
   .navToggles { order: -1; }
   .coastPanel .driftData { gap: 0 3px; padding-top: 0; }
+  .hudStage .metricStrip { order: -3; }
   .metricStrip .metric :is(strong,small) { display: inline; }
   .metricStrip .metric strong { line-height: 1.15; }
   .metricStrip .metric small { white-space: nowrap; }

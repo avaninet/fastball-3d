@@ -21,7 +21,7 @@
     <meta name="twitter:image" content="https://avaninet.github.io/fastball-3d/assets/fastball-3d-preview-v03.jpg?v=0.5">
     <meta name="twitter:image:alt" content="Fastball 3D. Throw your way home. A released drill floats in the forward visor. The aft camera shows the station above Earth's green aurora.">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ywyihmXk2KV5Vp9k6s4cZ2/87dsP2VwtjE3WnZ+tJBE=' 'sha256-06+YnnIig+hFrBRIXNywEF6volNQSnpbRo23Y45ymQo=' 'sha256-Un+2ov4Yfbsv7r9mDJ0ZAigLsN0YY966ynujcPihM1Q=' 'sha256-2mZKzOnvxieMtTC6IuoSDWBwXXrI4KldF7tHMCPeUqY=' 'sha256-mqJmgBTQjL+vG0dqRBoQxQX0tjlSPwByUnxXTU+LIdU=' 'sha256-MtlWEn9BalGNdldfoZXyPxv7Um7OsTDM6yEBMkLz4J8=' 'sha256-3J+GrDcI2C3PN3kvy0oSms5+4v/iAtkbOlnrhAjQ12I=' 'sha256-P860sML909h7koNlAdRUyy/kCyoH1vbwJaIGkDCuAk0=' 'sha256-KCk+MwKJsAjPa/eHFcl+g67DqFGhBHOkPmeR4BZXvbs=' 'sha256-nNFAxRcfbJQylOec8rCt04vdp4D1eUjydBKa5hWLjZc=' 'sha256-I+4pmh5Sw2y8tZ8puIEBevo/vIkqElyqohCsy4Zo3V4=' 'sha256-nOaiHRT9CKpEUon9G5TfSKowh871Sjxqhb+YJzFtcWw=' 'sha256-LGGJQWEuWgtyCtXGjFUAWe9Wvq7vnmCjUdkl3C9OngE=' 'sha256-CF7JEBwMG77CYV0rFnAu47QeJYGIxeEihKO47x2reEI='; style-src 'sha256-b0JrWCfCDT+XZ1icqdKwsVAO6VlZLmjbcpAueQ2i0Q0='; img-src data: blob:; base-uri 'none'; form-action 'none'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ywyihmXk2KV5Vp9k6s4cZ2/87dsP2VwtjE3WnZ+tJBE=' 'sha256-06+YnnIig+hFrBRIXNywEF6volNQSnpbRo23Y45ymQo=' 'sha256-uCXcUENFSx4L74LYcBl93eGvVQMrUc2iqLOR+FnX0B8=' 'sha256-2mZKzOnvxieMtTC6IuoSDWBwXXrI4KldF7tHMCPeUqY=' 'sha256-3ux60meojxkEPi1VbpwbwDItpCH/7OtCqupI7xR6vVI=' 'sha256-MtlWEn9BalGNdldfoZXyPxv7Um7OsTDM6yEBMkLz4J8=' 'sha256-3J+GrDcI2C3PN3kvy0oSms5+4v/iAtkbOlnrhAjQ12I=' 'sha256-P860sML909h7koNlAdRUyy/kCyoH1vbwJaIGkDCuAk0=' 'sha256-Dn4l7kvf3shg6zrXeguY62Qvf9adEpmVqjdFUApjNZs=' 'sha256-Bz8TirASFqxNpo6EXEjO6fog8VxTCU0hbuX9EOuKiUE=' 'sha256-dwM9jQ0qIR7wXqNoPWdkm5HoX16PsP3G1rY2Rzs+aYA=' 'sha256-nOaiHRT9CKpEUon9G5TfSKowh871Sjxqhb+YJzFtcWw=' 'sha256-yhWUtXYgS1ec/nzN6Sw7zH+Aans49rczR3JGWHcI6Vc=' 'sha256-CF7JEBwMG77CYV0rFnAu47QeJYGIxeEihKO47x2reEI='; style-src 'sha256-vWQiIIsVcinhXCffbLNwVBvckLYAPXfFxIf90cR4mrU='; img-src data: blob:; base-uri 'none'; form-action 'none'">
     <link rel="icon" href="data:,">
     <meta name="theme-color" content="#101519">
     <title>Fastball 3D v0.5 · EVA return simulator</title>
@@ -500,6 +500,20 @@ input[type=radio],input[type=checkbox] {
   background: #ffe2b3;
 }
 
+.securedFlag { display: none; }
+.is-secured .securedFlag {
+  display: block; position: absolute; left: 50%; top: 55%; transform: translateX(-50%);
+  white-space: nowrap; padding: 3px 8px; color: #b1e8c4; background: #101e24;
+  font-weight: 650; pointer-events: none;
+}
+#turnAft {
+  position: absolute; inset: 0; width: 100%; height: 100%; padding: 0;
+  border: 0; border-radius: 0; background: transparent; touch-action: manipulation;
+}
+/* Keep a power drag on the range and let the next tap activate a cockpit control immediately. */
+#power { touch-action: none; }
+.deck button { touch-action: manipulation; }
+#turnAft:focus-visible { outline: 2px solid #8bf5ff; outline-offset: -2px; }
 .gameOverFlag {
   display: none;
 }
@@ -699,6 +713,7 @@ input[type=radio],input[type=checkbox] {
   box-shadow: 0 0 0 1px #152026;
 }
 
+#speedGauge.unlimited::after { display: none; }
 #speedGauge.over i {
   background: var(--red);
 }
@@ -895,6 +910,10 @@ input[type=radio],input[type=checkbox] {
   font-weight: 650;
   text-align: center;
 }
+.scenarioCaption small {
+  position: absolute; inset: 3px auto auto 3px; padding: 1px 4px; border-radius: 2px;
+  background: #101c24; color: #f5d49e; font: 600 11px/1.2 var(--sans);
+}
 .scenarioTile:has(:checked) .scenarioCaption { color: #ffd390; }
 
 @media (max-width:560px) {
@@ -920,6 +939,7 @@ input[type=radio],input[type=checkbox] {
   #setup .dialogHead { margin: 0; padding-bottom: 3px; }
   .scenarioGrid { gap: 4px; }
   .scenarioArt svg { max-height: clamp(22px,8dvh,56px); }
+  .scenarioCaption small { display: none; }
   .scenarioCaption { padding: 2px; font-size: 12px; }
   #setupBrief,#setup #seedPreview { font-size: 12px; line-height: 1.25; }
   #setupBrief { margin: 4px 0 0; }
@@ -1132,6 +1152,7 @@ main {
 }
 
 .deck {
+  user-select: none;
   --inset: clamp(10px,1.3vw,24px);
   --hud-surface: rgb(9 19 26 / 91%);
   --hud-line: #51636b;
@@ -1886,7 +1907,7 @@ main {
   }
   .tool b {
     font-size: 12px;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
   }
   .tool small {
     font-size: 11px;
@@ -2242,6 +2263,21 @@ main {
   }
 }
 
+/* The instrument column can grow during warnings without resizing the aiming or release area. */
+@media (min-width:741px) and (min-height:501px) {
+  .hudStage .metrics { position: absolute; inset: 0 0 auto auto; max-height: 100%; overflow-y: auto; contain: layout; scrollbar-width: thin; }
+  .statusLine { height: 2.6em; overflow-y: auto; }
+}
+@media (max-width:740px) and (min-height:501px) {
+  .hudStage .metrics { contain: size; overflow-y: auto; scrollbar-width: thin; }
+  .rack .heading { flex-direction: row; align-items: baseline; flex-wrap: wrap; }
+  .tool b { font-size: clamp(11px,3vw,12px); }
+}
+@media (max-width:740px) and (min-height:501px) and (max-height:800px) {
+  .flightHead { order: 1; }
+  .lesson { grid-area: 4/1/5/-1; }
+}
+
 /* On short phones the visor and the release must fit together. Keep the
    instruments readable by letting their own column scroll independently. */
 @media (max-width:740px) and (min-height:501px) and (max-height:700px) {
@@ -2359,6 +2395,8 @@ main {
   contain: none;
 }
 .sightOnly .metricStrip { grid-template-columns: 1fr; }
+.sightOnly .navToggles label:has(#showPreview),.sightOnly #coachControl { display: none; }
+.is-secured .metrics .metric:not(.clock),.is-secured .driftData,.is-secured .velocity { display: none; }
 @media (pointer: coarse) {
   .previewControl label { min-height: 32px; }
 }
@@ -2377,6 +2415,7 @@ main {
   .coastPanel { order: -2; }
   .navToggles { order: -1; }
   .coastPanel .driftData { gap: 0 3px; padding-top: 0; }
+  .hudStage .metricStrip { order: -3; }
   .metricStrip .metric :is(strong,small) { display: inline; }
   .metricStrip .metric strong { line-height: 1.15; }
   .metricStrip .metric small { white-space: nowrap; }
@@ -2449,6 +2488,7 @@ main {
           </div>
           <div class="view forward">
             <canvas tabindex="0" id="forward" role="application" aria-label="Throw direction. Drag or use arrow keys to aim. Shift for fine aim."></canvas>
+            <span class="securedFlag">Grab bars secured</span>
             <div class="pauseFlag" id="paused" role="status">
               <span>PAUSED</span>
               <small id="pausedLineup" hidden>Lineup live</small>
@@ -2458,10 +2498,11 @@ main {
           <article class="aftPod">
             <div class="panelTitle">
               <h2 class="camLabel"><span class="indicator"></span>Aft camera</h2>
-              <span class="cameraMeta">Reverse view</span>
+              <span class="cameraMeta">Turn around · V</span>
             </div>
             <div class="view aft">
               <canvas id="aft" role="img" aria-label="Unmirrored view opposite the forward visor"></canvas>
+              <button id="turnAft" type="button" aria-label="Turn to the aft view" aria-keyshortcuts="V" title="Turn to the aft view (V). Turn again to face the original direction."></button>
               <span class="gameOverFlag" aria-hidden="true">GAME OVER</span>
             </div>
           </article>
@@ -2506,6 +2547,7 @@ main {
               </div>
               <div class="readout" id="coast"></div>
               <p id="advice"></p>
+              <p id="debrisClearance" hidden></p>
               <p id="clockWarning" role="status" hidden></p>
               <div class="driftData">
                 <span class="micro">Drift direction</span>
@@ -2963,7 +3005,7 @@ main {
                 <label class="scenarioTile">
                   <input id="pick-3" type="radio" name="scenarioChoice" value="3">
                   <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-3" width="180" height="80"/></svg></span>
-                  <span class="scenarioCaption">Random Drift</span>
+                  <span class="scenarioCaption">Random Drift <small>Step up</small></span>
                 </label>
                 <label class="scenarioTile">
                   <input id="pick-2" type="radio" name="scenarioChoice" value="2">
@@ -3074,9 +3116,9 @@ main {
           one.</p>
         </details>
         <h3>Pitch from the forward visor</h3>
-        <p>Begin flight starts the oxygen clock. Drag to turn or tap to center a bearing. Select a slot, adjust power
+        <p>Begin flight starts the oxygen clock and unlocks aiming and throwing. Drag to turn or tap to center a bearing. Select a slot, adjust power
         and press Throw. Watch the tool leave just below the crosshair. A gentle toss stays in view longer. Turning
-        alone leaves your velocity unchanged.</p>
+        alone leaves your velocity unchanged. Tap the aft camera or press V to turn exactly around. Repeat to return to your previous bearing.</p>
         <h3>Preview a throw</h3>
         <p>Switch on Preview throw in the instrument panel to see where your suit would go if you released the selected
         tool now. The solid violet line and filled arrows update with your aim, tool and power. Farther arrows are
@@ -3098,12 +3140,12 @@ main {
         <p>Tommi is in Earth’s shadow. The Moon is new. On this pass, it lies below Tommi’s horizon along with the
         Sun. Look for the faint stars above Earth’s curved edge. They give you a reference as you turn the visor.</p>
         <h3>Read both cameras</h3>
-        <p>STN points toward the station when it leaves the frame. The aft view looks straight behind you. A pair of
+        <p>The AFT cue groups bearings behind the forward visor. COVER HIT and FRAME HIT keep their own warning arrows. STN points toward the station when it leaves the frame. The aft view looks straight behind you. A pair of
         amber bands marks one end of the station in both views. Mint arrows point along your committed coast. Nearby
         dashes are brighter and thicker. Farther arrows look smaller. Looking straight down a Straight-Line coast,
         you’ll see a ring and the distance from your suit to contact or to your position at oxygen expiry. If the
         path looks end-on, read the time, side and clearance under Current coast. A negative range rate means the gap
-        to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the chosen grab limit. Any-speed flights show the soft limit as a reference. Positive X
+        to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the chosen grab limit. Positive X
         points away from Earth, +Y along the orbit and +Z above its plane. The whole <span id="envelopeSize"></span>
         m outline (the thin side points along track in the standard orientation) is within reach, including the gaps between panels.</p>
         <p>Choose <strong>Random station orientation</strong> in New flight to tilt the station for this opening.
@@ -3113,7 +3155,7 @@ main {
         <p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you
         which way to aim in the forward visor. A pitch up and right nudges the suit down and left. If you reach the
         top or bottom of the visor, turn along the horizon toward the heading in the hint. On a future miss,
-        match the estimated trim to the recoil beside <strong>Throw power</strong>. With single-use tools, the lightest remaining tool is selected after each release. Your power setting stays the same. Check both before you throw.</p>
+        compare the estimated trim with the recoil on each tool tile at the selected power. If this pass needs more recoil than one throw can deliver, use Preview to plan a later approach. With single-use tools, the lightest remaining tool is selected after each release. Your power setting stays the same. Check both before you throw.</p>
         <p><strong>Fast entry in</strong> gives your projected speed at the bars. The gauge shows your speed now.
         Follow the mint <strong>DRIFT</strong> cue or press <strong>Face drift</strong> to aim along your motion.
         On a clear Firm or Soft approach, line up early and aim to brake in the final 30 seconds before entry.
@@ -3144,7 +3186,7 @@ main {
         <strong>FRAME HIT</strong> arrow points toward it. A collision warning takes priority over station braking.
         Fast-forward drops to 1× with up to 65 seconds to react. Dodgeball Coach can suggest a tool, power and
         bearing to clear both pieces. Use Preview throw to check where that dodge leaves you relative to the bars.
-        When Current coast says a piece clears in a few seconds, hold the coast through the pass, then trim home.</p>
+        A clearance note describes that piece. Read the station forecast alongside it. If the bars are still a miss when you clear the piece, guided fast-forward returns to 1x so you can correct.</p>
         <h3>Share an opening</h3>
         <p>Random Drift and Random Dodgeball each have 4,096 openings. Dodgeball draws from eight debris layouts.
         Choose <strong>Generate opening</strong> to try another. Paste a friend’s ten-character code or link
@@ -3152,7 +3194,7 @@ main {
         F1 codes start with relative navigation online. F2 codes start in Manual. Earlier seed formats belong to the builds that created them. The flight card prints the same code. Retry restores its starting settings.</p>
         <p>Choose <strong>Flight card</strong> in the debrief to share your flown path. Both charts use the same
         along-track axis and scale. The upper chart shows radial motion and the lower chart shows cross-track motion.
-        Match the numbered throws between them. A blue ring marks a pass across Y = 0 that appears inside the
+        Match the numbered throws between them. On a long runaway coast the card focuses on the approach and marks where the path continues. The log keeps the full route and precise event times. On a single-use win the card leads with the percentage of Δv brought home. A blue ring marks a pass across Y = 0 that appears inside the
         grab volume in the upper view but clears the bars in three dimensions. In Dodgeball, the card also gives
         the closest suit-to-debris gap and its time for each piece.</p>
         <h3>Story / guided rescue</h3>
@@ -3214,12 +3256,12 @@ main {
         </section>
       </div>
       <div class="dialogFoot endActions">
+        <button id="nextLesson" class="primary" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-next"/></svg><span>Next lesson</span></button>
         <button id="viewLog"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-log"/></svg><span>Flight log</span></button>
         <button id="retry"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-retry"/></svg><span>Retry</span></button>
         <button id="again"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-new"/></svg><span>New flight</span></button>
         <button id="openShareCard" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-card"/></svg><span>Flight card</span></button>
         <button id="copyEndSeed" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-link"/></svg><span>Copy link</span></button>
-        <button id="nextLesson" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-next"/></svg><span>Next lesson</span></button>
       </div>
     </dialog>
     <dialog id="flightLog" aria-labelledby="logTitle">
@@ -3785,7 +3827,7 @@ function createCatalog(drift,dodge,challengeMask){
   if(drift.byteLength!==count*50 || dodge.byteLength!==count*6)throw Error('Incomplete flight catalog');
   function driftState(row){
     const n=row*50,vector=offset=>[0,1,2].map(i=>drift.getFloat64(n+offset+8*i,true));
-    return {name:'Random Drift',p:vector(0),v:vector(24),brief:'An unfamiliar separation. Read your drift and choose an opening pitch.'};
+    return {name:'Random Drift',p:vector(0),v:vector(24),brief:'A step up from the named openings. Read your drift and plan for several throws.'};
   }
   function mask(index,row){
     if(index===3)return drift.getUint16(row*50+48,true);
@@ -3920,6 +3962,27 @@ function orientation(az,el){
   const forward=direction(az,el),right=direction(az-90,0),up=direction(az,el+90);
   const local=q=>[dot(q,right),dot(q,up),dot(q,forward)];
   return {forward,right,up,local};
+}
+
+// A transfer estimates recoil for a point in the grab volume. Preview evaluates the
+// actual release, including the selected power stop, grab rule and debris.
+function missTrim(pos,near,untilPass,oxygenLeft,mode,pose,mask,story){
+  const {transfer,norm,scale}=Flight;
+  const dv=transfer(pos,near.bar,untilPass,mode),recoil=norm(dv);
+  const strongest=Math.max(0,...Flight.gear.map((_,i)=>mask&(1<<i)?Flight.impulse(i,mask):0));
+  if(recoil<=strongest)return {bearing:scale(dv,-1),recoil,message:''};
+
+  const budget=story?Infinity:Flight.budgets[mask];
+  let best=recoil,bearing=null;
+  for(const fraction of [.55,.75,.9]){
+    const t=oxygenLeft*fraction;
+    if(t<=untilPass+1)continue;
+    const target=Flight.nearest(Flight.motion(pos,t,mode).p,pose);
+    const later=transfer(pos,target,t,mode),cost=norm(later);
+    if(cost<best && cost<=budget){best=cost;bearing=scale(later,-1);}
+  }
+  const message=recoil>budget?'This pass needs more recoil than the remaining rack.':'This pass needs more than one throw.';
+  return {bearing,recoil:null,message:message+' Try a later approach.'};
 }
 
 // The displacement runs from the nearest grab bar to the predicted miss.
@@ -4736,7 +4799,7 @@ const Visor = (() => {
     }
     return {heads,visible,behind:dot(state.pos.v,cam.forward)<0};
   }
-  function course(ctx,cam,state,small,w,h,label,preview=false) {
+  function course(ctx,cam,state,small,w,h,label,aftCues,preview=false) {
     if(!preview&&!state.time&&!state.throws)return;
     const m=state.forecast;
     const stationHit=preview&&state.soft?m.hits.find(entry=>Flight.canGrab(entry,state.soft)):m.hits[state.hitIndex];
@@ -4768,6 +4831,8 @@ const Visor = (() => {
         ctx.beginPath();ctx.moveTo(x,y-radius);ctx.lineTo(x+radius,y);ctx.lineTo(x,y+radius);ctx.lineTo(x-radius,y);ctx.closePath();
         ctx.lineWidth=1.8;ctx.strokeStyle='#e1b3ff';ctx.stroke();
         label(x,clamp(y-radius-5,14,h-5),'AFTER THROW','#eed5ff','center');
+      }else if(!small && !visible && behind){
+        aftCues.push('Preview');
       }else if(!visible){
         const where=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
         label(w/2,small?14:h/2-30,'PREVIEW '+where,'#eed5ff','center');
@@ -4788,6 +4853,8 @@ const Visor = (() => {
       const below=visible[1]+22;
       const y=clamp(below+height<=h-4?below:visible[1]-13-height,13,h-4-height);
       lines.forEach((s,i)=>label(x,y+i*14,s,'#b4f7df','center'));
+    }else if(!small && !visible && behind && norm(state.pos.v)>1e-7){
+      aftCues.push('Coast');
     }else if(!visible && norm(state.pos.v)>1e-7){
       const direction=behind?(small?'FORWARD':'AFT'):'OFF SCREEN';
       label(w/2,small?h-6:h/2+31,'COAST '+direction,'#b4f7df','center');
@@ -4825,7 +4892,7 @@ const Visor = (() => {
     ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
     for(const {body,center} of objects){
       if(Station.crosses(cam.p,center,state.pose))continue;
-      if(state.sightOnly){
+      if(state.sightOnly || state.done){
         debrisMesh(ctx,cam,body,center);
         continue;
       }
@@ -4885,12 +4952,13 @@ const Visor = (() => {
     label(x+10,y+(preview?17:-9),title+' +'+remaining,color);
     ctx.restore();
   }
-  function targetMarker(ctx,cam,covers,w,h,small,label) {
+  function targetMarker(ctx,cam,covers,w,h,small,label,aftCues) {
     const q=cam.world([0,0,0]),xy=q[2]>near?cam.screen(q):null;
     if(xy && xy[0]>20 && xy[0]<w-20 && xy[1]>24 && xy[1]<h-20){
       if(small)return;
       if(!behindPanel(xy,covers))return;
     }
+    if(!small && q[2]<0){aftCues.push('STN');return;}
     edgeMarker(ctx,q,w,h,label,'STN','#dcffe9',small?Infinity:Math.min(w*.13,h*.19,92));
   }
   function edgeMarker(ctx,q,w,h,label,text,color,radius){
@@ -4901,6 +4969,20 @@ const Visor = (() => {
     const ex=w/2+x*t,ey=h/2+y*t,angle=Math.atan2(y,x);
     ctx.save();ctx.translate(ex,ey);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-5,-4);ctx.lineTo(-5,4);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.restore();
     label(clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),text,color,'center');
+  }
+  function aftCaption(ctx,w,h,covers,label,cues){
+    const full='AFT · '+cues.join(' / ');
+    ctx.font='600 12px '+cockpitFonts.sans;
+    for(const text of [full,'See aft camera']){
+      const width=ctx.measureText(text).width+8;
+      for(const y of [h-10,18,h*.78,h*.22]){
+        for(const x of [w/2,w/3,2*w/3]){
+          const l=x-width/2,r=x+width/2;
+          if(l<2 || r>w-2 || covers.some(b=>l<b.right && r>b.left && y+4>b.top && y-13<b.bottom))continue;
+          label(x,y,text,'#b4f7df','center');return;
+        }
+      }
+    }
   }
   function drawStars(ctx,cam,w,h,state,sceneHeight){
     // Inertial bearings rotate into the station frame as it follows its orbit.
@@ -4919,8 +5001,9 @@ const Visor = (() => {
     }
   }
   function navigationOverlay(ctx,cam,state,small,w,h,label,covers,preview,coachAim) {
-    if(preview)course(ctx,cam,preview,small,w,h,label,true);
-    course(ctx,cam,state,small,w,h,label);
+    const aftCues=[];
+    if(preview)course(ctx,cam,preview,small,w,h,label,aftCues,true);
+    course(ctx,cam,state,small,w,h,label,aftCues);
     if(state.forecast.debris){
       encounterMarker(ctx,cam,preview?.forecast.debris?.hit,small,label,true,0,w,h,covers);
       encounterMarker(ctx,cam,state.forecast.debris.hit,small,label,false,state.age,w,h,covers);
@@ -4944,15 +5027,18 @@ const Visor = (() => {
       ctx.strokeStyle='#b0e6cc';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.stroke();
       stroke(ctx,[x-9,y],[x-4,y],'#b0e6cc');stroke(ctx,[x+4,y],[x+9,y],'#b0e6cc');stroke(ctx,[x,y-8],[x,y-4],'#b0e6cc');
       if(!small && x>15&&x<w-55&&y>30&&y<h-24)label(x+12,y+4,'DRIFT','#b0e6cc');
+    }else if(!small && norm(state.pos.v)>1e-6 && drift[2]<0){
+      aftCues.push('Drift');
     }else if(!small && norm(state.pos.v)>1e-6){
-      edgeMarker(ctx,drift,w,h,label,drift[2]<0?'DRIFT AFT':'DRIFT','#b0e6cc',Math.min(w*.21,h*.28,138));
+      edgeMarker(ctx,drift,w,h,label,'DRIFT','#b0e6cc',Math.min(w*.21,h*.28,138));
     }
     if(!small){
       ctx.strokeStyle='#c1d7d530';ctx.lineWidth=.8;
       for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(cx,cy,r,i*Math.PI/2+.17,(i+1)*Math.PI/2-.17);ctx.stroke();}
       for(let i=0;i<48;i++){const a=i*Math.PI/24,k=i%4===0?6:2.5;stroke(ctx,[cx+Math.cos(a)*r,cy+Math.sin(a)*r],[cx+Math.cos(a)*(r+k),cy+Math.sin(a)*(r+k)],i%4===0?'#c8dcd885':'#849b9a55',.8);}
     }
-    targetMarker(ctx,cam,covers,w,h,small,label);
+    targetMarker(ctx,cam,covers,w,h,small,label,aftCues);
+    if(aftCues.length)aftCaption(ctx,w,h,covers,label,aftCues);
   }
   function render(canvas,az,el,state,small=false,backdrop=null,preview=null,coachAim=null) {
     const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
@@ -4974,10 +5060,11 @@ const Visor = (() => {
     drawStars(ctx,cam,w,h,state,sceneHeight);
     const covers=small?[]:cockpitPanels.get(canvas)??[];
     const label=captions(ctx,covers,w);
-    station(ctx,cam,state.pose,!state.sightOnly);
+    const navigationLive=!state.sightOnly && !state.done;
+    station(ctx,cam,state.pose,navigationLive);
     if(state.forecast.debris)debrisScene(ctx,cam,state,small);
     Equipment.draw(ctx,cam,w,sceneHeight,state.objects,small);
-    if(!state.sightOnly)navigationOverlay(ctx,cam,state,small,w,h,label,covers,preview,coachAim);
+    if(navigationLive)navigationOverlay(ctx,cam,state,small,w,h,label,covers,preview,coachAim);
     const cx=w/2,cy=h/2;
     const span=small?8:17,inner=small?3:5;
     ctx.beginPath();
@@ -5031,6 +5118,7 @@ function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector
 function writeText(node,text){if(node.textContent!==text)node.textContent=text;}
 function setMsg(msg){writeText(el('message'),msg);}
 function separationBrief(index){
+  if(index===3)return 'A step up from the named openings. This unfamiliar separation may take several throws.';
   return index>=4?'A platform tears free. Tommi drifts with its cover and bent frame.':
     "Tommi’s tether has parted and the suit thrusters are stuck closed.";
 }
@@ -5049,7 +5137,7 @@ function clearDebrisBrake(){
   el('clockRate').closest('label').classList.remove('debrisBrake');
 }
 function reseat(skipInitial=false) {
-  clearDebrisBrake();previewCache=null;coachCache=null;
+  clearDebrisBrake();previewCache=null;coachCache=null;flight.missBrakeGiven=false;
   flight.anchor={p:flight.pos.p.slice(),v:flight.pos.v.slice()};flight.age=0;flight.hitIndex=0;
   flight.forecast=forecastFrom(flight.anchor,skipInitial);
 }
@@ -5075,6 +5163,10 @@ function describePreview(preview){
   }
   const near=preview.forecast.near;
   if(Flight.inside(preview.anchor.p,preview.pose))return clearance+'Inside bars · '+Readout.speed(norm(preview.anchor.v),preview.soft)+' m/s';
+  if(near.t<.01){
+    const opening=barRangeRate(preview.anchor,preview.pose);
+    if(opening>0)return clearance+'Still opening at '+Readout.speed(opening,false)+' m/s. Try a different throw.';
+  }
   return clearance+(debris?'Bars missed by ':'Closest clearance ')+Readout.clearance(near.d)+' m · '+(near.t<.01?'now':clock(Math.ceil(near.t))+' from now');
 }
 function currentAids(){
@@ -5114,7 +5206,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids()
   Replays.updateAddress(flight);
   el('toStation').hidden=el('away').hidden=!story;el('storyTag').hidden=!story;
   el('lesson').hidden=lesson===null;
-  setMsg(sightOnly?offlineMessage:story?'Story flight. Every tool reloads. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
+  setMsg(sightOnly?offlineMessage:story?'Story flight. Every tool reloads. Aim while staged or paused. Throw runs the clock at 1×.':'Begin flight to aim and throw. Then drag the visor or use the arrow keys.');
   updateRack();instruments();
   if(index===5){
     const view=Visor.layoutView(visor,flight);
@@ -5154,7 +5246,8 @@ function finish(result) {
       'Projected speed at the bars is '+Readout.speed(flight.forecast.hits[0].speed,flight.soft);
     el('endCopy').textContent=approach+' m/s. With the rack empty, the remaining coast offers no grab at or below '+Flight.captureLimit(flight.soft).toFixed(3)+' m/s before oxygen runs out.';
   }else{
-    el('endCopy').textContent='The reserve ran out before a successful grab.';
+    const pass=flight.log.fast.at(-1);
+    el('endCopy').textContent=pass?'You reached the bars at '+clock(pass.time)+' at '+Readout.speed(pass.speed,flight.soft)+' m/s. The '+(flight.soft==='firm'?'Firm':'Soft')+' limit was '+Flight.captureLimit(flight.soft).toFixed(3)+' m/s. Aim along your drift to brake before entry.':'The reserve ran out before a successful grab. Start the return earlier and check the time left for a correction.';
   }
   const {budget,speed}=FlightLog.resultReadout(flight);
   el('endBudget').textContent=budget;
@@ -5181,6 +5274,16 @@ function advance(dt) {
   if(flight.done || dt<=0)return;
   const hazard=flight.forecast.debris?.hit;
   const entry=flight.forecast.hits[flight.hitIndex];
+  const clearPass=!flight.sightOnly && rate>1 && !flight.missBrakeGiven && !hazard && !entry && flight.throws && flight.mask && flight.forecast.debris?.approaches
+    .filter(p=>p.gap>=0 && p.gap<2 && p.tNear>flight.age && p.tNear<=flight.age+dt)
+    .sort((a,b)=>a.tNear-b.tNear)[0];
+  if(clearPass){
+    flight.missBrakeGiven=true;
+    const untilClear=clearPass.tNear-flight.age;
+    dt=untilClear+(dt-untilClear)/rate;
+    setClockStop(0);
+    setMsg(clearPass.body.short+' clear. Clock returned to 1x to correct the station miss.');
+  }
   const fastApproach=!hazard && flight.mask && flight.soft && entry && !Flight.canGrab(entry,flight.soft) && flight.brakeCueHit!==entry;
   if(!flight.sightOnly && (hazard || fastApproach) && rate>1){
     const untilBrake=Math.max(0,(hazard?hazard.t-Debris.warningLead:entry.t-30)-flight.age);
@@ -5237,14 +5340,17 @@ function updateRack() {
   for(const [i,g] of Flight.gear.entries()) {
     const b=el('tool'+i),present=!!(flight.mask&(1<<i));b.disabled=!present||!canPitch();
     b.classList.toggle('spent',!present);
-    const detail=present?g.mass.toFixed(1)+' kg':'Released';
-    b.setAttribute('aria-label',b.getAttribute('aria-keyshortcuts')+' '+g.name+' '+detail);
+    const mass=g.mass.toFixed(1)+' kg';
+    const detail=!present?'Released':flight.sightOnly?mass:(Flight.impulse(i,flight.mask)*power/100).toFixed(3)+' m/s';
+    const description=present&&!flight.sightOnly?detail+' recoil, '+mass:detail;
+    b.setAttribute('aria-label',b.getAttribute('aria-keyshortcuts')+' '+g.name+', '+description);
     b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=detail;
   }
   const budget=el('budget');
   budget.title=flight.sightOnly?'Equipment remaining':flight.story?'Each tool reloads immediately. Suit and gear mass stays constant.':'Total speed change available if you throw every remaining tool at full power';
   budget.textContent=flight.story?'Unlimited · auto-reload':Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard';
   if(!flight.story && !flight.sightOnly)budget.textContent+=' · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
+  el('turnAft').disabled=!canPitch();
   el('throw').disabled=selected<0||!canPitch();el('power').disabled=selected<0||!canPitch();
   el('prograde').disabled=flight.sightOnly||!canPitch()||norm(flight.pos.v)<.00001;
   el('powerValue').textContent=power+'%';
@@ -5284,7 +5390,10 @@ function throwTool() {
   flight.throws++;
   flight.stagedPitch=null;
   if(!flight.story)selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
-  setMsg(g.name+' released at '+power+'%.'+(flight.story?' Reloaded and ready.':flight.sightOnly?'':' Read the committed coast before spending another tool.'));
+  const opening=barRangeRate(flight.pos,flight.pose);
+  const pushedAway=flight.throws===1 && !flight.sightOnly && opening>0 && opening>barRangeRate(old,flight.pose)+.0005;
+  setMsg(g.name+' released at '+power+'%.'+(pushedAway?' That pitch pushed you away from the bars. Turn and throw the other way to counter it.':
+    flight.story?' Reloaded and ready.':flight.sightOnly?'':' Read the committed coast before spending another tool.'));
   reseat(Flight.inside(old.p,flight.pose)&&flight.misses>0);
   const hazard=flight.forecast.debris?.hit;
   if(!flight.sightOnly){
@@ -5307,6 +5416,7 @@ function nav(status) {
   status??=Flight.coastStatus(flight);
   const c=el('coast'),a=el('advice'),s=flight;
   const {kind,hit:h,near:n}=status;
+  el('debrisClearance').hidden=true;
   c.className='readout';
   if(kind==='finished'){c.textContent=outcomes[s.done];c.classList.add(s.done==='capture'?'good':'danger');a.textContent='Flight time '+clock(s.time)+' · '+Readout.count(s.throws,'throw')+'.';return;}
   if(!started && !s.throws){
@@ -5336,10 +5446,10 @@ function nav(status) {
   const clearPass=s.throws && s.forecast.debris?.approaches
     .filter(p=>p.gap>=0 && p.gap<2 && p.tNear>s.age && p.tNear-s.age<90)
     .sort((a,b)=>a.tNear-b.tNear)[0];
-  if(clearPass && (!h || kind==='fastEntry' && clearPass.tNear<h.t)){
-    c.textContent=clearPass.body.short+' clears in '+clock(Math.ceil(clearPass.tNear-s.age));
-    a.textContent='Hold this coast for '+Readout.clearance(clearPass.gap)+' m of clearance. Then check the station approach.';
-    return;
+  if(clearPass && (!h || clearPass.tNear<h.t)){
+    const note=el('debrisClearance');
+    writeText(note,clearPass.body.short+' clears by '+Readout.clearance(clearPass.gap)+' m in '+clock(Math.ceil(clearPass.tNear-s.age))+'.');
+    note.hidden=false;
   }
   if(h){
     const tooFast=kind==='fastEntry';
@@ -5373,11 +5483,17 @@ function nav(status) {
     c.textContent='Miss by '+Readout.clearance(n.d)+' m';
     advice='Nearest pass '+describeSide(n.p,n.bar)+' in '+clock(Math.ceil(n.t-s.age))+'.';
   }
-  const hint=stagedPitchMatches()?'':trimHint(n.t>s.age?sub(n.p,n.bar):sub(s.pos.p,Flight.nearest(s.pos.p,s.pose)),yaw,pitch);
-  const cues=[advice,hint];
-  if(hint && kind==='miss' && n.t-s.age>1){
-    const recoil=norm(Flight.transfer(s.pos,n.bar,n.t-s.age,s.mode));
-    cues.push(recoil<.005?'Fine trim, under 0.005 m/s recoil.':'Trim ≈ '+recoil.toFixed(2)+' m/s recoil.');
+  const cues=[advice];
+  if(!stagedPitchMatches()){
+    if(kind==='miss' && n.t-s.age>1){
+      const trim=missTrim(s.pos,n,n.t-s.age,s.limit-s.time,s.mode,s.pose,s.mask,s.story);
+      cues.push(trim.message);
+      if(trim.bearing)cues.push(trimHint(trim.bearing,yaw,pitch));
+      if(trim.recoil===null)cues.push('Check the new course in Preview.');
+      else cues.push(trim.recoil<.005?'Fine trim, under 0.005 m/s recoil.':'Trim ≈ '+trim.recoil.toFixed(3)+' m/s recoil.');
+    }else{
+      cues.push(trimHint(n.t>s.age?sub(n.p,n.bar):sub(s.pos.p,Flight.nearest(s.pos.p,s.pose)),yaw,pitch));
+    }
   }
   if(s.soft){
     const speed=norm(s.pos.v);
@@ -5387,9 +5503,12 @@ function nav(status) {
   writeText(a,cues.filter(Boolean).join(' '));
   c.classList.add('warn');
 }
+function barRangeRate({p,v},pose){
+  return dot(unit(sub(p,Flight.nearest(p,pose))),v);
+}
 function updateNavigationInstruments() {
-  const {p,v}=flight.pos,bar=Flight.nearest(p,flight.pose),distance=Flight.clearance(p,flight.pose);
-  const rr=distance>1e-8?dot(unit(sub(p,bar)),v):0,sp=norm(v);
+  const {p,v}=flight.pos,distance=Flight.clearance(p,flight.pose);
+  const rr=barRangeRate(flight.pos,flight.pose),sp=norm(v);
   writeText(el('range'),distance.toFixed(1));writeText(el('rate'),Readout.signed(rr,3));el('rate').className=rr<0?'good':rr>0?'warn':'';
   writeText(el('speed'),Readout.speed(sp,flight.soft));el('speed').className=flight.soft&&!Flight.softEnough(sp,flight.soft)?'danger':'';
   const gauge=el('speedGauge'),ceiling=Math.max(Flight.captureLimit('firm'),Math.ceil(sp/.04)*.04);
@@ -5397,9 +5516,11 @@ function updateNavigationInstruments() {
   gauge.style.setProperty('--tick',(100*Flight.captureLimit(flight.soft)/ceiling)+'%');
   gauge.classList.toggle('over',flight.soft&&!Flight.softEnough(sp,flight.soft));
   gauge.setAttribute('aria-valuemax',ceiling.toFixed(3));gauge.setAttribute('aria-valuenow',sp.toFixed(3));
-  const threshold=flight.soft==='firm'?'Firm limit':flight.soft?'Soft limit':'Reference';
+  const threshold=flight.soft==='firm'?'Firm limit':'Soft limit';
+  el('speedRef').hidden=!flight.soft;
+  gauge.classList.toggle('unlimited',!flight.soft);
   writeText(el('speedRef'),threshold+' '+Flight.captureLimit(flight.soft).toFixed(3));
-  gauge.setAttribute('aria-valuetext',Readout.speed(sp,flight.soft)+' meters per second. '+threshold+' '+Flight.captureLimit(flight.soft).toFixed(3));
+  gauge.setAttribute('aria-valuetext',Readout.speed(sp,flight.soft)+' meters per second. '+(flight.soft?threshold+' '+Flight.captureLimit(flight.soft).toFixed(3):'Any-speed capture'));
   for(const [i,axis] of ['X','Y','Z'].entries())writeText(el('vel'+axis),Readout.signed(v[i],4));
   writeText(el('suitMass'),Flight.mass(flight.mask).toFixed(1)+' kg');
   const [az,elv]=Flight.angles(v);
@@ -5409,6 +5530,7 @@ function instruments() {
   if(!flight.sightOnly)updateNavigationInstruments();
   writeText(el('oxygen'),clock(Math.ceil(flight.limit-flight.time)));
   el('flightDeck').classList.toggle('is-paused',started&&!running&&!flight.done);
+  el('flightDeck').classList.toggle('is-secured',flight.done==='capture');
   el('flightDeck').classList.toggle('is-lost',!!flight.done&&flight.done!=='capture');
   el('assists').inert=!!flight.done||flight.sightOnly;
   el('lesson').inert=!!flight.done;
@@ -5530,6 +5652,11 @@ function invalidateInput(){
   drag=null;document.body.classList.remove('dragging');
 }
 function changePower(value){if(canPitch())power=Flight.snapPower(value);el('power').value=power;updateRack();}
+function turnAft(){
+  if(!canPitch() || !sync() || !canPitch())return;
+  yaw=(yaw+180)%360;pitch=-pitch;dirty=true;
+}
+el('turnAft').onclick=turnAft;
 function snap(vector){if(flight.story&&!flight.sightOnly&&canPitch())setView(vector);}
 el('toStation').onclick=()=>snap(stationDirection());el('away').onclick=()=>snap(flight.pos.p);el('prograde').onclick=()=>{
   if(flight.sightOnly || !canPitch() || !sync() || !canPitch() || norm(flight.pos.v)<.00001)return;
@@ -5560,7 +5687,7 @@ el('power').oninput=()=>changePower(sliderPress && sliderPress.epoch!==inputEpoc
 
 // Tie browser-generated activation to the press that began it. Pause, dialogs,
 // a new opening and a hidden tab each invalidate outstanding cockpit gestures.
-const pitchTargets='.tool,#throw,#away,#toStation,#prograde,#lessonAction';
+const pitchTargets='.tool,#throw,#away,#toStation,#prograde,#lessonAction,#turnAft';
 document.addEventListener('pointerdown',e=>{
   presses.delete(e.pointerId);
   if(e.target===el('power'))sliderPress={id:e.pointerId,epoch:canPitch()?inputEpoch:-1};
@@ -5651,7 +5778,7 @@ document.addEventListener('keydown',e=>{
   const digit=/^(?:Digit|Numpad)([1-9])$/.exec(code)?.[1] || (/^[1-9]$/.test(key)?key:null);
   const decrease=key==='['||code==='BracketLeft'||code==='NumpadSubtract';
   const increase=key===']'||code==='BracketRight'||code==='NumpadAdd';
-  const pitchKey=arrow||digit||decrease||increase||(key==='enter'&&visorOrInput);
+  const pitchKey=key==='v'||arrow||digit||decrease||increase||(key==='enter'&&visorOrInput);
   if(key!=='p'&&!activation&&!pitchKey)return;
   if(!e.repeat)heldKeys.set(code,canPitch()||key==='p'?inputEpoch:-1);
   if(e.repeat&&heldKeys.get(code)!==inputEpoch){if(cockpitKey(e))e.preventDefault();return;}
@@ -5664,6 +5791,7 @@ document.addEventListener('keydown',e=>{
     return;
   }
   if(target===el('power'))sliderPress=null;
+  if(key==='v'){e.preventDefault();if(!e.repeat)turnAft();return;}
   const step=e.shiftKey?.25:2;
   if(decrease||increase){e.preventDefault();changePower(power+(decrease?-Flight.powerStep:Flight.powerStep));return;}
   if(digit){e.preventDefault();choose(rackOrder[Number(digit)-1]);return;}
@@ -5850,6 +5978,27 @@ const FlightLog = (() => {
     const cx=frame.cx-(left+right)*scale/2,cy=frame.cy+(top+bottom)*scale/2;
     return {scale,cx,cy,project:(p,axis)=>[cx-p[1]*scale,cy-p[axis]*scale]};
   }
+  function approachGrid(flight,segments,closest){
+    const full=layout(segments,flight.pose,cardFrame);
+    if(flight.done==='capture')return full;
+    const radius=Math.max(30,closest+12);
+    const approach=segments.map(segment=>segment.filter(sample=>Flight.clearance(sample.p,flight.pose)<=radius));
+    if(!approach.some(segment=>segment.length))return full;
+    const detail=layout(approach,flight.pose,cardFrame);
+    return detail.scale>full.scale*1.6?{...detail,focused:true}:full;
+  }
+  function withinPlot([x,y],{left,right,top,bottom},pad=0){
+    return x>=left+pad && x<=right-pad && y>=top+pad && y<=bottom-pad;
+  }
+  // Place the arrow at the actual intersection of the departing path and the plot edge.
+  function exitArrow(a,b,frame){
+    const dx=b[0]-a[0],dy=b[1]-a[1];
+    const tx=dx?((dx>0?frame.right:frame.left)-a[0])/dx:Infinity;
+    const ty=dy?((dy>0?frame.bottom:frame.top)-a[1])/dy:Infinity;
+    const t=Math.min(tx,ty),angle=Math.atan2(dy,dx)*180/Math.PI;
+    return '<path class="offChart" d="M 0 0 L -9 -4 L -9 4 Z" fill="#99e1cc" transform="translate('+
+      num(a[0]+t*dx)+' '+num(a[1]+t*dy)+') rotate('+num(angle)+')"/>';
+  }
   function outline(corners,project){
     const points=corners.map(project).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
     function chain(ordered){
@@ -5948,7 +6097,7 @@ const FlightLog = (() => {
       rows.push('<path d="M 0 '+y+' h 25" stroke="'+item.color+'" stroke-width="2" stroke-dasharray="'+(item.dash||'none')+'"/><path d="M 28 '+y+' l -7 -3 v 6 Z" fill="'+item.color+'"/>',
         '<text x="36" y="'+(y+4)+'" fill="'+item.color+'">'+item.name+'</text>');
       rows.push('<text x="300" y="'+(y+4)+'" text-anchor="end">'+(i?item.gap.toFixed(2)+' m':'Closest 3D suit–box gap')+'</text>',
-        '<text x="416" y="'+(y+4)+'" text-anchor="end">'+(i?Readout.clock(item.time):'Flight time')+'</text>');
+        '<text x="416" y="'+(y+4)+'" text-anchor="end">'+(i?precise(item.time):'Flight time')+'</text>');
     }
     return '<g class="debrisKey" fill="#d5dcdf" font-size="13">'+rows.join('')+'</g>';
   }
@@ -5973,6 +6122,7 @@ const FlightLog = (() => {
     for(let i=Math.ceil((cy-bottom+4)/(step*scale));cy-i*step*scale>=top;i++){
       const y=cy-i*step*scale;svg.push(line(left,y,right,y,i?'#25323a':'#637782'),label(left-5,y+4,i*step,'end'));
     }
+    if(grid.focused)svg.push(`<defs><clipPath id="approach${axis}"><rect x="${left}" y="${top}" width="${right-left}" height="${bottom-top}"/></clipPath></defs><g clip-path="url(#approach${axis})">`);
     const corners=(flight.pose??Flight.poses[0]).corners;
     svg.push('<polygon class="grabEnvelope" points="'+outline(corners,point)+'" fill="#29493d" stroke="#91c4a4"/>');
     const debrisPaths=tracks.map(track=>({...track,xy:track.points.map(point)}));
@@ -5983,12 +6133,14 @@ const FlightLog = (() => {
     // numbered callouts over the flight and mark every other release with a dot.
     const count=Math.min(anchors.length,compact?9:16);
     const indices=Array.from({length:count},(_,i)=>compact||count===anchors.length?i:Math.round(i*(anchors.length-1)/(count-1)));
-    const callouts=releaseLabels(indices.map(i=>anchors[i]),[...projected,...debrisPaths.map(track=>track.xy)],frame);
+    const shown=indices.filter(i=>!grid.focused || withinPlot(anchors[i],frame,4));
+    const callouts=releaseLabels(shown.map(i=>anchors[i]),[...projected,...debrisPaths.map(track=>track.xy)],frame);
     for(const {anchor:[x,y],center:[lx,ly]} of callouts)svg.push(line(x,y,lx,ly,'#b3976c',.8));
     for(const xy of projected){
       svg.push('<polyline fill="none" stroke="#99e1cc" stroke-width="2" points="'+xy.map(p=>p.map(num).join(',')).join(' ')+'"/>');
       let last=xy[0],distance=0;
       for(const next of xy.slice(1)){
+        if(grid.focused && withinPlot(last,frame) && !withinPlot(next,frame))svg.push(exitArrow(last,next,frame));
         const dx=next[0]-last[0],dy=next[1]-last[1];distance+=Math.hypot(dx,dy);
         if(distance>(tracks.length?42:33)){
           const angle=Math.atan2(dy,dx)*180/Math.PI;
@@ -6000,14 +6152,14 @@ const FlightLog = (() => {
     }
     const [startX,startY]=point(flight.initial.p);
     svg.push('<rect x="'+num(startX-4)+'" y="'+num(startY-4)+'" width="8" height="8" fill="#0b141b" stroke="#e9eada" stroke-width="2"/>');
-    const numbered=new Set(indices);
+    const numbered=new Set(shown);
     for(const [i,[x,y]] of anchors.entries()){
       if(!numbered.has(i))svg.push('<circle class="releaseDot" cx="'+num(x)+'" cy="'+num(y)+'" r="1.6" fill="#f2cc8e"><title>Throw '+(i+1)+'</title></circle>');
     }
     for(const [i,{anchor:[x,y],center:[lx,ly]}] of callouts.entries()){
       svg.push('<g class="releaseMark"><circle cx="'+num(x)+'" cy="'+num(y)+'" r="1.6" fill="#f2cc8e"/>',
         '<circle cx="'+num(lx)+'" cy="'+num(ly)+'" r="6" fill="#eac383"/>',
-        label(lx,ly+3.2,indices[i]+1,'middle','#112027',9.5),'</g>');
+        label(lx,ly+3.2,shown[i]+1,'middle','#112027',9.5),'</g>');
     }
     for(const pass of flight.log.fast){
       const [x,y]=point(pass.p);svg.push(line(x-5,y-5,x+5,y+5,'#ffae74',2),line(x-5,y+5,x+5,y-5,'#ffae74',2));
@@ -6018,6 +6170,7 @@ const FlightLog = (() => {
     }
     const [ex,ey]=point(flight.pos.p);
     svg.push('<path d="M 0 -5 L 5 0 L 0 5 L -5 0 Z" fill="'+color+'" stroke="#172126" transform="translate('+num(ex)+' '+num(ey)+')"/>');
+    if(grid.focused)svg.push('</g>');
     if(!compact)svg.push(label(222,271,alongTrackLabel),label(31,11,projectionLabels[axis].vertical,'start'));
     return svg.join('');
   }
@@ -6054,7 +6207,7 @@ const FlightLog = (() => {
   }
   function resultReadout(flight){
     const rescued=flight.done==='capture';
-    let budget;
+    let budget,percent;
     if(flight.skippedGuidance){
       budget='Assisted flight · compare throw count and speed';
     }else if(flight.story){
@@ -6062,25 +6215,25 @@ const FlightLog = (() => {
     }else{
       const original=Flight.budgets[Flight.fullRack];
       const recovered=rescued?Flight.budgets[flight.mask]:0;
-      const percent=(100*recovered/original).toFixed(1);
+      percent=(100*recovered/original).toFixed(1);
       budget='Δv brought home '+recovered.toFixed(3)+' / '+original.toFixed(3)+' m/s ('+percent+'%)';
     }
     return {
-      budget,
+      budget,percent,
       speed:(rescued?'Grab speed ':'Final relative speed ')+Readout.speed(Flight.norm(flight.pos.v),flight.soft)+' m/s'
     };
   }
   function card(flight,wide=matchMedia('(min-width: 680px)').matches){
     const {segments,closest,tracks}=reconstruct(flight);
-    const grid=layout(segments,flight.pose,cardFrame),crossing=projectedPass(flight,segments);
+    const grid=approachGrid(flight,segments,closest),crossing=projectedPass(flight,segments);
     const won=flight.done==='capture',name=flight.initial.name,result=outcomes[flight.done];
     const date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
     const code=Challenge.encode(flight),capture=Readout.capture(flight.soft),aids=Readout.aids(flight);
     const releases=flight.log.releases,records=releases.slice(0,9);
-    const elapsed=precise(flight.time),oxygen=Readout.clock(Math.ceil(flight.limit-flight.time));
-    const {budget,speed}=resultReadout(flight),speedValue=Readout.speed(Flight.norm(flight.pos.v),flight.soft)+' m/s';
+    const elapsed=Readout.clock(flight.time),oxygen=Readout.clock(Math.ceil(flight.limit-flight.time));
+    const {budget,speed,percent}=resultReadout(flight),speedValue=Readout.speed(Flight.norm(flight.pos.v),flight.soft)+' m/s';
     const inventory=flight.story?'Story · unlimited tools':releases.length+'/'+Flight.gear.length+' tools used';
-    const clearance=won?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
+    const clearance=won||flight.log.fast.length?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
     const fast=flight.log.fast,passCount=flight.misses?Readout.count(flight.misses,'fast entry','fast entries'):'';
     const pose=flight.pose?.id?flight.pose.label:'Station aligned';
     const summary=[result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',
@@ -6117,12 +6270,13 @@ const FlightLog = (() => {
         '<g '+mono+'>'+plot(flight,segments,grid,axis,true,tracks,crossing)+'</g></g>');
     }
     const axisY=chartTop+386;
-    content.push(label(chartX+221,axisY,alongTrackLabel,12,muted,middle));
+    content.push(label(chartX+221,axisY,(grid.focused?'Approach detail · full route in log · ':'')+alongTrackLabel,12,muted,middle));
 
     const left=wide?481:20,top=wide?120:axisY+29;
     const statusColor=won?'#b1e8c4':'#ffb29f';
-    content.push(section(left,top,won?'Grab speed':'Final relative speed'),
-      label(left,top+32,speedValue,28,statusColor,bold),
+    const scoredWin=won && percent!==undefined;
+    content.push(scoredWin?label(left,top,'Δv BROUGHT HOME',11,dim,'font-weight="650" letter-spacing="1.05"'):section(left,top,won?'Grab speed':'Final relative speed'),
+      label(left,top+32,scoredWin?percent+'%':speedValue,28,statusColor,bold),
       section(left,top+55,'Elapsed'),section(left+173,top+55,'Oxygen left'),
       label(left,top+77,elapsed,18,ink,mono),label(left+173,top+77,oxygen,18,ink,mono),
       rule(left,top+92,edge),section(left,top+112,'Equipment'),
@@ -6130,6 +6284,7 @@ const FlightLog = (() => {
       label(left,top+152,flight.story?'Auto-reload · '+Readout.count(releases.length,'throw'):budget,13.4,muted),
       label(left,top+173,aids,13.5,mint),label(left,top+193,pose,13,muted),
       rule(left,top+205,edge),section(left,top+224,'Release record'));
+    if(scoredWin)content.push(label(edge,top+30,speed,13.5,muted,end));
     let y=top+244;
     for(const [i,r] of records.entries()){
       content.push('<g class="cardRelease">',toolBadge(left+7,y-4,i+1),
@@ -6154,13 +6309,13 @@ const FlightLog = (() => {
     if(fast.length){
       const pass=fast[0];
       content.push(rule(left,y-6,edge),section(left,y+11,passCount),
-        label(left,y+32,(fast.length>1?'First at ':'')+precise(pass.time)+' · '+Readout.speed(pass.speed,flight.soft)+' m/s',14,'#ffc492'));
+        label(left,y+32,(fast.length>1?'First at ':'')+Readout.clock(pass.time)+' · '+Readout.speed(pass.speed,flight.soft)+' m/s',14,'#ffc492'));
       y+=52;
     }
     if(crossing){
       content.push(rule(left,y-6,edge),`<circle cx="${left+6}" cy="${y+9}" r="4.6" stroke="#a4ddff" fill="none" stroke-width="1.7"/>`,
         label(left+20,y+14,'Pass at Y = 0',14,'#b4e2fc',bold),
-        label(left,y+35,precise(crossing.time)+' · Z = '+Readout.signed(crossing.p[2],2)+' m',13.5,muted),
+        label(left,y+35,Readout.clock(crossing.time)+' · Z = '+Readout.signed(crossing.p[2],2)+' m',13.5,muted),
         label(left,y+54,Readout.clearance(crossing.gap,2)+' m clear of the bars',13.5,muted));
       y+=74;
     }
@@ -6364,7 +6519,7 @@ function showLossCall(result) {
 const lessons=[
   {title:'First rescue',index:0,mode:'Straight-Line',soft:false,
     brief:'Mission specialist Capt. Tommi Dylan (she/they), a former high-school star pitcher, is out to cold-reboot an inference server. The tether parts. The thruster valves stick closed. She has ten minutes of reserve oxygen.',
-    cue:'Bern still has Tommi on radar. Newton’s third law gives her one last pitch. Throw a tool away from the station and its recoil pushes her back. Choose Face away and throw the spare battery at 95%.'},
+    cue:'Newton’s third law gives her one last pitch. Throw a tool away and its recoil pushes her back. Tap the aft camera (V) or choose Face away. Select the spare battery at 95% and throw.'},
   {title:'Trim an oblique miss',index:1,mode:'Straight-Line',soft:false,
     cue:'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss, then line up a correction.'},
   {title:'Brake for the bars',index:1,mode:'Straight-Line',soft:true,
@@ -6394,8 +6549,11 @@ function scheduleHalfwayCheck(){
 }
 function updateLessonEnd(){
   const next=el('nextLesson'),i=flight.lesson;
-  next.hidden=i===null || !lessons[i+1] || flight.done!=='capture';
-  if(!next.hidden)next.title='Next lesson · '+lessons[i+1].title;
+  next.hidden=i===null || flight.done!=='capture';
+  if(next.hidden)return;
+  const label=lessons[i+1]?'Next lesson':'Fly single-use';
+  writeText(next.querySelector('span'),label);
+  next.title=lessons[i+1]?'Next lesson · '+lessons[i+1].title:'Fly this opening with single-use tools';
 }
 function stagedPitchMatches(){
   const staged=flight.stagedPitch;
@@ -6422,10 +6580,10 @@ function updateLessonCue(status=Flight.coastStatus(flight)){
       ?'Battery lined up at full power. Throw to counter the drift, then line up another correction.'
       :'Correction staged. Read the selected tool, bearing and recoil, then press Throw to resume at 1×.';
   }else if(flight.checkAt!==null){
-    cue='Find the station in the aft camera. Read Current coast to see where your recoil leads. The clock pauses for one course check.';
+    cue='Find the station in the aft camera. Try 10x on Play speed. The clock pauses halfway, or choose Coast to halfway.';
     label='Coast to halfway';
   }else if(status.kind==='grab'){
-    cue='The coast enters the full grab-bar envelope. Check the entry speed and coast to the grab.';label='Coast to grab';
+    cue=flight.checked&&!running?'Course check complete. Resume and use Play speed to fly the rest, or choose Coast to grab.':'Check entry speed. Use Play speed to coast home, or choose Coast to grab.';label='Coast to grab';
   }else if(status.kind==='fastEntry'){
     cue='This coast reaches the bars above the Soft limit. Aim along your drift and brake in the last 30 seconds before entry. Choose Line up brake to stage the pitch. You can also coast through to practice a slower return.';
     label='Line up brake';
@@ -6490,6 +6648,12 @@ function lessonAction(){
     if(h && Flight.canGrab(h,flight.soft)){
       advance(Math.max(0,h.t-flight.age)+1e-7);
     }else{
+      if(flight.lesson===2 && h && !Flight.canGrab(h,flight.soft)){
+        // Stage the brake at the advertised window, using the new position and remaining oxygen.
+        const wait=h.t-flight.age-30;
+        if(wait>0)advance(wait);
+        if(flight.done)return;
+      }
       freezeClock();
       const c=storyCorrection();
       if(c){
@@ -6508,7 +6672,11 @@ function requestFirstRescue(){
 el('storyEntry').onclick=requestFirstRescue;
 el('replayLesson').onclick=requestFirstRescue;
 el('replaceFlight').onclick=()=>beginLesson(0);
-el('nextLesson').onclick=()=>beginLesson(flight.lesson+1);
+el('nextLesson').onclick=()=>{
+  if(lessons[flight.lesson+1]){beginLesson(flight.lesson+1);return;}
+  el('debrief').close();
+  launchFlight(flight.index,flight.mode,flight.soft,flight.seed,false,null,{manual:false,preview:false,coach:false},flight.pose.id);
+};
 el('lessonAction').onclick=lessonAction;
 el('skipLesson').onclick=()=>{
   if(!flight.story||flight.lesson===null||!canPitch())return;

@@ -63,7 +63,7 @@ function showLossCall(result) {
 const lessons=[
   {title:'First rescue',index:0,mode:'Straight-Line',soft:false,
     brief:'Mission specialist Capt. Tommi Dylan (she/they), a former high-school star pitcher, is out to cold-reboot an inference server. The tether parts. The thruster valves stick closed. She has ten minutes of reserve oxygen.',
-    cue:'Bern still has Tommi on radar. Newton’s third law gives her one last pitch. Throw a tool away from the station and its recoil pushes her back. Choose Face away and throw the spare battery at 95%.'},
+    cue:'Newton’s third law gives her one last pitch. Throw a tool away and its recoil pushes her back. Tap the aft camera (V) or choose Face away. Select the spare battery at 95% and throw.'},
   {title:'Trim an oblique miss',index:1,mode:'Straight-Line',soft:false,
     cue:'Sideways drift carries across the station face. Try Face away and throw the 95% battery. Read the side and distance of the predicted miss, then line up a correction.'},
   {title:'Brake for the bars',index:1,mode:'Straight-Line',soft:true,
@@ -93,8 +93,11 @@ function scheduleHalfwayCheck(){
 }
 function updateLessonEnd(){
   const next=el('nextLesson'),i=flight.lesson;
-  next.hidden=i===null || !lessons[i+1] || flight.done!=='capture';
-  if(!next.hidden)next.title='Next lesson · '+lessons[i+1].title;
+  next.hidden=i===null || flight.done!=='capture';
+  if(next.hidden)return;
+  const label=lessons[i+1]?'Next lesson':'Fly single-use';
+  writeText(next.querySelector('span'),label);
+  next.title=lessons[i+1]?'Next lesson · '+lessons[i+1].title:'Fly this opening with single-use tools';
 }
 function stagedPitchMatches(){
   const staged=flight.stagedPitch;
@@ -121,10 +124,10 @@ function updateLessonCue(status=Flight.coastStatus(flight)){
       ?'Battery lined up at full power. Throw to counter the drift, then line up another correction.'
       :'Correction staged. Read the selected tool, bearing and recoil, then press Throw to resume at 1×.';
   }else if(flight.checkAt!==null){
-    cue='Find the station in the aft camera. Read Current coast to see where your recoil leads. The clock pauses for one course check.';
+    cue='Find the station in the aft camera. Try 10x on Play speed. The clock pauses halfway, or choose Coast to halfway.';
     label='Coast to halfway';
   }else if(status.kind==='grab'){
-    cue='The coast enters the full grab-bar envelope. Check the entry speed and coast to the grab.';label='Coast to grab';
+    cue=flight.checked&&!running?'Course check complete. Resume and use Play speed to fly the rest, or choose Coast to grab.':'Check entry speed. Use Play speed to coast home, or choose Coast to grab.';label='Coast to grab';
   }else if(status.kind==='fastEntry'){
     cue='This coast reaches the bars above the Soft limit. Aim along your drift and brake in the last 30 seconds before entry. Choose Line up brake to stage the pitch. You can also coast through to practice a slower return.';
     label='Line up brake';
@@ -189,6 +192,12 @@ function lessonAction(){
     if(h && Flight.canGrab(h,flight.soft)){
       advance(Math.max(0,h.t-flight.age)+1e-7);
     }else{
+      if(flight.lesson===2 && h && !Flight.canGrab(h,flight.soft)){
+        // Stage the brake at the advertised window, using the new position and remaining oxygen.
+        const wait=h.t-flight.age-30;
+        if(wait>0)advance(wait);
+        if(flight.done)return;
+      }
       freezeClock();
       const c=storyCorrection();
       if(c){
@@ -207,7 +216,11 @@ function requestFirstRescue(){
 el('storyEntry').onclick=requestFirstRescue;
 el('replayLesson').onclick=requestFirstRescue;
 el('replaceFlight').onclick=()=>beginLesson(0);
-el('nextLesson').onclick=()=>beginLesson(flight.lesson+1);
+el('nextLesson').onclick=()=>{
+  if(lessons[flight.lesson+1]){beginLesson(flight.lesson+1);return;}
+  el('debrief').close();
+  launchFlight(flight.index,flight.mode,flight.soft,flight.seed,false,null,{manual:false,preview:false,coach:false},flight.pose.id);
+};
 el('lessonAction').onclick=lessonAction;
 el('skipLesson').onclick=()=>{
   if(!flight.story||flight.lesson===null||!canPitch())return;

@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const scripts=['physics','readout'].map(name=>fs.readFileSync(path.join(root,'src',name+'.js'),'utf8'));
-const {F,trimHint}=vm.compileFunction(scripts.join('\n')+'\nreturn {F:Flight,trimHint};',['Catalog'])(require('./catalog-data.cjs'));
+const {F,trimHint,missTrim}=vm.compileFunction(scripts.join('\n')+'\nreturn {F:Flight,trimHint,missTrim};',['Catalog'])(require('./catalog-data.cjs'));
 const {norm,unit,add,sub,scale,clamp}=F;
 const tools=F.gear.map((g,i)=>i).sort((a,b)=>F.impulse(a,F.fullRack)-F.impulse(b,F.fullRack));
 function coast(state,left,mode,soft){
@@ -56,9 +56,11 @@ function hintPilot(initial,mode,soft,deadline,story,useHint=true){
       bearing=unit(p.s.v);wanted=Math.max(.005,norm(p.s.v)-.065);
     }else{
       const near=now.near;
-      const miss=near.t>.03?sub(near.p,near.bar):sub(p.s.p,F.nearest(p.s.p));
-      bearing=useHint?suggestedBearing(trimHint(miss,...F.angles(bearing)),bearing):unit(p.s.p);
-      wanted=near.t>18?(near.d+1)/near.t:.045;
+      const interior=near.t>1 && near.t<p.left-.03;
+      const trim=interior?missTrim(p.s,near,near.t,p.left,mode,F.poses[0],p.mask,story):null;
+      const miss=trim?trim.bearing:near.t>.03?sub(near.p,near.bar):sub(p.s.p,F.nearest(p.s.p));
+      bearing=useHint && miss?suggestedBearing(trimHint(miss,...F.angles(bearing)),bearing):unit(p.s.p);
+      wanted=trim?.recoil??(near.t>18?(near.d+1)/near.t:.045);
     }
     const {tool,power}=choosePitch(wanted,p.mask);p.pitch(tool,power,bearing);
   }

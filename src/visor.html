@@ -83,6 +83,7 @@ __COCKPIT_STYLE__</style>
           </div>
           <div class="view forward">
             <canvas tabindex="0" id="forward" role="application" aria-label="Throw direction. Drag or use arrow keys to aim. Shift for fine aim."></canvas>
+            <span class="securedFlag">Grab bars secured</span>
             <div class="pauseFlag" id="paused" role="status">
               <span>PAUSED</span>
               <small id="pausedLineup" hidden>Lineup live</small>
@@ -92,10 +93,11 @@ __COCKPIT_STYLE__</style>
           <article class="aftPod">
             <div class="panelTitle">
               <h2 class="camLabel"><span class="indicator"></span>Aft camera</h2>
-              <span class="cameraMeta">Reverse view</span>
+              <span class="cameraMeta">Turn around · V</span>
             </div>
             <div class="view aft">
               <canvas id="aft" role="img" aria-label="Unmirrored view opposite the forward visor"></canvas>
+              <button id="turnAft" type="button" aria-label="Turn to the aft view" aria-keyshortcuts="V" title="Turn to the aft view (V). Turn again to face the original direction."></button>
               <span class="gameOverFlag" aria-hidden="true">GAME OVER</span>
             </div>
           </article>
@@ -140,6 +142,7 @@ __COCKPIT_STYLE__</style>
               </div>
               <div class="readout" id="coast"></div>
               <p id="advice"></p>
+              <p id="debrisClearance" hidden></p>
               <p id="clockWarning" role="status" hidden></p>
               <div class="driftData">
                 <span class="micro">Drift direction</span>
@@ -228,7 +231,7 @@ __COCKPIT_STYLE__</style>
                 <label class="scenarioTile">
                   <input id="pick-3" type="radio" name="scenarioChoice" value="3">
                   <span class="scenarioArt"><svg viewBox="0 4 180 73" aria-hidden="true" focusable="false"><use href="#scenario-art-scene-3" width="180" height="80"/></svg></span>
-                  <span class="scenarioCaption">Random Drift</span>
+                  <span class="scenarioCaption">Random Drift <small>Step up</small></span>
                 </label>
                 <label class="scenarioTile">
                   <input id="pick-2" type="radio" name="scenarioChoice" value="2">
@@ -339,9 +342,9 @@ __COCKPIT_STYLE__</style>
           one.</p>
         </details>
         <h3>Pitch from the forward visor</h3>
-        <p>Begin flight starts the oxygen clock. Drag to turn or tap to center a bearing. Select a slot, adjust power
+        <p>Begin flight starts the oxygen clock and unlocks aiming and throwing. Drag to turn or tap to center a bearing. Select a slot, adjust power
         and press Throw. Watch the tool leave just below the crosshair. A gentle toss stays in view longer. Turning
-        alone leaves your velocity unchanged.</p>
+        alone leaves your velocity unchanged. Tap the aft camera or press V to turn exactly around. Repeat to return to your previous bearing.</p>
         <h3>Preview a throw</h3>
         <p>Switch on Preview throw in the instrument panel to see where your suit would go if you released the selected
         tool now. The solid violet line and filled arrows update with your aim, tool and power. Farther arrows are
@@ -363,12 +366,12 @@ __COCKPIT_STYLE__</style>
         <p>Tommi is in Earth’s shadow. The Moon is new. On this pass, it lies below Tommi’s horizon along with the
         Sun. Look for the faint stars above Earth’s curved edge. They give you a reference as you turn the visor.</p>
         <h3>Read both cameras</h3>
-        <p>STN points toward the station when it leaves the frame. The aft view looks straight behind you. A pair of
+        <p>The AFT cue groups bearings behind the forward visor. COVER HIT and FRAME HIT keep their own warning arrows. STN points toward the station when it leaves the frame. The aft view looks straight behind you. A pair of
         amber bands marks one end of the station in both views. Mint arrows point along your committed coast. Nearby
         dashes are brighter and thicker. Farther arrows look smaller. Looking straight down a Straight-Line coast,
         you’ll see a ring and the distance from your suit to contact or to your position at oxygen expiry. If the
         path looks end-on, read the time, side and clearance under Current coast. A negative range rate means the gap
-        to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the chosen grab limit. Any-speed flights show the soft limit as a reference. Positive X
+        to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the chosen grab limit. Positive X
         points away from Earth, +Y along the orbit and +Z above its plane. The whole <span id="envelopeSize"></span>
         m outline (the thin side points along track in the standard orientation) is within reach, including the gaps between panels.</p>
         <p>Choose <strong>Random station orientation</strong> in New flight to tilt the station for this opening.
@@ -378,7 +381,7 @@ __COCKPIT_STYLE__</style>
         <p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you
         which way to aim in the forward visor. A pitch up and right nudges the suit down and left. If you reach the
         top or bottom of the visor, turn along the horizon toward the heading in the hint. On a future miss,
-        match the estimated trim to the recoil beside <strong>Throw power</strong>. With single-use tools, the lightest remaining tool is selected after each release. Your power setting stays the same. Check both before you throw.</p>
+        compare the estimated trim with the recoil on each tool tile at the selected power. If this pass needs more recoil than one throw can deliver, use Preview to plan a later approach. With single-use tools, the lightest remaining tool is selected after each release. Your power setting stays the same. Check both before you throw.</p>
         <p><strong>Fast entry in</strong> gives your projected speed at the bars. The gauge shows your speed now.
         Follow the mint <strong>DRIFT</strong> cue or press <strong>Face drift</strong> to aim along your motion.
         On a clear Firm or Soft approach, line up early and aim to brake in the final 30 seconds before entry.
@@ -409,7 +412,7 @@ __COCKPIT_STYLE__</style>
         <strong>FRAME HIT</strong> arrow points toward it. A collision warning takes priority over station braking.
         Fast-forward drops to 1× with up to 65 seconds to react. Dodgeball Coach can suggest a tool, power and
         bearing to clear both pieces. Use Preview throw to check where that dodge leaves you relative to the bars.
-        When Current coast says a piece clears in a few seconds, hold the coast through the pass, then trim home.</p>
+        A clearance note describes that piece. Read the station forecast alongside it. If the bars are still a miss when you clear the piece, guided fast-forward returns to 1x so you can correct.</p>
         <h3>Share an opening</h3>
         <p>Random Drift and Random Dodgeball each have 4,096 openings. Dodgeball draws from eight debris layouts.
         Choose <strong>Generate opening</strong> to try another. Paste a friend’s ten-character code or link
@@ -417,7 +420,7 @@ __COCKPIT_STYLE__</style>
         F1 codes start with relative navigation online. F2 codes start in Manual. Earlier seed formats belong to the builds that created them. The flight card prints the same code. Retry restores its starting settings.</p>
         <p>Choose <strong>Flight card</strong> in the debrief to share your flown path. Both charts use the same
         along-track axis and scale. The upper chart shows radial motion and the lower chart shows cross-track motion.
-        Match the numbered throws between them. A blue ring marks a pass across Y = 0 that appears inside the
+        Match the numbered throws between them. On a long runaway coast the card focuses on the approach and marks where the path continues. The log keeps the full route and precise event times. On a single-use win the card leads with the percentage of Δv brought home. A blue ring marks a pass across Y = 0 that appears inside the
         grab volume in the upper view but clears the bars in three dimensions. In Dodgeball, the card also gives
         the closest suit-to-debris gap and its time for each piece.</p>
         <h3>Story / guided rescue</h3>
@@ -479,12 +482,12 @@ __COCKPIT_STYLE__</style>
         </section>
       </div>
       <div class="dialogFoot endActions">
+        <button id="nextLesson" class="primary" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-next"/></svg><span>Next lesson</span></button>
         <button id="viewLog"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-log"/></svg><span>Flight log</span></button>
         <button id="retry"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-retry"/></svg><span>Retry</span></button>
         <button id="again"><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-new"/></svg><span>New flight</span></button>
         <button id="openShareCard" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-card"/></svg><span>Flight card</span></button>
         <button id="copyEndSeed" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-link"/></svg><span>Copy link</span></button>
-        <button id="nextLesson" hidden><svg class="actionIcon" aria-hidden="true" focusable="false"><use href="#act-next"/></svg><span>Next lesson</span></button>
       </div>
     </dialog>
     <dialog id="flightLog" aria-labelledby="logTitle">

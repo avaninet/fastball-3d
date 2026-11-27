@@ -23,7 +23,7 @@
     const buttons=[...el('debrief').querySelectorAll('.endActions button:not([hidden])')];
     const expected=['viewLog','retry','again'];
     if(!el('debriefShare').hidden)expected.push('openShareCard','copyEndSeed');
-    if(!el('nextLesson').hidden)expected.push('nextLesson');
+    if(!el('nextLesson').hidden)expected.unshift('nextLesson');
     eq(buttons.map(button=>button.id).join()===expected.join(),'applicable debrief actions in keyboard order');
     const rects=buttons.map(button=>button.getBoundingClientRect());
     eq(rects[1].left>=rects[0].right && rects[2].left>=rects[1].right,'three distinct debrief columns');
@@ -304,7 +304,7 @@
     }
   });
   test('Cockpit rectangles, hit targets and keyboard focus',()=>{
-    configure(0,'Straight-Line');scrollTo(0,0);
+    configure(0,'Straight-Line',true);scrollTo(0,0);
     for(const id of ['forward','aft','tool0','tool1','tool2','tool3','tool4','tool5','tool6','tool7','tool8','clockRate','power','throw','coast','advice','speedGauge','speedRef','pause']){
       const node=el(id),r=node.getBoundingClientRect();
       if(['forward','tool0','power','throw','advice'].includes(id))rects[id]=[r.x,r.y,r.width,r.height].map(Math.round);
@@ -429,7 +429,7 @@
           eq(new Set(strokes.map(s=>s[0])).size>2&&new Set(strokes.map(s=>s[1])).size>2,'weight and brightness vary with range');
           if(mode==='Straight-Line')eq(captions.includes('AFTER THROW'),'distinct end-on diamond caption');
           captions=[];Visor.render(canvas,az+180,-elevation,flight,small,null,path);
-          eq(captions.includes(small?'PREVIEW FORWARD':'PREVIEW AFT'),'opposite lens shows the preview bearing');
+          eq((small?captions.includes('PREVIEW FORWARD'):captions.some(s=>s.startsWith('AFT · ') && s.includes('Preview'))),'opposite lens shows the preview bearing');
           strokes=[];Visor.render(canvas,az,elevation,flight,small);
           eq(!strokes.length,'violet disappears when preview is off');
         }
@@ -705,7 +705,7 @@
     try{
       for(const fallback of [false,true]){
         if(fallback){root.style.setProperty('--sans','Arial, sans-serif');root.style.setProperty('--mono','"Courier New", monospace');}
-        for(const [w,h] of [[320,568],[375,553],[360,640],[375,667],[667,375],[1024,650],[1280,600],[1366,625],[1366,768]]){
+        for(const [w,h] of [[320,568],[375,553],[360,640],[360,740],[375,667],[667,375],[1024,650],[1280,600],[1366,625],[1366,768]]){
           frame.style.width=w+'px';frame.style.height=h+'px';
           for(const story of [false,true]){
             if(story)beginLesson(0);else configure(0,'Straight-Line');
@@ -737,7 +737,8 @@
     eq(!send('keydown','ArrowLeft','ArrowLeft'),'paused visor still owns aiming keys');
     for(const [slot,i] of rackOrder.entries()){
       const button=el('tool'+i);
-      eq(button.getAttribute('aria-label')===[slot+1,Flight.gear[i].name,button.querySelector('small').textContent].join(' '),'spoken slot '+slot);
+      const spoken=button.getAttribute('aria-label');
+      eq(spoken.startsWith((slot+1)+' '+Flight.gear[i].name) && (button.classList.contains('spent') || spoken.includes(Flight.gear[i].mass.toFixed(1)+' kg')) && spoken.includes(button.querySelector('small').textContent),'spoken slot '+slot);
     }
   });
   test('Locked cockpit preserves native repeat and Space activation on other controls',()=>{
@@ -792,6 +793,71 @@
     keys('ArrowUp');instruments();eq(!cue().startsWith('Correction staged') && !el('lessonAction').hidden,'can re-stage after turning');
     beginLesson(0);click('pause');advance(600);
     eq(flight.done==='oxygen' && cue().includes('Retry') && el('lessonAction').hidden,'terminal loss cue');
+  });
+  test('Aft turns reverse the current bearing and recoil follows the selected stop and inventory',()=>{
+    const battery=el('tool5').querySelector('small');
+    eq(el('turnAft').disabled && el('message').textContent.includes('Begin flight to aim and throw'),'standard start explained');
+    click('pause');keys('ArrowUp');keys('ArrowLeft');
+    const original=Flight.direction(yaw,pitch);
+    click('turnAft');close(dot(original,Flight.direction(yaw,pitch)),-1);
+    keys('v');close(dot(original,Flight.direction(yaw,pitch)),1);
+    keys('v',false,visor,true);close(dot(original,Flight.direction(yaw,pitch)),1);
+    eq(!flight.throws && !flight.usedFaceDrift,'view turn spends nothing and uses no assist');
+    set('power',63);eq(battery.textContent===(Flight.impulse(5,flight.mask)*.65).toFixed(3)+' m/s','recoil snaps during drag');
+    click('tool4');setView(stationDirection());click('throw');
+    eq(el('message').textContent.includes('pushed you away') && battery.textContent===(Flight.impulse(5,flight.mask)*.65).toFixed(3)+' m/s','actual first recoil and lighter rack');
+    click('manualNav');eq(battery.textContent==='4.8 kg' && !el('showPreview').getClientRects().length,'offline rack and controls');
+    const before=Flight.direction(yaw,pitch);keys('v');close(dot(before,Flight.direction(yaw,pitch)),-1);
+    click('pause');eq(el('turnAft').disabled,'standard paused input locked');
+  });
+  test('Expensive Random Drift trims respect the real rack',()=>{
+    const replay=Challenge.decode('F1D-5JJ00J');
+    start(replay.index,replay.mode,replay.soft,replay.seed);click('pause');
+    eq(el('advice').textContent.includes('more than one throw') && el('advice').textContent.includes('later approach') && !el('advice').textContent.includes('Trim ≈'),'affordable later approach offered');
+    flight.mask=1<<6;instruments();
+    eq(el('advice').textContent.includes('remaining rack') && !el('advice').textContent.includes('Trim ≈'),'checks remaining single-use inventory');
+    flight.story=true;instruments();eq(!el('advice').textContent.includes('remaining rack'),'Story reload accounted for');
+  });
+  test('A clear Coach dodge keeps the station miss visible and slows once at clearance',()=>{
+    const r=Challenge.decode('F1B-6P400X');
+    start(r.index,r.mode,r.soft,r.seed,false,null,{coach:true,preview:false});click('pause');
+    setView(Flight.direction(-63.14193,11.39882));click('throw');
+    advance(flight.forecast.debris.hit.t-Debris.warningLead);instruments();
+    const aim=coachCache.aim;
+    choose(aim.tool);changePower(aim.power);setView(aim.dir);click('throw');
+    eq(!flight.forecast.debris.hit && !flight.forecast.hits.length,'actual legal dodge clears debris and misses bars');
+    eq(!el('debrisClearance').hidden && el('debrisClearance').textContent.includes('Frame clears by') && el('coast').textContent.startsWith('Miss by'),'both outcomes visible');
+    const pass=flight.forecast.debris.approaches.find(p=>p.body.short==='Frame');
+    set('clockRate',3);advance(pass.tNear-flight.age+1);
+    eq(rate===1 && flight.missBrakeGiven,'clock returns at closest debris clearance');
+    set('clockRate',3);advance(1);eq(rate===30,'pilot can fast-forward again');
+  });
+  test('Warnings leave Throw in place on desktop and compact screens',()=>{
+    const frame=window.frameElement,original=frame.style.cssText;
+    try{
+      for(const [w,h] of [[1440,900],[1366,768],[360,740],[667,375]]){
+        frame.style.width=w+'px';frame.style.height=h+'px';scrollTo(0,0);
+        start(4,'Straight-Line',false);click('pause');setView(flight.pos.p);changePower(100);click('throw');
+        const before=el('throw').getBoundingClientRect();
+        set('clockRate',3);advance(8);instruments();
+        const after=el('throw').getBoundingClientRect();
+        eq(!el('clockWarning').hidden && after.bottom<=h,'warning and Throw reachable '+w);
+        close(before.top,after.top,.5);close(before.left,after.left,.5);
+      }
+    }finally{frame.style.cssText=original;}
+  });
+  test('A receding preview, overspeed debrief and runaway card describe the flown approach',()=>{
+    configure(0,'Straight-Line');setView(stationDirection());click('throw');
+    setView(flight.pos.p);choose(4);click('showPreview');
+    eq(describePreview(predictThrow()).includes('Still opening at'),'opening preview names the range rate');
+    fixture('Straight-Line',true,[0,-25,0],[0,.266,0]);advance(600);completeLossTransition();
+    eq(flight.log.fast.length && el('endCopy').textContent.includes('0.266 m/s') && el('endCopy').textContent.includes('0.080 m/s'),'actual entry and limit in oxygen debrief');
+    for(const wide of [true,false]){
+      const svg=new DOMParser().parseFromString(FlightLog.card(flight,wide),'image/svg+xml');
+      eq(svg.querySelectorAll('.cardPlot .offChart').length===2 && svg.documentElement.textContent.includes('Approach detail'),'runaway path leaves the shared approach window');
+      eq(!/\d:\d\d\.\d{3}/.test(svg.documentElement.textContent),'card times in whole seconds');
+    }
+    click('viewLog');eq(/\d:\d\d\.\d{3}/.test(el('logEvents').textContent),'log keeps precise fast entry');
   });
   test('Coast distinguishes an outward start from a past flyby',()=>{
     configure(2,'Straight-Line');
@@ -932,13 +998,18 @@
         tick(coast,30);eq(running&&!flight.checked,'clock continues past halfway');
         click('lessonAction');eq(!running&&stagedPitchMatches(),'requested correction staged '+i);
         if(i===1)eq(Flight.gear[selected].mass<=1.2,'light correction');
-        if(i===2)eq(dot(Flight.direction(yaw,pitch),unit(flight.pos.v))>.999,'brake measured drift');
+        if(i===2){
+          eq(dot(Flight.direction(yaw,pitch),unit(flight.pos.v))>.999,'brake measured drift');
+          close(flight.forecast.hits[0].t-flight.age,30,.03);
+        }
         click('throw');
       }
       click('lessonAction');eq(flight.done==='capture'&&!el('upmassHero').hidden,'lesson '+i+' outcome '+flight.done+' / '+el('endCopy').textContent+' / '+el('lessonCue').textContent);
       if(i<3)click('nextLesson');
     }
-    click('retry');click('skipLesson');eq(!flight.story&&running&&el('lesson').hidden,'manual handover');
+    eq(el('nextLesson').textContent.includes('Fly single-use'),'last lesson offers an independent flight');
+    click('nextLesson');eq(!flight.story && running && flight.lesson===null && flight.mode==='Orbital' && flight.mask===Flight.fullRack,'fresh single-use opening');
+    beginLesson(3);click('skipLesson');eq(!flight.story&&running&&el('lesson').hidden,'manual handover');
     click('manual');enterLesson('replayLesson');eq(flight.lesson===0 && !started,'replay');
   });
   function tick(seconds,multiplier){
@@ -1227,7 +1298,8 @@
       eq([date,Challenge.encode(flight),outcomes[ending],flight.throws+'/'+Flight.gear.length+' tools used'].every(s=>art.textContent.includes(s)),'actual log and local completion date');
       eq([...art.querySelectorAll('.cardPlot')].every(chart=>chart.querySelectorAll('.releaseMark').length===flight.throws),'all real releases on both plots');
       const labels=[...art.querySelectorAll('text')].map(node=>node.textContent);
-      eq(labels.includes(budget)&&labels.includes(Readout.speed(norm(flight.pos.v),flight.soft)+' m/s'),'both metrics printed on card');
+      if(ending==='capture')eq(labels.includes(percent+'%') && labels.includes(speed),'score and grab speed printed on card');
+      else eq(labels.includes(budget)&&labels.includes(Readout.speed(norm(flight.pos.v),flight.soft)+' m/s'),'loss metrics printed on card');
       const savedCopy=Replays.copy;let copied;
       try{
         Replays.copy=text=>{copied=text;};click('copyChallenge');
@@ -1252,7 +1324,7 @@
         if(annotated){
           const [upper,lower]=plots.map(p=>p.querySelector('.crossingMark circle'));
           eq(upper.getAttribute('cx')===lower.getAttribute('cx')&&upper.getAttribute('cy')!==lower.getAttribute('cy'),'shared along-track axis, different vertical position');
-          eq(svg.documentElement.textContent.includes('0:08.000 · Z = '+Readout.signed(z,2)+' m')&&svg.documentElement.textContent.includes('5.00 m clear'),'measured event time, signed Z and 3D gap');
+          eq(svg.documentElement.textContent.includes('0:08 · Z = '+Readout.signed(z,2)+' m')&&svg.documentElement.textContent.includes('5.00 m clear'),'measured event time, signed Z and 3D gap');
         }
       }
     }
@@ -1404,7 +1476,7 @@
     click('throw');eq(rate===1&&slider.value==='0','release resets to first stop');
     for(const soft of [true,false]){
       fixture('Straight-Line',soft,[5,-18,3],[-.011,.105,.023]);instruments();
-      eq(el('speedGauge').classList.contains('over')===soft && el('speedRef').textContent.includes('0.080'),'threshold');
+      eq(el('speedGauge').classList.contains('over')===soft && el('speedRef').hidden===!soft && (soft?el('speedRef').textContent.includes('0.080'):el('speedGauge').classList.contains('unlimited')),'threshold');
       eq(el('velX').textContent==='-0.0110'&&el('velY').textContent==='+0.1050'&&el('velZ').textContent==='+0.0230','signed axes');
       eq(el('suitMass').textContent===Flight.mass(flight.mask).toFixed(1)+' kg','mass');
     }

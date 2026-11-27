@@ -45,6 +45,27 @@ const FlightLog = (() => {
     const cx=frame.cx-(left+right)*scale/2,cy=frame.cy+(top+bottom)*scale/2;
     return {scale,cx,cy,project:(p,axis)=>[cx-p[1]*scale,cy-p[axis]*scale]};
   }
+  function approachGrid(flight,segments,closest){
+    const full=layout(segments,flight.pose,cardFrame);
+    if(flight.done==='capture')return full;
+    const radius=Math.max(30,closest+12);
+    const approach=segments.map(segment=>segment.filter(sample=>Flight.clearance(sample.p,flight.pose)<=radius));
+    if(!approach.some(segment=>segment.length))return full;
+    const detail=layout(approach,flight.pose,cardFrame);
+    return detail.scale>full.scale*1.6?{...detail,focused:true}:full;
+  }
+  function withinPlot([x,y],{left,right,top,bottom},pad=0){
+    return x>=left+pad && x<=right-pad && y>=top+pad && y<=bottom-pad;
+  }
+  // Place the arrow at the actual intersection of the departing path and the plot edge.
+  function exitArrow(a,b,frame){
+    const dx=b[0]-a[0],dy=b[1]-a[1];
+    const tx=dx?((dx>0?frame.right:frame.left)-a[0])/dx:Infinity;
+    const ty=dy?((dy>0?frame.bottom:frame.top)-a[1])/dy:Infinity;
+    const t=Math.min(tx,ty),angle=Math.atan2(dy,dx)*180/Math.PI;
+    return '<path class="offChart" d="M 0 0 L -9 -4 L -9 4 Z" fill="#99e1cc" transform="translate('+
+      num(a[0]+t*dx)+' '+num(a[1]+t*dy)+') rotate('+num(angle)+')"/>';
+  }
   function outline(corners,project){
     const points=corners.map(project).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
     function chain(ordered){
@@ -143,7 +164,7 @@ const FlightLog = (() => {
       rows.push('<path d="M 0 '+y+' h 25" stroke="'+item.color+'" stroke-width="2" stroke-dasharray="'+(item.dash||'none')+'"/><path d="M 28 '+y+' l -7 -3 v 6 Z" fill="'+item.color+'"/>',
         '<text x="36" y="'+(y+4)+'" fill="'+item.color+'">'+item.name+'</text>');
       rows.push('<text x="300" y="'+(y+4)+'" text-anchor="end">'+(i?item.gap.toFixed(2)+' m':'Closest 3D suit–box gap')+'</text>',
-        '<text x="416" y="'+(y+4)+'" text-anchor="end">'+(i?Readout.clock(item.time):'Flight time')+'</text>');
+        '<text x="416" y="'+(y+4)+'" text-anchor="end">'+(i?precise(item.time):'Flight time')+'</text>');
     }
     return '<g class="debrisKey" fill="#d5dcdf" font-size="13">'+rows.join('')+'</g>';
   }
@@ -168,6 +189,7 @@ const FlightLog = (() => {
     for(let i=Math.ceil((cy-bottom+4)/(step*scale));cy-i*step*scale>=top;i++){
       const y=cy-i*step*scale;svg.push(line(left,y,right,y,i?'#25323a':'#637782'),label(left-5,y+4,i*step,'end'));
     }
+    if(grid.focused)svg.push(`<defs><clipPath id="approach${axis}"><rect x="${left}" y="${top}" width="${right-left}" height="${bottom-top}"/></clipPath></defs><g clip-path="url(#approach${axis})">`);
     const corners=(flight.pose??Flight.poses[0]).corners;
     svg.push('<polygon class="grabEnvelope" points="'+outline(corners,point)+'" fill="#29493d" stroke="#91c4a4"/>');
     const debrisPaths=tracks.map(track=>({...track,xy:track.points.map(point)}));
@@ -178,12 +200,14 @@ const FlightLog = (() => {
     // numbered callouts over the flight and mark every other release with a dot.
     const count=Math.min(anchors.length,compact?9:16);
     const indices=Array.from({length:count},(_,i)=>compact||count===anchors.length?i:Math.round(i*(anchors.length-1)/(count-1)));
-    const callouts=releaseLabels(indices.map(i=>anchors[i]),[...projected,...debrisPaths.map(track=>track.xy)],frame);
+    const shown=indices.filter(i=>!grid.focused || withinPlot(anchors[i],frame,4));
+    const callouts=releaseLabels(shown.map(i=>anchors[i]),[...projected,...debrisPaths.map(track=>track.xy)],frame);
     for(const {anchor:[x,y],center:[lx,ly]} of callouts)svg.push(line(x,y,lx,ly,'#b3976c',.8));
     for(const xy of projected){
       svg.push('<polyline fill="none" stroke="#99e1cc" stroke-width="2" points="'+xy.map(p=>p.map(num).join(',')).join(' ')+'"/>');
       let last=xy[0],distance=0;
       for(const next of xy.slice(1)){
+        if(grid.focused && withinPlot(last,frame) && !withinPlot(next,frame))svg.push(exitArrow(last,next,frame));
         const dx=next[0]-last[0],dy=next[1]-last[1];distance+=Math.hypot(dx,dy);
         if(distance>(tracks.length?42:33)){
           const angle=Math.atan2(dy,dx)*180/Math.PI;
@@ -195,14 +219,14 @@ const FlightLog = (() => {
     }
     const [startX,startY]=point(flight.initial.p);
     svg.push('<rect x="'+num(startX-4)+'" y="'+num(startY-4)+'" width="8" height="8" fill="#0b141b" stroke="#e9eada" stroke-width="2"/>');
-    const numbered=new Set(indices);
+    const numbered=new Set(shown);
     for(const [i,[x,y]] of anchors.entries()){
       if(!numbered.has(i))svg.push('<circle class="releaseDot" cx="'+num(x)+'" cy="'+num(y)+'" r="1.6" fill="#f2cc8e"><title>Throw '+(i+1)+'</title></circle>');
     }
     for(const [i,{anchor:[x,y],center:[lx,ly]}] of callouts.entries()){
       svg.push('<g class="releaseMark"><circle cx="'+num(x)+'" cy="'+num(y)+'" r="1.6" fill="#f2cc8e"/>',
         '<circle cx="'+num(lx)+'" cy="'+num(ly)+'" r="6" fill="#eac383"/>',
-        label(lx,ly+3.2,indices[i]+1,'middle','#112027',9.5),'</g>');
+        label(lx,ly+3.2,shown[i]+1,'middle','#112027',9.5),'</g>');
     }
     for(const pass of flight.log.fast){
       const [x,y]=point(pass.p);svg.push(line(x-5,y-5,x+5,y+5,'#ffae74',2),line(x-5,y+5,x+5,y-5,'#ffae74',2));
@@ -213,6 +237,7 @@ const FlightLog = (() => {
     }
     const [ex,ey]=point(flight.pos.p);
     svg.push('<path d="M 0 -5 L 5 0 L 0 5 L -5 0 Z" fill="'+color+'" stroke="#172126" transform="translate('+num(ex)+' '+num(ey)+')"/>');
+    if(grid.focused)svg.push('</g>');
     if(!compact)svg.push(label(222,271,alongTrackLabel),label(31,11,projectionLabels[axis].vertical,'start'));
     return svg.join('');
   }
@@ -249,7 +274,7 @@ const FlightLog = (() => {
   }
   function resultReadout(flight){
     const rescued=flight.done==='capture';
-    let budget;
+    let budget,percent;
     if(flight.skippedGuidance){
       budget='Assisted flight · compare throw count and speed';
     }else if(flight.story){
@@ -257,25 +282,25 @@ const FlightLog = (() => {
     }else{
       const original=Flight.budgets[Flight.fullRack];
       const recovered=rescued?Flight.budgets[flight.mask]:0;
-      const percent=(100*recovered/original).toFixed(1);
+      percent=(100*recovered/original).toFixed(1);
       budget='Δv brought home '+recovered.toFixed(3)+' / '+original.toFixed(3)+' m/s ('+percent+'%)';
     }
     return {
-      budget,
+      budget,percent,
       speed:(rescued?'Grab speed ':'Final relative speed ')+Readout.speed(Flight.norm(flight.pos.v),flight.soft)+' m/s'
     };
   }
   function card(flight,wide=matchMedia('(min-width: 680px)').matches){
     const {segments,closest,tracks}=reconstruct(flight);
-    const grid=layout(segments,flight.pose,cardFrame),crossing=projectedPass(flight,segments);
+    const grid=approachGrid(flight,segments,closest),crossing=projectedPass(flight,segments);
     const won=flight.done==='capture',name=flight.initial.name,result=outcomes[flight.done];
     const date=new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(flight.finishedAt);
     const code=Challenge.encode(flight),capture=Readout.capture(flight.soft),aids=Readout.aids(flight);
     const releases=flight.log.releases,records=releases.slice(0,9);
-    const elapsed=precise(flight.time),oxygen=Readout.clock(Math.ceil(flight.limit-flight.time));
-    const {budget,speed}=resultReadout(flight),speedValue=Readout.speed(Flight.norm(flight.pos.v),flight.soft)+' m/s';
+    const elapsed=Readout.clock(flight.time),oxygen=Readout.clock(Math.ceil(flight.limit-flight.time));
+    const {budget,speed,percent}=resultReadout(flight),speedValue=Readout.speed(Flight.norm(flight.pos.v),flight.soft)+' m/s';
     const inventory=flight.story?'Story · unlimited tools':releases.length+'/'+Flight.gear.length+' tools used';
-    const clearance=won?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
+    const clearance=won||flight.log.fast.length?'':'Closest approach flown '+Readout.clearance(closest,2)+' m';
     const fast=flight.log.fast,passCount=flight.misses?Readout.count(flight.misses,'fast entry','fast entries'):'';
     const pose=flight.pose?.id?flight.pose.label:'Station aligned';
     const summary=[result+' in '+elapsed,Readout.count(releases.length,'throw'),oxygen+' oxygen',
@@ -312,12 +337,13 @@ const FlightLog = (() => {
         '<g '+mono+'>'+plot(flight,segments,grid,axis,true,tracks,crossing)+'</g></g>');
     }
     const axisY=chartTop+386;
-    content.push(label(chartX+221,axisY,alongTrackLabel,12,muted,middle));
+    content.push(label(chartX+221,axisY,(grid.focused?'Approach detail · full route in log · ':'')+alongTrackLabel,12,muted,middle));
 
     const left=wide?481:20,top=wide?120:axisY+29;
     const statusColor=won?'#b1e8c4':'#ffb29f';
-    content.push(section(left,top,won?'Grab speed':'Final relative speed'),
-      label(left,top+32,speedValue,28,statusColor,bold),
+    const scoredWin=won && percent!==undefined;
+    content.push(scoredWin?label(left,top,'Δv BROUGHT HOME',11,dim,'font-weight="650" letter-spacing="1.05"'):section(left,top,won?'Grab speed':'Final relative speed'),
+      label(left,top+32,scoredWin?percent+'%':speedValue,28,statusColor,bold),
       section(left,top+55,'Elapsed'),section(left+173,top+55,'Oxygen left'),
       label(left,top+77,elapsed,18,ink,mono),label(left+173,top+77,oxygen,18,ink,mono),
       rule(left,top+92,edge),section(left,top+112,'Equipment'),
@@ -325,6 +351,7 @@ const FlightLog = (() => {
       label(left,top+152,flight.story?'Auto-reload · '+Readout.count(releases.length,'throw'):budget,13.4,muted),
       label(left,top+173,aids,13.5,mint),label(left,top+193,pose,13,muted),
       rule(left,top+205,edge),section(left,top+224,'Release record'));
+    if(scoredWin)content.push(label(edge,top+30,speed,13.5,muted,end));
     let y=top+244;
     for(const [i,r] of records.entries()){
       content.push('<g class="cardRelease">',toolBadge(left+7,y-4,i+1),
@@ -349,13 +376,13 @@ const FlightLog = (() => {
     if(fast.length){
       const pass=fast[0];
       content.push(rule(left,y-6,edge),section(left,y+11,passCount),
-        label(left,y+32,(fast.length>1?'First at ':'')+precise(pass.time)+' · '+Readout.speed(pass.speed,flight.soft)+' m/s',14,'#ffc492'));
+        label(left,y+32,(fast.length>1?'First at ':'')+Readout.clock(pass.time)+' · '+Readout.speed(pass.speed,flight.soft)+' m/s',14,'#ffc492'));
       y+=52;
     }
     if(crossing){
       content.push(rule(left,y-6,edge),`<circle cx="${left+6}" cy="${y+9}" r="4.6" stroke="#a4ddff" fill="none" stroke-width="1.7"/>`,
         label(left+20,y+14,'Pass at Y = 0',14,'#b4e2fc',bold),
-        label(left,y+35,precise(crossing.time)+' · Z = '+Readout.signed(crossing.p[2],2)+' m',13.5,muted),
+        label(left,y+35,Readout.clock(crossing.time)+' · Z = '+Readout.signed(crossing.p[2],2)+' m',13.5,muted),
         label(left,y+54,Readout.clearance(crossing.gap,2)+' m clear of the bars',13.5,muted));
       y+=74;
     }

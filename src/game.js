@@ -34,6 +34,7 @@ function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector
 function writeText(node,text){if(node.textContent!==text)node.textContent=text;}
 function setMsg(msg){writeText(el('message'),msg);}
 function separationBrief(index){
+  if(index===3)return 'A step up from the named openings. This unfamiliar separation may take several throws.';
   return index>=4?'A platform tears free. Tommi drifts with its cover and bent frame.':
     "Tommi’s tether has parted and the suit thrusters are stuck closed.";
 }
@@ -52,7 +53,7 @@ function clearDebrisBrake(){
   el('clockRate').closest('label').classList.remove('debrisBrake');
 }
 function reseat(skipInitial=false) {
-  clearDebrisBrake();previewCache=null;coachCache=null;
+  clearDebrisBrake();previewCache=null;coachCache=null;flight.missBrakeGiven=false;
   flight.anchor={p:flight.pos.p.slice(),v:flight.pos.v.slice()};flight.age=0;flight.hitIndex=0;
   flight.forecast=forecastFrom(flight.anchor,skipInitial);
 }
@@ -78,6 +79,10 @@ function describePreview(preview){
   }
   const near=preview.forecast.near;
   if(Flight.inside(preview.anchor.p,preview.pose))return clearance+'Inside bars · '+Readout.speed(norm(preview.anchor.v),preview.soft)+' m/s';
+  if(near.t<.01){
+    const opening=barRangeRate(preview.anchor,preview.pose);
+    if(opening>0)return clearance+'Still opening at '+Readout.speed(opening,false)+' m/s. Try a different throw.';
+  }
   return clearance+(debris?'Bars missed by ':'Closest clearance ')+Readout.clearance(near.d)+' m · '+(near.t<.01?'now':clock(Math.ceil(near.t))+' from now');
 }
 function currentAids(){
@@ -117,7 +122,7 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids()
   Replays.updateAddress(flight);
   el('toStation').hidden=el('away').hidden=!story;el('storyTag').hidden=!story;
   el('lesson').hidden=lesson===null;
-  setMsg(sightOnly?offlineMessage:story?'Story flight. Every tool reloads. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
+  setMsg(sightOnly?offlineMessage:story?'Story flight. Every tool reloads. Aim while staged or paused. Throw runs the clock at 1×.':'Begin flight to aim and throw. Then drag the visor or use the arrow keys.');
   updateRack();instruments();
   if(index===5){
     const view=Visor.layoutView(visor,flight);
@@ -157,7 +162,8 @@ function finish(result) {
       'Projected speed at the bars is '+Readout.speed(flight.forecast.hits[0].speed,flight.soft);
     el('endCopy').textContent=approach+' m/s. With the rack empty, the remaining coast offers no grab at or below '+Flight.captureLimit(flight.soft).toFixed(3)+' m/s before oxygen runs out.';
   }else{
-    el('endCopy').textContent='The reserve ran out before a successful grab.';
+    const pass=flight.log.fast.at(-1);
+    el('endCopy').textContent=pass?'You reached the bars at '+clock(pass.time)+' at '+Readout.speed(pass.speed,flight.soft)+' m/s. The '+(flight.soft==='firm'?'Firm':'Soft')+' limit was '+Flight.captureLimit(flight.soft).toFixed(3)+' m/s. Aim along your drift to brake before entry.':'The reserve ran out before a successful grab. Start the return earlier and check the time left for a correction.';
   }
   const {budget,speed}=FlightLog.resultReadout(flight);
   el('endBudget').textContent=budget;
@@ -184,6 +190,16 @@ function advance(dt) {
   if(flight.done || dt<=0)return;
   const hazard=flight.forecast.debris?.hit;
   const entry=flight.forecast.hits[flight.hitIndex];
+  const clearPass=!flight.sightOnly && rate>1 && !flight.missBrakeGiven && !hazard && !entry && flight.throws && flight.mask && flight.forecast.debris?.approaches
+    .filter(p=>p.gap>=0 && p.gap<2 && p.tNear>flight.age && p.tNear<=flight.age+dt)
+    .sort((a,b)=>a.tNear-b.tNear)[0];
+  if(clearPass){
+    flight.missBrakeGiven=true;
+    const untilClear=clearPass.tNear-flight.age;
+    dt=untilClear+(dt-untilClear)/rate;
+    setClockStop(0);
+    setMsg(clearPass.body.short+' clear. Clock returned to 1x to correct the station miss.');
+  }
   const fastApproach=!hazard && flight.mask && flight.soft && entry && !Flight.canGrab(entry,flight.soft) && flight.brakeCueHit!==entry;
   if(!flight.sightOnly && (hazard || fastApproach) && rate>1){
     const untilBrake=Math.max(0,(hazard?hazard.t-Debris.warningLead:entry.t-30)-flight.age);
@@ -240,14 +256,17 @@ function updateRack() {
   for(const [i,g] of Flight.gear.entries()) {
     const b=el('tool'+i),present=!!(flight.mask&(1<<i));b.disabled=!present||!canPitch();
     b.classList.toggle('spent',!present);
-    const detail=present?g.mass.toFixed(1)+' kg':'Released';
-    b.setAttribute('aria-label',b.getAttribute('aria-keyshortcuts')+' '+g.name+' '+detail);
+    const mass=g.mass.toFixed(1)+' kg';
+    const detail=!present?'Released':flight.sightOnly?mass:(Flight.impulse(i,flight.mask)*power/100).toFixed(3)+' m/s';
+    const description=present&&!flight.sightOnly?detail+' recoil, '+mass:detail;
+    b.setAttribute('aria-label',b.getAttribute('aria-keyshortcuts')+' '+g.name+', '+description);
     b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=detail;
   }
   const budget=el('budget');
   budget.title=flight.sightOnly?'Equipment remaining':flight.story?'Each tool reloads immediately. Suit and gear mass stays constant.':'Total speed change available if you throw every remaining tool at full power';
   budget.textContent=flight.story?'Unlimited · auto-reload':Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard';
   if(!flight.story && !flight.sightOnly)budget.textContent+=' · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
+  el('turnAft').disabled=!canPitch();
   el('throw').disabled=selected<0||!canPitch();el('power').disabled=selected<0||!canPitch();
   el('prograde').disabled=flight.sightOnly||!canPitch()||norm(flight.pos.v)<.00001;
   el('powerValue').textContent=power+'%';
@@ -287,7 +306,10 @@ function throwTool() {
   flight.throws++;
   flight.stagedPitch=null;
   if(!flight.story)selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
-  setMsg(g.name+' released at '+power+'%.'+(flight.story?' Reloaded and ready.':flight.sightOnly?'':' Read the committed coast before spending another tool.'));
+  const opening=barRangeRate(flight.pos,flight.pose);
+  const pushedAway=flight.throws===1 && !flight.sightOnly && opening>0 && opening>barRangeRate(old,flight.pose)+.0005;
+  setMsg(g.name+' released at '+power+'%.'+(pushedAway?' That pitch pushed you away from the bars. Turn and throw the other way to counter it.':
+    flight.story?' Reloaded and ready.':flight.sightOnly?'':' Read the committed coast before spending another tool.'));
   reseat(Flight.inside(old.p,flight.pose)&&flight.misses>0);
   const hazard=flight.forecast.debris?.hit;
   if(!flight.sightOnly){
@@ -310,6 +332,7 @@ function nav(status) {
   status??=Flight.coastStatus(flight);
   const c=el('coast'),a=el('advice'),s=flight;
   const {kind,hit:h,near:n}=status;
+  el('debrisClearance').hidden=true;
   c.className='readout';
   if(kind==='finished'){c.textContent=outcomes[s.done];c.classList.add(s.done==='capture'?'good':'danger');a.textContent='Flight time '+clock(s.time)+' · '+Readout.count(s.throws,'throw')+'.';return;}
   if(!started && !s.throws){
@@ -339,10 +362,10 @@ function nav(status) {
   const clearPass=s.throws && s.forecast.debris?.approaches
     .filter(p=>p.gap>=0 && p.gap<2 && p.tNear>s.age && p.tNear-s.age<90)
     .sort((a,b)=>a.tNear-b.tNear)[0];
-  if(clearPass && (!h || kind==='fastEntry' && clearPass.tNear<h.t)){
-    c.textContent=clearPass.body.short+' clears in '+clock(Math.ceil(clearPass.tNear-s.age));
-    a.textContent='Hold this coast for '+Readout.clearance(clearPass.gap)+' m of clearance. Then check the station approach.';
-    return;
+  if(clearPass && (!h || clearPass.tNear<h.t)){
+    const note=el('debrisClearance');
+    writeText(note,clearPass.body.short+' clears by '+Readout.clearance(clearPass.gap)+' m in '+clock(Math.ceil(clearPass.tNear-s.age))+'.');
+    note.hidden=false;
   }
   if(h){
     const tooFast=kind==='fastEntry';
@@ -376,11 +399,17 @@ function nav(status) {
     c.textContent='Miss by '+Readout.clearance(n.d)+' m';
     advice='Nearest pass '+describeSide(n.p,n.bar)+' in '+clock(Math.ceil(n.t-s.age))+'.';
   }
-  const hint=stagedPitchMatches()?'':trimHint(n.t>s.age?sub(n.p,n.bar):sub(s.pos.p,Flight.nearest(s.pos.p,s.pose)),yaw,pitch);
-  const cues=[advice,hint];
-  if(hint && kind==='miss' && n.t-s.age>1){
-    const recoil=norm(Flight.transfer(s.pos,n.bar,n.t-s.age,s.mode));
-    cues.push(recoil<.005?'Fine trim, under 0.005 m/s recoil.':'Trim ≈ '+recoil.toFixed(2)+' m/s recoil.');
+  const cues=[advice];
+  if(!stagedPitchMatches()){
+    if(kind==='miss' && n.t-s.age>1){
+      const trim=missTrim(s.pos,n,n.t-s.age,s.limit-s.time,s.mode,s.pose,s.mask,s.story);
+      cues.push(trim.message);
+      if(trim.bearing)cues.push(trimHint(trim.bearing,yaw,pitch));
+      if(trim.recoil===null)cues.push('Check the new course in Preview.');
+      else cues.push(trim.recoil<.005?'Fine trim, under 0.005 m/s recoil.':'Trim ≈ '+trim.recoil.toFixed(3)+' m/s recoil.');
+    }else{
+      cues.push(trimHint(n.t>s.age?sub(n.p,n.bar):sub(s.pos.p,Flight.nearest(s.pos.p,s.pose)),yaw,pitch));
+    }
   }
   if(s.soft){
     const speed=norm(s.pos.v);
@@ -390,9 +419,12 @@ function nav(status) {
   writeText(a,cues.filter(Boolean).join(' '));
   c.classList.add('warn');
 }
+function barRangeRate({p,v},pose){
+  return dot(unit(sub(p,Flight.nearest(p,pose))),v);
+}
 function updateNavigationInstruments() {
-  const {p,v}=flight.pos,bar=Flight.nearest(p,flight.pose),distance=Flight.clearance(p,flight.pose);
-  const rr=distance>1e-8?dot(unit(sub(p,bar)),v):0,sp=norm(v);
+  const {p,v}=flight.pos,distance=Flight.clearance(p,flight.pose);
+  const rr=barRangeRate(flight.pos,flight.pose),sp=norm(v);
   writeText(el('range'),distance.toFixed(1));writeText(el('rate'),Readout.signed(rr,3));el('rate').className=rr<0?'good':rr>0?'warn':'';
   writeText(el('speed'),Readout.speed(sp,flight.soft));el('speed').className=flight.soft&&!Flight.softEnough(sp,flight.soft)?'danger':'';
   const gauge=el('speedGauge'),ceiling=Math.max(Flight.captureLimit('firm'),Math.ceil(sp/.04)*.04);
@@ -400,9 +432,11 @@ function updateNavigationInstruments() {
   gauge.style.setProperty('--tick',(100*Flight.captureLimit(flight.soft)/ceiling)+'%');
   gauge.classList.toggle('over',flight.soft&&!Flight.softEnough(sp,flight.soft));
   gauge.setAttribute('aria-valuemax',ceiling.toFixed(3));gauge.setAttribute('aria-valuenow',sp.toFixed(3));
-  const threshold=flight.soft==='firm'?'Firm limit':flight.soft?'Soft limit':'Reference';
+  const threshold=flight.soft==='firm'?'Firm limit':'Soft limit';
+  el('speedRef').hidden=!flight.soft;
+  gauge.classList.toggle('unlimited',!flight.soft);
   writeText(el('speedRef'),threshold+' '+Flight.captureLimit(flight.soft).toFixed(3));
-  gauge.setAttribute('aria-valuetext',Readout.speed(sp,flight.soft)+' meters per second. '+threshold+' '+Flight.captureLimit(flight.soft).toFixed(3));
+  gauge.setAttribute('aria-valuetext',Readout.speed(sp,flight.soft)+' meters per second. '+(flight.soft?threshold+' '+Flight.captureLimit(flight.soft).toFixed(3):'Any-speed capture'));
   for(const [i,axis] of ['X','Y','Z'].entries())writeText(el('vel'+axis),Readout.signed(v[i],4));
   writeText(el('suitMass'),Flight.mass(flight.mask).toFixed(1)+' kg');
   const [az,elv]=Flight.angles(v);
@@ -412,6 +446,7 @@ function instruments() {
   if(!flight.sightOnly)updateNavigationInstruments();
   writeText(el('oxygen'),clock(Math.ceil(flight.limit-flight.time)));
   el('flightDeck').classList.toggle('is-paused',started&&!running&&!flight.done);
+  el('flightDeck').classList.toggle('is-secured',flight.done==='capture');
   el('flightDeck').classList.toggle('is-lost',!!flight.done&&flight.done!=='capture');
   el('assists').inert=!!flight.done||flight.sightOnly;
   el('lesson').inert=!!flight.done;
@@ -533,6 +568,11 @@ function invalidateInput(){
   drag=null;document.body.classList.remove('dragging');
 }
 function changePower(value){if(canPitch())power=Flight.snapPower(value);el('power').value=power;updateRack();}
+function turnAft(){
+  if(!canPitch() || !sync() || !canPitch())return;
+  yaw=(yaw+180)%360;pitch=-pitch;dirty=true;
+}
+el('turnAft').onclick=turnAft;
 function snap(vector){if(flight.story&&!flight.sightOnly&&canPitch())setView(vector);}
 el('toStation').onclick=()=>snap(stationDirection());el('away').onclick=()=>snap(flight.pos.p);el('prograde').onclick=()=>{
   if(flight.sightOnly || !canPitch() || !sync() || !canPitch() || norm(flight.pos.v)<.00001)return;
@@ -563,7 +603,7 @@ el('power').oninput=()=>changePower(sliderPress && sliderPress.epoch!==inputEpoc
 
 // Tie browser-generated activation to the press that began it. Pause, dialogs,
 // a new opening and a hidden tab each invalidate outstanding cockpit gestures.
-const pitchTargets='.tool,#throw,#away,#toStation,#prograde,#lessonAction';
+const pitchTargets='.tool,#throw,#away,#toStation,#prograde,#lessonAction,#turnAft';
 document.addEventListener('pointerdown',e=>{
   presses.delete(e.pointerId);
   if(e.target===el('power'))sliderPress={id:e.pointerId,epoch:canPitch()?inputEpoch:-1};
@@ -654,7 +694,7 @@ document.addEventListener('keydown',e=>{
   const digit=/^(?:Digit|Numpad)([1-9])$/.exec(code)?.[1] || (/^[1-9]$/.test(key)?key:null);
   const decrease=key==='['||code==='BracketLeft'||code==='NumpadSubtract';
   const increase=key===']'||code==='BracketRight'||code==='NumpadAdd';
-  const pitchKey=arrow||digit||decrease||increase||(key==='enter'&&visorOrInput);
+  const pitchKey=key==='v'||arrow||digit||decrease||increase||(key==='enter'&&visorOrInput);
   if(key!=='p'&&!activation&&!pitchKey)return;
   if(!e.repeat)heldKeys.set(code,canPitch()||key==='p'?inputEpoch:-1);
   if(e.repeat&&heldKeys.get(code)!==inputEpoch){if(cockpitKey(e))e.preventDefault();return;}
@@ -667,6 +707,7 @@ document.addEventListener('keydown',e=>{
     return;
   }
   if(target===el('power'))sliderPress=null;
+  if(key==='v'){e.preventDefault();if(!e.repeat)turnAft();return;}
   const step=e.shiftKey?.25:2;
   if(decrease||increase){e.preventDefault();changePower(power+(decrease?-Flight.powerStep:Flight.powerStep));return;}
   if(digit){e.preventDefault();choose(rackOrder[Number(digit)-1]);return;}
