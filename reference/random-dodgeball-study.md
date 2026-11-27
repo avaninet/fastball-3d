@@ -18,6 +18,8 @@ A code contains the version (`F1`), scenario letter, hyphen, five most-significa
 | 2 | Manual inventory 0, Story inventory 1 |
 | 1, 0 | Starting Preview and Dodgeball Coach, respectively. Coach requires a debris scenario. |
 
+New sight-only starts use the F2 prefix with the same catalogs and payload. F2 selects Manual (no guidance) and requires both starting aid bits to be zero. F1 keeps its original meaning and check digit. The flight card records whether Manual stayed on after the clock started.
+
 The check digit is CRC-5 over the uppercase ASCII prefix and five payload digits, excluding the hyphen. It uses polynomial x⁵+x²+1, MSB first, initial and final XOR zero. Decode checks the checksum, reserved values, scenario and pose permissions before launching. Opening a share link stages the flight so each player can start their own clock.
 
 Each Drift row stores six little-endian float64 values and a 16-bit approved-tilt mask (50 bytes). Each Dodgeball row stores a 32-bit deterministic debris key and a 16-bit mask (6 bytes). Bit zero of either mask identifies pose 1. The two binaries total 224 KiB before base64 embedding. The standalone game reconstructs the selected row locally. A frozen row ordering, debris generator, tilt definitions and flight rules give F1 its meaning. Use a new version for revisions that change a code's challenge.

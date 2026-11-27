@@ -19,6 +19,7 @@ const Readout={
     return (rule==='firm'?'Firm':'Soft')+' capture ≤ '+Flight.captureLimit(rule).toFixed(3)+' m/s';
   },
   aids(flight){
+    if(flight.manualThroughout)return 'Manual throughout';
     const aids=[];
     if(flight.usedPreview)aids.push('Preview');
     if(flight.usedCoach)aids.push('Dodgeball Coach');

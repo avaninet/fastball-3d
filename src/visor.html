@@ -60,7 +60,7 @@ __COCKPIT_STYLE__</style>
       <section id="flightDeck" class="deck" aria-label="Flight cameras and navigation">
         <div class="panelTitle camTitle">
           <h2 class="camLabel"><span class="indicator"></span>Forward visor</h2>
-          <div class="bearingReadout" role="group" aria-label="Forward visor bearing">
+          <div class="bearingReadout" role="group" aria-label="Visor instruments">
             <span id="visorHeading"></span>
             <span id="visorElevation"></span>
             <span class="flightTime">Flight time <b id="flightTime">0:00</b></span>
@@ -125,6 +125,12 @@ __COCKPIT_STYLE__</style>
                 <strong id="oxygen"></strong>
               </div>
             </div>
+            <div class="previewControl">
+              <label title="Show the suit’s predicted coast if you release the selected tool now"><input id="showPreview" type="checkbox" aria-describedby="previewResult">Preview throw</label>
+              <label id="coachControl" title="Suggest an avoidance throw during a collision warning" hidden><input id="dodgeCoach" type="checkbox">Dodgeball Coach</label>
+              <label id="manualNavControl" title="Fly using the two cameras and suit status"><input id="manualNav" type="checkbox">Manual (no guidance)</label>
+              <output id="previewResult" for="showPreview power" aria-live="off" hidden></output>
+            </div>
             <article class="panel coastPanel">
               <div class="coastTitle">
                 <span class="trace"></span>
@@ -138,13 +144,8 @@ __COCKPIT_STYLE__</style>
                 <span id="driftAngles"></span>
               </div>
             </article>
-            <div class="previewControl">
-              <label title="Show the suit’s predicted coast if you release the selected tool now"><input id="showPreview" type="checkbox" aria-describedby="previewResult">Preview throw</label>
-              <label id="coachControl" title="Suggest an avoidance throw during a collision warning" hidden><input id="dodgeCoach" type="checkbox">Dodgeball Coach</label>
-              <output id="previewResult" for="showPreview power" aria-live="off" hidden></output>
-            </div>
-            <div class="velocity">
-              <h2>Station-relative velocity <small>m/s</small></h2>
+            <details class="velocity" id="velocityDetails" open>
+              <summary>Station-relative velocity <small>m/s</small></summary>
               <dl>
                 <div>
                   <dt>Radial · X</dt>
@@ -163,7 +164,7 @@ __COCKPIT_STYLE__</style>
                   <dd id="suitMass"></dd>
                 </div>
               </dl>
-            </div>
+            </details>
           </section>
           <div class="pitchPod">
             <article class="panel rack">
@@ -266,7 +267,8 @@ __COCKPIT_STYLE__</style>
             <option value="soft">Soft capture · 0.080 m/s</option>
           </select>
           <label class="challenge"><input type="checkbox" id="randomOrientation" aria-describedby="orientationNote"><span>Random station orientation<small id="orientationNote" role="status">Select to start the station at a fixed tilt.</small></span></label>
-          <label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small>Tools reload. Aim while paused, or use Face station and Face away. Drift scenarios start closer to the bars.</small></span></label>
+          <label class="challenge"><input type="checkbox" id="setupManualNav"><span>Manual (no guidance)<small>Relative nav offline. Aft camera and suit status available.</small></span></label>
+          <label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small id="storyNote">Tools reload. Aim while paused, or use Face station and Face away. Drift scenarios start closer to the bars.</small></span></label>
         </div>
         <div class="dialogFoot">
           <button type="button" class="close">Cancel</button>
@@ -328,12 +330,22 @@ __COCKPIT_STYLE__</style>
         and press Throw. Watch the tool leave just below the crosshair. A gentle toss stays in view longer. Turning
         alone leaves your velocity unchanged.</p>
         <h3>Preview a throw</h3>
-        <p>Switch on Preview throw under Current coast to see where your suit would go if you released the selected
+        <p>Switch on Preview throw in the instrument panel to see where your suit would go if you released the selected
         tool now. The solid violet line and filled arrows update with your aim, tool and power. Farther arrows are
         smaller and dimmer. A violet cross marks the first contact or nearest pass. Looking straight down the path,
         you’ll see a diamond. The sidebar gives the projected grab, fast entry or closest clearance. Check aft when
         recoil takes you behind the crosshair. The dashed mint line shows your actual coast.</p>
         <p><em>Pro tip: Work the problem - let's not make things worse by guessing.</em></p>
+        <h3>Manual (no guidance)</h3>
+        <p>The BOREX suit has lost its relative navigation solution. The forward visor, aft camera,
+        fixed crosshairs, oxygen display and equipment rack still work. Choose Manual in New flight
+        or use the cockpit checkbox. Both Dodgeball scenarios support it. The clock holds your chosen
+        speed through throws and close approaches. With an empty rack you coast until a grab,
+        a debris strike or oxygen expiry.</p>
+        <p>Story still reloads tools and lets you aim while paused. First rescue and its lessons keep
+        their guidance. Start in Manual and keep it on for the entire attempt to earn
+        <strong>Manual throughout</strong> on the flight card. Retry and challenge links restore
+        the starting choice.</p>
         <h3>The night-side sky</h3>
         <p>Tommi is in Earth’s shadow. The Moon is new. On this pass, it lies below Tommi’s horizon along with the
         Sun. Look for the faint stars above Earth’s curved edge. They give you a reference as you turn the visor.</p>
@@ -360,7 +372,7 @@ __COCKPIT_STYLE__</style>
         On a clear Firm or Soft approach, line up early and aim to brake in the final 30 seconds before entry.
         Fast-forward returns to 1× for that cue when you have a tool left. Press Throw to brake, then check
         Current coast again. If you enter fast, you can still brake inside the bars or circle back.</p>
-        <p>After your last manual throw, a miss or an unavoidable fast entry ends the flight at release.
+        <p>With guidance on, the flight ends when your last tool leaves the rack if the forecast shows a miss or an unavoidable fast entry.
         A later eligible grab keeps the clock running, including an Orbital slowdown inside the bars.
         A forecast debris collision plays out to impact.</p>
         <h3>Time and controls</h3>
@@ -379,7 +391,7 @@ __COCKPIT_STYLE__</style>
         gives you a replacement drill. Finishing a guided lesson after choosing Skip guidance also skips the award.</p>
         <h3>Flying through debris</h3>
         <p>A platform mount gives way and takes Tommi’s tether anchor with it. The loose cover and bent frame drift independently. A hit to Tommi’s suit ends the flight. Both Dodgeball modes keep the same opening geometry in Story and manual flight. Both flight models and all three grab rules work here.</p>
-        <p>Follow the short trails to see where each piece is heading. An amber box surrounds the piece your current coast would hit. The box moves with it and extends 4 cm past each side. Steer your whole suit outside the box, including around the frame’s open middle. The blue × marks where your suit would first touch the box, with a countdown. Violet shows the predicted contact for a previewed throw. You can also slow down and let a piece cross ahead.</p>
+        <p>With guidance on, follow the short trails to see where each piece is heading. An amber box surrounds the piece your current coast would hit. The box moves with it and extends 4 cm past each side. Steer your whole suit outside the box, including around the frame’s open middle. The blue × marks where your suit would first touch the box, with a countdown. Violet shows the predicted contact for a previewed throw. You can also slow down and let a piece cross ahead.</p>
         <p>If the impact point leaves the forward view or sits behind a panel, the <strong>COVER HIT</strong> or
         <strong>FRAME HIT</strong> arrow points toward it. A collision warning takes priority over station braking.
         Fast-forward drops to 1× with up to 65 seconds to react. Dodgeball Coach can suggest a tool, power and
@@ -393,8 +405,8 @@ __COCKPIT_STYLE__</style>
         <h3>Story / guided rescue</h3>
         <p>First rescue starts a fresh Straight-Line lesson. Every Story throw reloads the selected tool. Suit mass
         stays constant, so repeating a pitch at the same power gives the same recoil. You can line up while paused
-        and snap to measured bearings. First rescue pauses for one halfway check. In later lessons, choose when to
-        line up a correction. Throw starts or resumes the clock at 1×. Skip guidance gives you single-use tools for
+        and, with guidance on, snap to measured bearings. First rescue pauses for one halfway check. In later lessons, choose when to
+        line up a correction. In these lessons, Throw starts or resumes the clock at 1×. Skip guidance gives you single-use tools for
         the rest of this assisted flight. After skipping, Retry starts a manual opening eligible for a Δv score. Choose
         Story flight in setup to use these assists on another opening.</p>
         <section class="credits" aria-labelledby="creditsTitle">

@@ -26,6 +26,15 @@ for(const bad of ['F1B-5011G8','F2B-5011G7','F1B-5011','DB2-00500007',
   assert.equal(Challenge.decode(bad),null,bad);
 }
 
+// Both versions address the same catalog rows. F2 selects a sight-only start.
+for(const index of [0,1,2,3,4,5])for(const story of [false,true]){
+  const base={...example,index,seed:index===3||index===5?2560:0,poseId:0,story};
+  const manual={...base,startingAids:{manual:true,preview:false,coach:false}};
+  const encoded=Challenge.encode(manual);
+  assert.match(encoded,/^F2/);
+  assert.deepEqual(Challenge.decode('#seed='+encoded),manual);
+  assert.equal(Challenge.decode(Challenge.encode({...manual,startingAids:{manual:true,preview:true}})),null);
+}
 let codes=0;
 for(let index=0;index<6;index++){
   const count=index===3||index===5?Catalog.count:1;

@@ -26,6 +26,8 @@ The habit that comes back to her now is older than that. She was a high-school s
 
 Fly **Straight-Line** to coast in a straight line, or choose **Orbital** to see your path bend relative to the station. **Any-speed** lets you grab the bars at any speed. For a gentler arrival, **Firm** requires 0.120 m/s or slower and **Soft** requires 0.080 m/s or slower. **Story flight** gives you reloading tools and time to line up a pitch while paused.
 
+Choose **Manual (no guidance)** to fly any opening by sight. The navigation display goes offline. Use the two cameras, oxygen clock and equipment rack. You control play speed, even during a close approach. Story still lets you line up while paused and reloads each tool. Fly the entire attempt with Manual on to earn **Manual throughout** on your flight card.
+
 ## Challenge a friend
 
 Turn on **Random station orientation** in any of the six scenarios to try a different approach. The station holds its new angle for the whole flight. Watch the mint outline in both visors to see how much room you have.

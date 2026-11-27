@@ -11,6 +11,11 @@ let frameInterrupted=false;
 const heldKeys=new Map(),presses=new Map();
 let inputEpoch=0, inputSince=0, sliderPress=null;
 const weightClass=g=>g.mass<1?'Light':g.mass<3?'Medium':'Heavy';
+const offlineMessage='Relative nav offline. Aft camera and suit status available.';
+const compactInstruments=matchMedia('(max-height: 800px), (max-width: 740px)');
+function sizeVelocityDetails(){el('velocityDetails').open=!compactInstruments.matches;}
+sizeVelocityDetails();
+compactInstruments.addEventListener('change',sizeVelocityDetails);
 const isSeeded=index=>index===3||index===5;
 function debrisForSeed(row){return Debris.layoutPieces(Catalog.debrisKey(row));}
 function randomInt(n){
@@ -26,6 +31,10 @@ function refreshChallengeTag(){
 function setView(vector){if(norm(vector)>1e-10){[yaw,pitch]=Flight.angles(vector);dirty=true;}}
 function writeText(node,text){if(node.textContent!==text)node.textContent=text;}
 function setMsg(msg){writeText(el('message'),msg);}
+function separationBrief(index){
+  return index>=4?'A work platform tore free. Its service cover and bent frame are adrift with Tommi.':
+    "Tommi's tether has parted and the suit thrusters are stuck closed.";
+}
 function stationDirection(){return scale(flight.pos.p,-1);}
 function forecastFrom(anchor,skipInitial){
   const left=Math.max(0,flight.limit-flight.time);
@@ -46,7 +55,7 @@ function reseat(skipInitial=false) {
   flight.forecast=forecastFrom(flight.anchor,skipInitial);
 }
 function predictThrow(){
-  if(!el('showPreview').checked||flight.done||selected<0||!(flight.mask&(1<<selected)))return null;
+  if(flight.sightOnly||!el('showPreview').checked||flight.done||selected<0||!(flight.mask&(1<<selected)))return null;
   // Both visors project from the live suit position. Reuse only at the same flight time.
   if(previewCache && previewCache.time===flight.time && previewCache.yaw===yaw && previewCache.pitch===pitch &&
     previewCache.tool===selected && previewCache.power===power)return previewCache.value;
@@ -70,18 +79,21 @@ function describePreview(preview){
   return clearance+(debris?'Bars missed by ':'Closest clearance ')+Readout.clearance(near.d)+' m · '+(near.t<.01?'now':clock(Math.ceil(near.t))+' from now');
 }
 function currentAids(){
-  return {preview:el('showPreview').checked,coach:el('dodgeCoach').checked};
+  return {manual:el('manualNav').checked,preview:el('showPreview').checked,coach:el('dodgeCoach').checked};
 }
 function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids(),poseId=0) {
-  el('showPreview').checked=aids.preview;
-  if(index===4||index===5)el('dodgeCoach').checked=aids.coach;
-  const startingAids={preview:aids.preview,coach:(index===4||index===5)&&aids.coach};
+  const sightOnly=lesson===null && !!aids.manual;
+  const startingAids={manual:sightOnly,preview:!sightOnly && !!aids.preview,
+    coach:!sightOnly && index>=4 && !!aids.coach};
+  el('manualNav').checked=sightOnly;
+  el('showPreview').checked=startingAids.preview;
+  el('dodgeCoach').checked=startingAids.coach;
   const initial=Flight.opening(index,seed,story);
   lossDebriefAt=null;
   invalidateInput();
   flight={
     index,mode,soft,seed,story,initial,lesson,pose:Flight.poses[poseId],limit:Flight.oxygenReserve,
-    startingAids,usedPreview:startingAids.preview,usedCoach:startingAids.coach,usedFaceDrift:false,
+    sightOnly,manualThroughout:sightOnly,startingAids,usedPreview:startingAids.preview,usedCoach:startingAids.coach,usedFaceDrift:false,
     debrisPieces:index===5?debrisForSeed(seed):index===4?Debris.pieces:null,
     skippedGuidance:false,checkAt:null,checked:false,stagedPitch:null,
     log:{releases:[],fast:[]},pos:{p:initial.p.slice(),v:initial.v.slice()},
@@ -92,14 +104,16 @@ function start(index,mode,soft,seed=0,story=false,lesson=null,aids=currentAids()
   running=false;started=false;lastTime=performance.now();reseat();setView(stationDirection());
   el('name').textContent=initial.name;
   el('coachControl').hidden=!flight.debrisPieces;
-  el('brief').textContent=lesson===0?'Capt. Tommi Dylan (she/they) pitches on Saturdays. Rumor has it she flew the classified “unmanned” X-99 orbital spaceplane. Today her tether snaps and her suit thrusters jam.':initial.brief;
+  el('flightDeck').classList.toggle('sightOnly',sightOnly);
+  el('manualNavControl').hidden=lesson!==null;
+  el('brief').textContent=sightOnly?separationBrief(index):lesson===0?'Capt. Tommi Dylan (she/they) pitches on Saturdays. Rumor has it she flew the classified “unmanned” X-99 orbital spaceplane. Today her tether snaps and her suit thrusters jam.':initial.brief;
   el('modeTag').textContent=mode;
   el('captureTag').textContent=Readout.capture(soft);
   refreshChallengeTag();
   Replays.updateAddress(flight);
   el('toStation').hidden=el('away').hidden=!story;el('storyTag').hidden=!story;
   el('lesson').hidden=lesson===null;
-  setMsg(story?'Story flight. Every tool reloads. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
+  setMsg(sightOnly?offlineMessage:story?'Story flight. Every tool reloads. Aim while staged or paused. Throw runs the clock at 1×.':'Read the opening, then begin flight. Drag the visor or use arrow keys to aim.');
   updateRack();instruments();
   if(index===5){
     const view=Visor.layoutView(visor,flight);
@@ -167,7 +181,7 @@ function advance(dt) {
   const hazard=flight.forecast.debris?.hit;
   const entry=flight.forecast.hits[flight.hitIndex];
   const fastApproach=!hazard && flight.mask && flight.soft && entry && !Flight.canGrab(entry,flight.soft) && flight.brakeCueHit!==entry;
-  if((hazard || fastApproach) && rate>1){
+  if(!flight.sightOnly && (hazard || fastApproach) && rate>1){
     const untilBrake=Math.max(0,(hazard?hazard.t-Debris.warningLead:entry.t-30)-flight.age);
     if(dt>=untilBrake){
       // Consume the remainder of this frame at real time, even at 30×.
@@ -192,7 +206,7 @@ function advance(dt) {
     }
     flight.log.fast.push({time:flight.time-flight.age+h.t,p:h.p.slice(),speed:h.speed});
     flight.misses++;
-    setMsg('Fast entry at '+Readout.speed(h.speed,flight.soft)+' m/s. '+(flight.mask?'Brake while within reach, or circle back for a slower grab.':'Keep coasting. A slower grab is still ahead.'));
+    if(!flight.sightOnly)setMsg('Fast entry at '+Readout.speed(h.speed,flight.soft)+' m/s. '+(flight.mask?'Brake while within reach, or circle back for a slower grab.':'Keep coasting. A slower grab is still ahead.'));
   }
   flight.time+=step;flight.age=end;flight.pos=Flight.motion(flight.anchor,end,flight.mode);
   Equipment.advance(flight);
@@ -216,8 +230,9 @@ function sync(now=performance.now()) {
 }
 function updateRack() {
   dirty=true;
-  el('showPreview').disabled=!!flight.done||selected<0;
-  el('dodgeCoach').disabled=!!flight.done;
+  el('manualNav').disabled=!!flight.done || flight.lesson!==null;
+  el('showPreview').disabled=!!flight.done || flight.sightOnly || selected<0;
+  el('dodgeCoach').disabled=!!flight.done || flight.sightOnly;
   for(const [i,g] of Flight.gear.entries()) {
     const b=el('tool'+i),present=!!(flight.mask&(1<<i));b.disabled=!present||!canPitch();
     b.classList.toggle('spent',!present);
@@ -226,14 +241,16 @@ function updateRack() {
     b.setAttribute('aria-pressed',String(present&&selected===i));b.querySelector('small').textContent=detail;
   }
   const budget=el('budget');
-  budget.title=flight.story?'Each tool reloads immediately. Suit and gear mass stays constant.':'Total speed change available if you throw every remaining tool at full power';
-  budget.textContent=flight.story?'Unlimited · auto-reload':Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
+  budget.title=flight.sightOnly?'Equipment remaining':flight.story?'Each tool reloads immediately. Suit and gear mass stays constant.':'Total speed change available if you throw every remaining tool at full power';
+  budget.textContent=flight.story?'Unlimited · auto-reload':Flight.gear.filter((_,i)=>flight.mask&(1<<i)).length+'/'+Flight.gear.length+' aboard';
+  if(!flight.story && !flight.sightOnly)budget.textContent+=' · '+Flight.budgets[flight.mask].toFixed(3)+' m/s Δv';
   el('throw').disabled=selected<0||!canPitch();el('power').disabled=selected<0||!canPitch();
-  el('prograde').disabled=!canPitch()||norm(flight.pos.v)<.00001;
+  el('prograde').disabled=flight.sightOnly||!canPitch()||norm(flight.pos.v)<.00001;
   el('powerValue').textContent=power+'%';
   updateRecoilReadout();
 }
 function updateRecoilReadout(){
+  if(flight.sightOnly){writeText(el('impulseInfo'),'');return;}
   let cue='';
   if(!flight.story && !flight.throws && !flight.done){
     const toward=dot(Flight.direction(yaw,pitch),unit(stationDirection()));
@@ -254,16 +271,18 @@ function throwTool() {
   flight.throws++;
   flight.stagedPitch=null;
   if(!flight.story)selected=rackOrder.find(i=>flight.mask&(1<<i))??-1;
-  setMsg(g.name+' released at '+power+'%. '+(flight.story?'Reloaded and ready.':'Read the committed coast before spending another tool.'));
+  setMsg(g.name+' released at '+power+'%.'+(flight.story?' Reloaded and ready.':flight.sightOnly?'':' Read the committed coast before spending another tool.'));
   reseat(Flight.inside(old.p,flight.pose)&&flight.misses>0);
   const hazard=flight.forecast.debris?.hit;
-  if(rate>1 && hazard && hazard.t<=Debris.warningLead)showDebrisBrake(hazard);
-  else setClockStop(0);
+  if(!flight.sightOnly){
+    if(rate>1 && hazard && hazard.t<=Debris.warningLead)showDebrisBrake(hazard);
+    else setClockStop(0);
+  }
   // The forecast includes later entries and Orbital slowdowns inside the bars.
   const hits=flight.forecast.hits;
   const grab=hits.find(hit=>Flight.canGrab(hit,flight.soft));
   if(grab?.t===0){finish('capture');return;}
-  if(!flight.mask && !grab && !flight.forecast.debris?.hit){
+  if(!flight.sightOnly && !flight.mask && !grab && !flight.forecast.debris?.hit){
     const reachesBars=hits.length>0 || Flight.inside(old.p,flight.pose);
     finish(reachesBars?'overspeed':'stranded');return;
   }
@@ -277,7 +296,9 @@ function describeSide(point,bar) {
   const axis=diff.reduce((a,b,i,arr)=>Math.abs(b)>Math.abs(arr[a])?i:a,0);
   return side[2*axis+(diff[axis]>0?1:0)];
 }
-function nav(status=Flight.coastStatus(flight)) {
+function nav(status) {
+  if(flight.sightOnly)return;
+  status??=Flight.coastStatus(flight);
   const c=el('coast'),a=el('advice'),s=flight;
   const {kind,hit:h,near:n}=status;
   c.className='readout';
@@ -359,7 +380,7 @@ function nav(status=Flight.coastStatus(flight)) {
   writeText(a,cues.filter(Boolean).join(' '));
   c.classList.add('warn');
 }
-function instruments() {
+function updateNavigationInstruments() {
   const {p,v}=flight.pos,bar=Flight.nearest(p,flight.pose),distance=Flight.clearance(p,flight.pose);
   const rr=distance>1e-8?dot(unit(sub(p,bar)),v):0,sp=norm(v);
   writeText(el('range'),distance.toFixed(1));writeText(el('rate'),Readout.signed(rr,3));el('rate').className=rr<0?'good':rr>0?'warn':'';
@@ -376,18 +397,22 @@ function instruments() {
   writeText(el('suitMass'),Flight.mass(flight.mask).toFixed(1)+' kg');
   const [az,elv]=Flight.angles(v);
   writeText(el('driftAngles'),sp<.00001?'Stationary':Readout.bearing(az,elv));
+}
+function instruments() {
+  if(!flight.sightOnly)updateNavigationInstruments();
   writeText(el('oxygen'),clock(Math.ceil(flight.limit-flight.time)));
   el('flightDeck').classList.toggle('is-paused',started&&!running&&!flight.done);
   el('flightDeck').classList.toggle('is-lost',!!flight.done&&flight.done!=='capture');
-  el('assists').inert=!!flight.done;
+  el('assists').inert=!!flight.done||flight.sightOnly;
   el('lesson').inert=!!flight.done;
   el('clockRate').disabled=!!flight.done;
   el('pause').disabled=lossDebriefAt!==null;
   writeText(el('pause'),flight.done?'Debrief':running?'Pause':started?'Resume':'Begin flight');
   el('pausedLineup').hidden=!flight.story;
-  const status=Flight.coastStatus(flight);
-  updateLessonCue(status);
-  nav(status);
+  if(!flight.sightOnly){
+    const status=Flight.coastStatus(flight);
+    updateLessonCue(status);nav(status);
+  }
 }
 function canPitch(){return !!flight && !flight.done && !document.hidden && !document.querySelector('dialog[open]') && (running||flight.story);}
 function freezeClock(){
@@ -399,8 +424,9 @@ function pause(){
   if(!sync())return;
   if(flight.done){if(lossDebriefAt===null)el('debrief').showModal();return;}
   if(running){freezeClock();return;}
+  const firstStart=!started;
   invalidateInput();started=true;running=true;lastTime=performance.now();dirty=true;updateRack();instruments();
-  setMsg(flight.story?'Clock running. Aim, throw, or pause to line up.':'Clock running. Drag or tap the visor, choose power, then throw.');
+  setMsg(flight.sightOnly && firstStart?offlineMessage:flight.story?'Clock running. Aim, throw, or pause to line up.':'Clock running. Drag or tap the visor, choose power, then throw.');
 }
 function paintVisors(){
   if(!flight.throws)updateRecoilReadout();
@@ -417,9 +443,11 @@ function updateFrame(now) {
   sync(now);
   updateLossDebrief(now);
   if(dirty || running&&now-lastPaint>=32) {
-    if(dirty && !running){nav();updateLessonCue();}
-    writeText(el('visorHeading'),'HDG '+Readout.heading(yaw,2)+'°');
-    writeText(el('visorElevation'),'EL '+Readout.signed(pitch,2)+'°');
+    if(!flight.sightOnly){
+      if(dirty && !running){nav();updateLessonCue();}
+      writeText(el('visorHeading'),'HDG '+Readout.heading(yaw,2)+'°');
+      writeText(el('visorElevation'),'EL '+Readout.signed(pitch,2)+'°');
+    }
     writeText(el('flightTime'),clock(flight.time));
     paintVisors();lastPaint=now;dirty=false;
   }
@@ -449,11 +477,29 @@ function recordAidChange(){
   flight.usedPreview ||= aids.preview;
   flight.usedCoach ||= !!flight.debrisPieces && aids.coach;
   if(!started){
-    flight.startingAids={preview:aids.preview,coach:!!flight.debrisPieces&&aids.coach};
+    flight.startingAids={manual:flight.sightOnly,preview:aids.preview,coach:!!flight.debrisPieces&&aids.coach};
     refreshChallengeTag();Replays.updateAddress(flight);
   }
   dirty=true;
 }
+el('manualNav').onchange=()=>{
+  const enabled=el('manualNav').checked;
+  if(flight.lesson!==null || !sync() || flight.done){
+    el('manualNav').checked=flight.sightOnly;
+    return;
+  }
+  flight.sightOnly=enabled;
+  flight.manualThroughout=enabled && (!started || flight.manualThroughout);
+  el('flightDeck').classList.toggle('sightOnly',enabled);
+  if(enabled){
+    el('showPreview').checked=false;el('dodgeCoach').checked=false;
+    clearDebrisBrake();
+  }
+  previewCache=null;coachCache=null;
+  el('brief').textContent=enabled?separationBrief(flight.index):flight.initial.brief;
+  setMsg(enabled?offlineMessage:'Relative navigation restored.');
+  recordAidChange();updateRack();instruments();paintVisors();
+};
 el('showPreview').onchange=recordAidChange;
 el('dodgeCoach').onchange=()=>{recordAidChange();coachCache=null;nav();};
 for(const [slot,i] of rackOrder.entries()) {
@@ -471,9 +517,9 @@ function invalidateInput(){
   drag=null;document.body.classList.remove('dragging');
 }
 function changePower(value){if(canPitch())power=clamp(value,10,100);el('power').value=power;updateRack();}
-function snap(vector){if(flight.story&&canPitch())setView(vector);}
+function snap(vector){if(flight.story&&!flight.sightOnly&&canPitch())setView(vector);}
 el('toStation').onclick=()=>snap(stationDirection());el('away').onclick=()=>snap(flight.pos.p);el('prograde').onclick=()=>{
-  if(!canPitch() || !sync() || !canPitch() || norm(flight.pos.v)<.00001)return;
+  if(flight.sightOnly || !canPitch() || !sync() || !canPitch() || norm(flight.pos.v)<.00001)return;
   if(!flight.story)flight.usedFaceDrift=true;
   setView(flight.pos.v);
 };
@@ -493,7 +539,7 @@ el('clockRate').oninput=()=>{
   const requested=el('clockRate').valueAsNumber;
   sync();if(flight.done)return;
   const hazard=flight.forecast.debris?.hit;
-  if(requested && hazard && hazard.t-flight.age<=Debris.warningLead)showDebrisBrake(hazard);
+  if(!flight.sightOnly && requested && hazard && hazard.t-flight.age<=Debris.warningLead)showDebrisBrake(hazard);
   else setClockStop(requested);
 };
 el('power').oninput=()=>changePower(sliderPress && sliderPress.epoch!==inputEpoch?power:Number(el('power').value));
@@ -620,10 +666,10 @@ function pauseForModal(d){
 const setupScenarios=el('setupForm').elements.namedItem('scenarioChoice');
 let setupAids,setupSeed=0,setupPoseId=0;
 function setupRules(){
-  const rule=el('captureRule').value,index=Number(setupScenarios.value);
+  const rule=el('captureRule').value,index=Number(setupScenarios.value),manual=el('setupManualNav').checked;
   return {index,seed:setupSeed,poseId:setupPoseId,mode:document.querySelector('input[name=model]:checked').value,
     soft:rule==='firm'?'firm':rule==='soft',story:el('storyMode').checked,
-    startingAids:{preview:setupAids.preview,coach:index>=4 && setupAids.coach}};
+    startingAids:{manual,preview:!manual && setupAids.preview,coach:!manual && index>=4 && setupAids.coach}};
 }
 function chooseSetupPose(){
   const index=Number(setupScenarios.value),mask=Catalog.mask(index,setupSeed);
@@ -634,11 +680,15 @@ function updateSetup(){
   const rules=setupRules(),{index,seed,poseId,story}=rules;
   const opening=Flight.opening(index,seed,story),pose=Flight.poses[poseId];
   el('randomOrientation').checked=!!poseId;
-  el('orientationNote').textContent=poseId?pose.label+' · Fixed throughout the flight.':'Select to start the station at a fixed tilt.';
+  el('orientationNote').textContent=rules.startingAids.manual && poseId?'Station tilt is fixed for this flight.':poseId?pose.label+' · Fixed throughout the flight.':'Select to start the station at a fixed tilt.';
   el('seed').value=Challenge.encode(rules);el('seed').removeAttribute('aria-invalid');
   el('reroll').hidden=!isSeeded(index)&&!poseId;
-  el('setupBrief').textContent=opening.briefing??opening.brief;
-  if(index===5){
+  el('setupBrief').textContent=rules.startingAids.manual?separationBrief(index):(opening.briefing??opening.brief);
+  el('storyNote').textContent=rules.startingAids.manual?'Tools reload. Aim while paused. Drift scenarios start closer to the bars.':
+    'Tools reload. Aim while paused, or use Face station and Face away. Drift scenarios start closer to the bars.';
+  if(rules.startingAids.manual){
+    el('seedPreview').textContent='';
+  }else if(index===5){
     const ranges=debrisForSeed(seed).map(b=>b.short+' '+norm(sub(b.p,opening.p)).toFixed(1)+' m');
     const layout=Debris.layouts[Math.floor(Catalog.debrisKey(seed)/Debris.layoutStride)];
     el('seedPreview').textContent=[layout.name,...ranges].join(' · ')+' from Tommi at separation';
@@ -648,7 +698,7 @@ function updateSetup(){
 }
 function applySetup(r){
   setupScenarios.value=String(r.index);setupSeed=r.seed;setupPoseId=r.pose?.id??r.poseId;
-  setupAids={...r.startingAids};
+  setupAids={...r.startingAids};el('setupManualNav').checked=!!setupAids.manual;
   document.querySelector('input[name=model][value="'+r.mode+'"]').checked=true;
   el('captureRule').value=r.soft==='firm'?'firm':r.soft?'soft':'none';el('storyMode').checked=r.story;
   updateSetup();
@@ -693,7 +743,7 @@ el('seed').oninput=()=>{
   else{el('seed').removeAttribute('aria-invalid');el('seedPreview').textContent='Enter a full challenge code or link.';}
 };
 el('seed').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();loadSetupSeed();}};
-for(const input of document.querySelectorAll('input[name=model],#captureRule,#storyMode'))input.onchange=updateSetup;
+for(const input of document.querySelectorAll('input[name=model],#captureRule,#storyMode,#setupManualNav'))input.onchange=updateSetup;
 function launchFlight(index,mode,soft,seed,story,lesson=null,aids,poseId=0){
   start(index,mode,soft,seed,story,lesson,aids,poseId);
   if(!story)pause();

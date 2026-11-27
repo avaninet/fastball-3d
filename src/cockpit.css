@@ -1418,7 +1418,7 @@ main {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 30px;
+  min-height: 26px;
   cursor: pointer;
   font: 600 13px/1.25 var(--sans);
   color: #e6c5ff;
@@ -1445,11 +1445,13 @@ main {
   margin: 5px 0 1px;
 }
 
-.velocity h2 {
+.velocity summary {
+  cursor: pointer;
+  font-weight: 650;
   font-size: 12px;
 }
 
-.velocity h2 small,.velocity dt {
+.velocity summary small,.velocity dt {
   font: 12px/1.2 var(--sans);
   color: #d8e6e8;
 }
@@ -2015,7 +2017,7 @@ main {
     gap: 2px;
     margin: 2px 0;
   }
-  .velocity dt,.velocity dd,.velocity h2 small {
+  .velocity dt,.velocity dd,.velocity summary small {
     font-size: 11px;
   }
   .lesson {
@@ -2198,4 +2200,24 @@ main {
   .hudStage {
     min-height: 247px;
   }
+}
+
+#manualNavControl { color: #d8e6e8; }
+#manualNav { accent-color: #b6e9df; }
+.previewControl label:has(input:disabled),#coachControl:has(input:disabled) { color: #a4b2b6; cursor: default; }
+#flightDeck.sightOnly :is(.metric:not(.clock),.coastPanel,.velocity,#assists,#visorHeading,#visorElevation,#impulseInfo) {
+  display: none;
+}
+#flightDeck.sightOnly .hudStage .metrics {
+  align-self: start;
+  contain: none;
+}
+.sightOnly .metricStrip { grid-template-columns: 1fr; }
+@media (pointer: coarse) {
+  .previewControl label { min-height: 32px; }
+}
+@media (max-width: 365px) {
+  .metrics { display: flex; flex-direction: column; }
+  .previewControl { order: -1; padding-inline: 3px; }
+  .previewControl label { gap: 4px; }
 }

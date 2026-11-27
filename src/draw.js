@@ -58,7 +58,7 @@ const Visor = (() => {
   function polygon(ctx,xy){
     ctx.beginPath();ctx.moveTo(...xy[0]);for(let i=1;i<xy.length;i++)ctx.lineTo(...xy[i]);ctx.closePath();
   }
-  function station(ctx,cam,pose) {
+  function station(ctx,cam,pose,outline) {
     // The assembly, painter ordering and surface details share its local camera.
     if(pose?.id){
       const eye=pose.local(cam.p);
@@ -102,6 +102,7 @@ const Visor = (() => {
         }
       }
     });
+    if(!outline)return;
     for(const [a,b] of edges)line3(ctx,cam,a,b,'#8ce8b47a',.8);
     for(const [a,b] of edges)for(const k of [0,.94])
       line3(ctx,cam,add(a,scale(sub(b,a),k)),add(a,scale(sub(b,a),k+.06)),'#b6f4c5',1.35);
@@ -312,6 +313,10 @@ const Visor = (() => {
     ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
     for(const {body,center} of objects){
       if(Station.crosses(cam.p,center,state.pose))continue;
+      if(state.sightOnly){
+        debrisMesh(ctx,cam,body,center);
+        continue;
+      }
       let previous=center;
       for(const seconds of [12,24,36,48]){
         const next=Flight.motion(body,state.time+seconds,state.mode).p;
@@ -398,29 +403,7 @@ const Visor = (() => {
       ctx.fillRect(px-star.size/2,py-star.size/2,star.size,star.size);
     }
   }
-  function render(canvas,az,el,state,small=false,backdrop=null,preview=null,coachAim=null) {
-    const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
-    const ratio=Math.min(window.devicePixelRatio||1,1.75);
-    const width=Math.round(w*ratio),height=Math.round(h*ratio);
-    if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
-    // On phones the rack sits below the aiming area. Extend the same projection
-    // under it while keeping the reticle, lens and touch coordinates in place.
-    const surface=backdrop?.clientHeight?backdrop:canvas,sceneHeight=surface.clientHeight;
-    if(surface!==canvas&&(surface.width!==width||surface.height!==Math.round(sceneHeight*ratio))){
-      surface.width=width;surface.height=Math.round(sceneHeight*ratio);
-    }
-    // The backing bitmap has whole pixels. At fractional display scales the
-    // requested ratio can stop the new frame halfway through the last row.
-    const ctx=surface.getContext('2d',{alpha:false});
-    ctx.setTransform(surface.width/w,0,0,surface.height/sceneHeight,0,0);
-    const cam=camera(state.pos.p,az,el,w,h,small,!!state.forecast.debris,small?1:state.visorLens);
-    EarthSky.draw(ctx,w,sceneHeight,h/2,cam);
-    drawStars(ctx,cam,w,h,state,sceneHeight);
-    const covers=small?[]:cockpitPanels.get(canvas)??[];
-    const label=captions(ctx,covers,w);
-    station(ctx,cam,state.pose);
-    if(state.forecast.debris)debrisScene(ctx,cam,state,small);
-    Equipment.draw(ctx,cam,w,sceneHeight,state.objects,small);
+  function navigationOverlay(ctx,cam,state,small,w,h,label,covers,preview,coachAim) {
     if(preview)course(ctx,cam,preview,small,w,h,label,true);
     course(ctx,cam,state,small,w,h,label);
     if(state.forecast.debris){
@@ -454,6 +437,33 @@ const Visor = (() => {
       for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(cx,cy,r,i*Math.PI/2+.17,(i+1)*Math.PI/2-.17);ctx.stroke();}
       for(let i=0;i<48;i++){const a=i*Math.PI/24,k=i%4===0?6:2.5;stroke(ctx,[cx+Math.cos(a)*r,cy+Math.sin(a)*r],[cx+Math.cos(a)*(r+k),cy+Math.sin(a)*(r+k)],i%4===0?'#c8dcd885':'#849b9a55',.8);}
     }
+    targetMarker(ctx,cam,covers,w,h,small,label);
+  }
+  function render(canvas,az,el,state,small=false,backdrop=null,preview=null,coachAim=null) {
+    const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;
+    const ratio=Math.min(window.devicePixelRatio||1,1.75);
+    const width=Math.round(w*ratio),height=Math.round(h*ratio);
+    if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
+    // On phones the rack sits below the aiming area. Extend the same projection
+    // under it while keeping the reticle, lens and touch coordinates in place.
+    const surface=backdrop?.clientHeight?backdrop:canvas,sceneHeight=surface.clientHeight;
+    if(surface!==canvas&&(surface.width!==width||surface.height!==Math.round(sceneHeight*ratio))){
+      surface.width=width;surface.height=Math.round(sceneHeight*ratio);
+    }
+    // The backing bitmap has whole pixels. At fractional display scales the
+    // requested ratio can stop the new frame halfway through the last row.
+    const ctx=surface.getContext('2d',{alpha:false});
+    ctx.setTransform(surface.width/w,0,0,surface.height/sceneHeight,0,0);
+    const cam=camera(state.pos.p,az,el,w,h,small,!!state.forecast.debris,small?1:state.visorLens);
+    EarthSky.draw(ctx,w,sceneHeight,h/2,cam);
+    drawStars(ctx,cam,w,h,state,sceneHeight);
+    const covers=small?[]:cockpitPanels.get(canvas)??[];
+    const label=captions(ctx,covers,w);
+    station(ctx,cam,state.pose,!state.sightOnly);
+    if(state.forecast.debris)debrisScene(ctx,cam,state,small);
+    Equipment.draw(ctx,cam,w,sceneHeight,state.objects,small);
+    if(!state.sightOnly)navigationOverlay(ctx,cam,state,small,w,h,label,covers,preview,coachAim);
+    const cx=w/2,cy=h/2;
     const span=small?8:17,inner=small?3:5;
     ctx.beginPath();
     for(const [x,y] of [[1,0],[-1,0],[0,1],[0,-1]]){
@@ -461,7 +471,6 @@ const Visor = (() => {
     }
     ctx.strokeStyle='#041018';ctx.lineWidth=4;ctx.stroke();
     ctx.strokeStyle='#70faff';ctx.lineWidth=2;ctx.stroke();
-    targetMarker(ctx,cam,covers,w,h,small,label);
     if(surface!==canvas){
       const view=canvas.getContext('2d',{alpha:false});
       view.save();view.resetTransform();

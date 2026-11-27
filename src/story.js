@@ -203,6 +203,7 @@ el('lessonAction').onclick=lessonAction;
 el('skipLesson').onclick=()=>{
   if(!flight.story||flight.lesson===null||!canPitch())return;
   if(!sync()||flight.done)return;
+  el('manualNavControl').hidden=false;
   flight.lesson=null;flight.checkAt=null;flight.stagedPitch=null;flight.story=false;flight.skippedGuidance=true;
   el('away').hidden=el('toStation').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
   invalidateInput();if(!running)pause();

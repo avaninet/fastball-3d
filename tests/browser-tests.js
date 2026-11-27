@@ -9,7 +9,7 @@
   function test(name,fn){
     try{
       if(passed.length||errors.length){
-        heldKeys.clear();sliderPress=null;el('showPreview').checked=false;
+        heldKeys.clear();sliderPress=null;el('showPreview').checked=false;el('manualNav').checked=false;
         start(0,'Straight-Line',false);
       }
       fn();passed.push(name);
@@ -1712,6 +1712,85 @@
       click('retry');eq(flight.index===5 && flight.seed===code && flight.debrisPieces[0].p.join()===cover,'retry restores incident');
       el('dodgeCoach').checked=false;
     }
+  });
+
+  test('Sight-only controls, camera overlays and Story inventory',()=>{
+    click('new');click('pick-5');click('setupManualNav');
+    el('storyMode').checked=true;updateSetup();
+    eq(el('setupBrief').textContent===separationBrief(5) && !el('seedPreview').textContent,'setup withholds opening telemetry');
+    el('setupForm').requestSubmit();
+    eq(flight.sightOnly && flight.story && !running && canPitch(),'Story lineup remains available');
+    const visible=node=>node.getClientRects().length>0;
+    eq(!visible(el('coast')) && !visible(el('range')) && !visible(el('speedGauge')) &&
+      !visible(el('velX')) && !visible(el('visorHeading')) && !visible(el('assists')) &&
+      !visible(el('impulseInfo')) && !el('budget').textContent.includes('m/s'),'navigation hidden');
+    eq(el('showPreview').disabled && el('dodgeCoach').disabled && visible(el('manualNav')) &&
+      visible(el('oxygen')) && visible(visor) && visible(aft),'both cameras, oxygen and checkbox available');
+    const labels=[],original=CanvasRenderingContext2D.prototype.fillText;
+    try{
+      CanvasRenderingContext2D.prototype.fillText=function(text,...args){labels.push(text);return original.call(this,text,...args);};
+      paintVisors();
+    }finally{CanvasRenderingContext2D.prototype.fillText=original;}
+    eq(!labels.some(t=>/DRIFT|COAST|CONTACT|NEAREST|AIM THROW|AFTER THROW|STN| HIT/.test(t)),'neither camera draws nav captions');
+    setClockStop(2);click('throw');
+    eq(running && rate===20 && flight.mask===Flight.fullRack && flight.throws===1,'Story throw reloads at the chosen speed');
+    click('pause');click('manualNav');click('manualNav');
+    eq(!running && canPitch() && !flight.manualThroughout,'guidance seen while paused clears credit');
+    finish('capture');click('openShareCard');
+    eq(!el('cardArt').textContent.includes('Manual throughout'),'mixed flight card');
+    el('shareCard').close();click('retry');
+    eq(flight.sightOnly && flight.manualThroughout && flight.story,'retry restores the starting choice');
+    enterLesson('storyEntry');
+    eq(flight.lesson===0 && !flight.sightOnly && !visible(el('manualNav')) && visible(el('assists')),'First rescue stays guided');
+  });
+  test('Sight-only approach speed, physical outcomes and challenge links',()=>{
+    const aids={manual:true,preview:false,coach:false};
+    start(4,'Straight-Line',true,0,false,null,aids);
+    const shared=Replays.fragment(flight);eq(shared.startsWith('#seed=F2C'),'manual challenge prefix');
+    click('pause');advance(12);setView(flight.pos.p);setClockStop(3);click('throw');
+    const impact=flight.forecast.debris.hit;
+    eq(impact && !el('message').textContent.includes('coast') && rate===30,'throw keeps selected speed');
+    advance(impact.t-Debris.warningLead+1);set('clockRate',2);
+    eq(rate===20 && el('clockWarning').hidden && !el('clockRate').closest('label').classList.contains('debrisBrake'),'no warning or clock lock');
+    advance(impact.t-flight.age+1);
+    eq(flight.done==='collision' && FlightLog.card(flight).includes('Manual throughout'),'real debris contact and full-run credit');
+    eq(Replays.openHash(shared) && flight.sightOnly && !started,'manual link stages whole attempt');
+    eq(Replays.openHash('#seed=F1B-5011G7') && !flight.sightOnly && flight.pose.id===16,'legacy link restores guided cockpit');
+    fixture('Straight-Line','firm',[0,-9,0],[0,.125,0]);
+    click('manualNav');setClockStop(3);advance(60);
+    eq(rate===30 && flight.misses===1 && !el('message').textContent.includes('Fast entry'),'fast entry is logged silently');
+    start(0,'Straight-Line',true,0,false,null,aids);click('pause');advance(12);setView(flight.pos.p);click('throw');advance(585);
+    eq(flight.done==='capture' && Readout.aids(flight)==='Manual throughout','sight-only Soft capture');
+    click('openShareCard');
+    eq(el('cardArt').querySelector('desc').textContent.includes('Manual throughout') &&
+      [...el('cardArt').querySelectorAll('text')].some(t=>t.textContent==='Manual throughout'),'credit on both visible and copied card');
+    el('shareCard').close();el('debrief').close();
+    start(0,'Straight-Line',true,0,false,null,aids);flight.mask=1<<5;click('pause');setView(stationDirection());click('throw');
+    eq(!flight.mask && !flight.done && running,'empty rack continues on actual coast');
+    advance(600);eq(flight.done==='oxygen','oxygen expiry ends the coast');
+  });
+
+  test('All manual openings keep the switches and release in reach',()=>{
+    const frame=window.frameElement,original=frame.style.cssText;
+    const aids={manual:true,preview:false,coach:false};
+    try{
+      for(const index of [0,1,2,3,4,5]){
+        start(index,'Orbital','firm',0,false,null,aids);
+        eq(flight.sightOnly && el('coachControl').hidden===(index<4),'scenario '+index);
+      }
+      for(const [w,h] of [[320,568],[390,844],[667,375],[844,390],[1366,768]]){
+        frame.style.width=w+'px';frame.style.height=h+'px';scrollTo(0,0);
+        start(5,'Orbital',true,0,false,null,{preview:true,coach:true});
+        for(const manual of [false,true]){
+          if(manual)click('manualNav');
+          const side=el('manualNav').closest('.metrics'),label=el('manualNavControl').getBoundingClientRect();
+          const panel=side.getBoundingClientRect(),button=el('throw').getBoundingClientRect();
+          eq(label.bottom<=Math.min(panel.bottom,h)+1 && label.top>=panel.top-1,'switch fits at '+w+' / '+manual);
+          eq(button.bottom<=h+1,'Throw fits at '+w);
+          if(manual)eq(side.scrollHeight<=side.clientHeight+1,'sight-only sidebar fits at '+w);
+        }
+      }
+    }finally{frame.style.cssText=original;}
   });
   const out=document.createElement('pre');out.id='qa-result';out.textContent=JSON.stringify({passed,errors,rects,viewport:[innerWidth,innerHeight]});document.body.append(out);
 })();
