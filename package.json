@@ -7,7 +7,7 @@
     "build": "node scripts/build.cjs",
     "test": "node scripts/build.cjs --check && node tests/station.cjs && node tests/balance.cjs && node tests/dodgeball.cjs",
     "test:browser": "node scripts/browser-qa.cjs",
-    "test:difficulty": "node tests/difficulty.cjs",
+    "test:difficulty": "node studies/difficulty.cjs",
     "test:native": "node tests/native-browser.cjs"
   },
   "engines": {

@@ -46,9 +46,10 @@ In local headless Chrome at 1440 × 950 with GPU acceleration disabled, the medi
 
 ## Reproducing the catalog
 
+Create a local `.local/` directory for the detailed reports. The JSON files in `assets/` contain the approved IDs used by the game.
+
 ```sh
-node studies/dodgeball-layouts.cjs DB2-study.json assets/dodgeball-layout-seeds.json
-node studies/dodgeball-card.cjs DB2-study.json example.svg DB2-00500007
+node studies/dodgeball-layouts.cjs .local/DB2-study.json assets/dodgeball-layout-seeds.json
 node scripts/build.cjs
 npm test
 ```
@@ -60,7 +61,7 @@ The report records full-precision states, selection and holdout counts for every
 The original 4,096 DB1 codes still load the original single-family trajectories, including `DB1-007C5282`. That catalog accepted 4,096 of 45,654 candidates. Its held-out manual soft-capture totals were 129,505 / 131,072 in Straight-Line and 130,758 / 131,072 in Orbital. To reproduce the historical catalog, run the original study.
 
 ```sh
-node studies/dodgeball-catalog.cjs DB1-study.json 4096 assets/dodgeball-seeds.json
+node studies/dodgeball-catalog.cjs .local/DB1-study.json 4096 assets/dodgeball-seeds.json
 ```
 
 ## Reading the approach charts

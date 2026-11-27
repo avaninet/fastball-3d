@@ -1,6 +1,6 @@
-# Difficulty assessment for the ten-minute reserve
+# Historical Random Drift difficulty study
 
-For the v0.4 cockpit and the matched 0.080 and 0.120 m/s playtest across all six scenarios, see the [capture-speed study](reference/capture-speed-playtest.md). This earlier study covers Random drift. The debris routes and trial results for Random Dodgeball are documented in the [debris catalog study](reference/random-dodgeball-study.md).
+This study tested the preserved Random Drift `D-` openings and experimental starting distances. The 54–77 m and 57–81 m candidates below were simulated for a possible future trial. For the v0.4 grab rules and Random Dodgeball layouts, see the [capture-speed study](capture-speed-playtest.md) and [debris catalog study](random-dodgeball-study.md).
 
 **Playtest recommendation.** Keep the ten-minute clock and the directional hints. Reserve the longer, faster opening for a separately seeded **any-speed Random drift** trial. A third-party study recorded two wins in 14,400 simulated soft flights in the 57–81 m band. The original soft-capture planner results below describe attainable routes. In the manual Orbital Soft trial, the hint-following pilot rescued Tommi on 115 of 128 openings, usually with four tools and over four minutes of oxygen remaining. On a second set it won 121 of 128. A single straight-back battery throw is already a poor shortcut on these seeds. The forgiving part is how much room remains to read the miss and correct it.
 
@@ -50,7 +50,7 @@ The harder candidate produced a useful spread. On the second set, 65 openings ha
 
 ## Reproduce the assessment
 
-Run `node tests/difficulty.cjs` from the repository. The study applies candidate geometry in memory. The measurements below use the preserved `D-` family. From v0.2, newly generated `E-` seeds also reject candidates that coast into the bars without a throw anywhere in the full ten minutes.
+Run `npm run test:difficulty` from the repository. The study applies candidate geometry in memory. The measurements below use the preserved `D-` family. From v0.2, newly generated `E-` seeds also reject candidates that coast into the bars without a throw anywhere in the full ten minutes.
 
 - The first set uses 128 consecutive seeds beginning at decimal 104729. The second uses 128 starting at hexadecimal 726800 with a stride of 1543. Both sets use the actual nine-tool recoil, Orbital propagator, station envelope and in-volume soft-grab rule.
 - The hint pilot opens with the 95% battery facing away. Manual lineup costs 12 seconds and Story permits a staged pitch. Story pilots can repeat any tool at full-rack mass. The pilot checks misses after 18 seconds, interprets the game’s up/down/left/right/behind words in its current view, and estimates correction strength from clearance and time to closest pass. For a fast approach it attempts a brake along measured drift. Aim and power are precise. Choosing the power and timing are capabilities of this pilot, beyond the words in the hint. The comparison changes only the bearing used for a trim.

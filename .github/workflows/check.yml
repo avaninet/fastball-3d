@@ -1,5 +1,5 @@
-name: Check standalone game
-on: [push, pull_request]
+name: Check standalone game and publish Pages
+on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
@@ -23,3 +23,37 @@ jobs:
           trap 'kill "$driver"' EXIT
           curl --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:9515/status > /dev/null
           npm run test:native
+      - name: Stage the playable site
+        shell: node {0}
+        run: |
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const site = path.join(process.env.RUNNER_TEMP, 'fastball-pages');
+          fs.mkdirSync(site);
+          fs.mkdirSync(path.join(site, 'assets'));
+          for (const file of ['index.html', 'assets/fastball-3d-preview-v03.jpg']) {
+            fs.copyFileSync(file, path.join(site, file));
+          }
+      - name: Upload the checked site
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/fastball-pages
+
+  deploy:
+    needs: game
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - name: Publish the playable site
+        id: publish
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
