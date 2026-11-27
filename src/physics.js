@@ -51,8 +51,10 @@ const Flight = (() => {
   const nearest = p => p.map((x,i)=>clamp(x,-half[i],half[i]));
   const clearance = p => norm(sub(p,nearest(p)));
   const inside = p => p.every((x,i)=>Math.abs(x)<=half[i]+1e-8);
-  const softEnough = speed => speed<=limit+1e-9;
-  const canGrab = (hit,soft) => !soft || softEnough(hit.speed);
+  // false is any-speed, true preserves the original soft rule and 'firm' is the trial rule.
+  const captureLimit = rule => rule==='firm' ? .120 : limit;
+  const softEnough = (speed,rule=true) => speed<=captureLimit(rule)+1e-9;
+  const canGrab = (hit,soft) => !soft || softEnough(hit.speed,soft);
   // A fast Story pitch can cross the envelope tolerance in nanoseconds.
   // Resolve the full ten-minute bracket to near machine precision.
   function bisectCrossing(value,lo,hi,left){
@@ -96,10 +98,10 @@ const Flight = (() => {
     }
     return roots.sort((a,b)=>a-b);
   }
-  function softCrossings(velocityCoefficients,end){
+  function softCrossings(velocityCoefficients,end,threshold){
     // With u = tan(nt/2), each velocity component has a quadratic numerator
     // over 1+u². The ten-minute horizon stays inside a single tangent branch.
-    const squared=limit*limit,coeff=[-squared,0,-2*squared,0,-squared];
+    const squared=threshold*threshold,coeff=[-squared,0,-2*squared,0,-squared];
     for(const [sin,cos,offset] of velocityCoefficients){
       const v=[cos+offset,2*sin,offset-cos];
       for(let i=0;i<3;i++)for(let j=0;j<3;j++)coeff[i+j]+=v[i]*v[j];
@@ -123,7 +125,7 @@ const Flight = (() => {
         }
       }
     }
-    if(soft && mode==='Orbital')candidates.push(...softCrossings(coeff,end));
+    if(soft && mode==='Orbital')candidates.push(...softCrossings(coeff,end,captureLimit(soft)));
     const sorted=candidates.sort((a,b)=>a-b).filter((t,i,a)=>i===0||t-a[i-1]>1e-7);
     const found=[];
     for(let i=0;i<sorted.length;i++) {
@@ -132,7 +134,7 @@ const Flight = (() => {
       const before=i?motion(s,(sorted[i-1]+t)/2,mode):null;
       const alreadyInside=before?inside(before.p):skipInitial;
       const speed=norm(sample.v);
-      if(alreadyInside && !(soft && softEnough(speed) && (!before||norm(before.v)>limit)))continue;
+      if(alreadyInside && !(soft && softEnough(speed,soft) && (!before||norm(before.v)>captureLimit(soft))))continue;
       found.push({t,p:sample.p,speed});
     }
     return found;
@@ -274,6 +276,6 @@ const Flight = (() => {
     const base=index===3?randomStart(seed):named[index];
     return story?base:manualOpening(base);
   }
-  return {gear,fullRack,named,opening,half,limit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,rackAfterThrow,impulse,budgets,
+  return {gear,fullRack,named,opening,half,limit,captureLimit,oxygenReserve,n,add,sub,scale,norm,dot,unit,clamp,rad,direction,angles,mass,rackAfterThrow,impulse,budgets,
     release,motion,nearest,clearance,inside,softEnough,canGrab,entries,forecast,coastPass,coastStatus,seedStream,transfer,command,applyCommand,randomStart};
 })();

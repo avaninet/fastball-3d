@@ -14,11 +14,23 @@ const Readout={
   bearing(azimuth,elevation){
     return 'HDG '+this.heading(azimuth,2)+'° / EL '+this.signed(elevation,2)+'°';
   },
-  speed(value){
+  capture(rule){
+    if(!rule)return 'Any-speed capture';
+    return (rule==='firm'?'Firm':'Soft')+' capture ≤ '+Flight.captureLimit(rule).toFixed(3)+' m/s';
+  },
+  aids(flight){
+    const aids=[];
+    if(flight.usedPreview)aids.push('Preview');
+    if(flight.usedCoach)aids.push('Dodgeball Coach');
+    if(flight.usedFaceDrift)aids.push('Face drift');
+    return aids.length?'Aids used: '+aids.join(', '):'Optional aids off';
+  },
+  speed(value,rule=true){
+    const limit=Flight.captureLimit(rule);
     const ordinary=value.toFixed(3);
-    if(Number(ordinary)===Flight.limit && !Flight.softEnough(value)){
+    if(Number(ordinary)===limit && !Flight.softEnough(value,rule)){
       const precise=value.toFixed(4);
-      return Number(precise)>Flight.limit?precise:'>'+ordinary;
+      return Number(precise)>limit?precise:'>'+ordinary;
     }
     return ordinary;
   },
@@ -42,6 +54,12 @@ function trimHint(displacement,az,elevation){
   if(Flight.norm(displacement)<1e-7)return '';
   const [right,up,forward]=orientation(az,elevation).local(Flight.unit(displacement));
   if(forward>.94)return 'Pitch straight ahead along the forward crosshair.';
+  // At a pitch stop, match the target's horizontal heading before pitching back down or up.
+  if(Math.abs(elevation)>=85 && up*Math.sign(elevation)>0 && Math.hypot(displacement[0],displacement[1])>1e-8){
+    const [heading]=Flight.angles(displacement);
+    const delta=((heading-az+540)%360+360)%360-180;
+    if(Math.abs(delta)>8)return 'Turn '+(delta>0?'left':'right')+' along the horizon toward HDG '+Readout.heading(heading,0)+'°.';
+  }
   if(forward<-.94)return 'Aim almost straight behind your current view.';
   const threshold=.42*Math.max(Math.abs(right),Math.abs(up)),parts=[];
   if(Math.abs(up)>=threshold)parts.push(up>0?'up':'down');

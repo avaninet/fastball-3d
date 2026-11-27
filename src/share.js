@@ -4,6 +4,7 @@ const Replays=(()=>{
   function parse(value,rules=defaults){
     if(typeof value!=='string'||value.length>maxLength)return null;
     let code=value.trim(),mode=rules.mode,soft=rules.soft,story=rules.story;
+    let aids=rules.startingAids;
     // A shared challenge may be embedded in a sentence or followed by prose.
     const fragmentStart=code.lastIndexOf('#seed=');
     if(fragmentStart>=0){
@@ -21,23 +22,28 @@ const Replays=(()=>{
       code=params.get('seed')||'';
       mode=params.get('level')??defaults.mode;
       const goal=params.get('goal')??'none',assisted=params.get('story')??'0';
-      if(!['Straight-Line','Orbital'].includes(mode)||!['none','soft'].includes(goal)||!['0','1'].includes(assisted))return null;
-      soft=goal==='soft';story=assisted==='1';
+      if(!['Straight-Line','Orbital'].includes(mode)||!['none','soft','firm'].includes(goal)||!['0','1'].includes(assisted))return null;
+      soft=goal==='firm'?'firm':goal==='soft';story=assisted==='1';
+      const preview=params.get('preview')??'0',coach=params.get('coach')??'0';
+      if(![preview,coach].every(flag=>flag==='0'||flag==='1'))return null;
+      aids={preview:preview==='1',coach:coach==='1'};
     }
     if(/^DB[12]-/i.test(code)){
       const approved=code[2]==='2'?approvedDodgeballSeeds:legacyDodgeballSeeds;
       if(!/^DB[12]-[\da-f]{8}$/i.test(code)||!approved.has(parseInt(code.slice(4),16)))return null;
-      return {seed:code.toUpperCase(),mode,soft,story};
+      return {seed:code.toUpperCase(),mode,soft,story,startingAids:aids};
     }
     const match=/^([DE]-)?([\da-f]{1,8})$/i.exec(code);
     if(!match)return null;
     const number=parseInt(match[2],16);
-    return {seed:match[1]?match[1].toUpperCase()+hex(number):number,mode,soft,story};
+    return {seed:match[1]?match[1].toUpperCase()+hex(number):number,mode,soft,story,startingAids:aids};
   }
   function fragment(replay){
     const params=new URLSearchParams({seed:seedLabel(replay.seed),level:replay.mode});
-    if(replay.soft)params.set('goal','soft');
+    if(replay.soft)params.set('goal',replay.soft==='firm'?'firm':'soft');
     if(replay.story)params.set('story','1');
+    if(replay.startingAids?.preview)params.set('preview','1');
+    if(replay.startingAids?.coach && /^DB[12]-/.test(replay.seed))params.set('coach','1');
     return '#'+params;
   }
   function link(replay,address=location.href){
@@ -61,7 +67,7 @@ const Replays=(()=>{
     const needsConfirmation=flight&&((started&&!flight.done)||el('setup').open);
     for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
     if(replay&&!needsConfirmation){
-      start(seedScenario(replay.seed),replay.mode,replay.soft,replay.seed,replay.story);
+      start(seedScenario(replay.seed),replay.mode,replay.soft,replay.seed,replay.story,null,replay.startingAids);
     }else{
       if(!flight)start(0,'Straight-Line',false);
       updateAddress(flight); // Cancel keeps the current flight and its address.

@@ -65,10 +65,10 @@ __COCKPIT_STYLE__</style>
             <span id="visorElevation"></span>
             <span class="flightTime">Flight time <b id="flightTime">0:00</b></span>
           </div>
-          <div class="aimBtns" id="assists" hidden>
+          <div class="aimBtns" id="assists">
             <button id="toStation">Face station</button>
             <button id="away">Face away</button>
-            <button id="prograde">Face drift</button>
+            <button id="prograde" title="Aim along suit drift to line up a braking throw">Face drift</button>
           </div>
           <div class="clockGroup">
             <div class="clockControls">
@@ -257,7 +257,12 @@ __COCKPIT_STYLE__</style>
             <label><input type="radio" name="model" value="Straight-Line" checked> Straight-Line</label>
             <label><input type="radio" name="model" value="Orbital"> Orbital</label>
           </div>
-          <label class="challenge"><input type="checkbox" id="soft"><span>Require a soft capture<small>Maximum grab speed <span data-soft-limit></span> m/s. A fast entry leaves you drifting.</small></span></label>
+          <label for="captureRule" class="rowLabel">Grab rule</label>
+          <select id="captureRule">
+            <option value="none">Any-speed capture</option>
+            <option value="firm">Firm capture · 0.120 m/s (playtest)</option>
+            <option value="soft">Soft capture · 0.080 m/s</option>
+          </select>
           <label class="challenge"><input type="checkbox" id="storyMode"><span>Story flight<small>Unlimited auto-reloading tools, assisted bearings and paused aiming. Drift scenarios start closer to the bars.</small></span></label>
         </div>
         <div class="dialogFoot">
@@ -328,15 +333,13 @@ __COCKPIT_STYLE__</style>
         dashes are brighter and thicker. Farther arrows look smaller. Looking straight down a Straight-Line coast,
         you’ll see a ring and the distance from your suit to contact or to your position at oxygen expiry. If the
         path looks end-on, read the time, side and clearance under Current coast. A negative range rate means the gap
-        to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the
-        <span data-soft-limit></span> m/s soft limit, shown as a reference during any-speed flights. Positive X
+        to the bars is shrinking. Relative speed includes sideways motion. The gauge marks the chosen grab limit. Any-speed flights show the soft limit as a reference. Positive X
         points away from Earth, +Y along the orbit and +Z above its plane. The whole <span id="envelopeSize"></span>
         m outline (X × Y × Z, with the thin side along track) is within reach, including the gaps between panels.</p>
         <h3>Trim and brake</h3>
         <p>A shrinking range can end in a flyby. Current coast names the miss in station coordinates and tells you
         which way to aim in the forward visor. If it says to aim up and right, a light pitch that way nudges the suit
-        down and left. The hint follows you as you turn. Pitch along measured drift to brake. Soft capture takes
-        effect anywhere inside the bars at <span data-soft-limit></span> m/s or slower. After a fast entry, brake
+        down and left. Match the suggested trim size to the recoil shown by the power slider. The DRIFT edge arrow leads to your suit’s direction of travel. Face drift lines up a braking throw. On a clear, fast approach, prepare early and brake in the last 30 seconds. Fast-forward returns to 1x at that cue. Soft capture allows up to <span data-soft-limit></span> m/s anywhere inside the bars. The Firm playtest allows up to 0.120 m/s. After a fast entry, brake
         while still within reach or coast through and return. In manual flight, after the last throw the flight ends
         if the coast misses the bars or every remaining chance to grab is too fast. If Orbital drift will slow you
         enough within reach, keep coasting. If a debris collision is forecast, the clock runs to impact.</p>
@@ -354,12 +357,12 @@ __COCKPIT_STYLE__</style>
         the original drill home to hear the <strong>Upmass Hero</strong> epilogue after the call. A Story reload
         gives you a replacement drill. Finishing a guided lesson after choosing Skip guidance also skips the award.</p>
         <h3>Dodgeball Challenge</h3>
-        <p>A platform mount gives way and takes Tommi’s tether anchor with it. The loose cover and bent frame drift independently. A hit to Tommi’s suit ends the flight. Both Dodgeball modes keep the same opening geometry in Story and manual flight. Either flight model and grab rule work here.</p>
+        <p>A platform mount gives way and takes Tommi’s tether anchor with it. The loose cover and bent frame drift independently. A hit to Tommi’s suit ends the flight. Both Dodgeball modes keep the same opening geometry in Story and manual flight. Both flight models and all three grab rules work here.</p>
         <p>Follow the short trails to see where each piece is heading. An amber box surrounds the piece your current coast would hit. The box moves with it and extends 4 cm past each side. Steer your whole suit outside the box, including around the frame’s open middle. The blue × marks where your suit would first touch the box, with a countdown. Violet shows the predicted contact for a previewed throw. You can also slow down and let a piece cross ahead.</p>
         <p>Switch on Dodgeball Coach for a suggested tool and throw bearing during a collision warning. Your suit moves in the opposite direction. Fast-forward drops to 1× with up to 65 seconds to react. You can accelerate again once the coast clears.</p>
         <h3>Share a seeded flight</h3>
         <p>In New flight, choose Random drift or Random Dodgeball and generate a seed. Random Dodgeball draws from eight debris layouts with 512 openings each. The seed preview names the layout and gives the distance from Tommi to each piece. Paste a friend's code or replay link in either scenario and the matching scenario is selected. Copy replay
-        includes the flight model, capture rule and Story setting. In an offline copy, paste the shared replay into
+        includes the flight model, grab rule, Story setting and starting Preview and Coach settings. The debrief, log and card list any optional aids used. In an offline copy, paste the shared replay into
         Load seed. The debrief also has a flight card you can save as an image.</p>
         <h3>Story / guided rescue</h3>
         <p>First rescue starts a fresh Straight-Line lesson. Every Story throw reloads the selected tool. Suit mass
@@ -387,6 +390,7 @@ __COCKPIT_STYLE__</style>
           <button class="x close" aria-label="Close">×</button>
         </div>
         <p id="endCopy"></p>
+        <p id="hardGrab" hidden></p>
         <section id="upmassHero" hidden aria-labelledby="upmassTitle">
           <h3 id="upmassTitle">Upmass Hero</h3>
           <p>“Supply, cross that replacement drill off the manifest. Think you could send us some board games instead?”</p>

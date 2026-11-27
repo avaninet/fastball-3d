@@ -71,14 +71,14 @@ function draws(mode,trial,layout){
 // A witness's coasts and grab time depend only on the throws. Reuse them
 // across candidate debris pairs, then test every leg against that pair.
 const tracks=new Map();
-function track(mode,trial,layout,story){
-  const key=[mode,trial,layout,story].join('/');
+function track(mode,trial,layout,story,rule){
+  const key=[mode,trial,layout,story,rule].join('/');
   if(tracks.has(key))return tracks.get(key);
   let state=start,mask=F.fullRack,t=0,win=false;
   const legs=[],releases=[];
   for(const cmd of [...draws(mode,trial,layout),{time:F.oxygenReserve}]){
     const dt=cmd.time-t;
-    const grab=F.entries(state,dt,mode,false,true).find(h=>F.softEnough(h.speed));
+    const grab=F.entries(state,dt,mode,false,rule).find(h=>F.canGrab(h,rule));
     const end=grab?.t??dt;
     legs.push({state,time:t,end:t+end});
     state=F.motion(state,end,mode);t+=end;
@@ -92,8 +92,8 @@ function track(mode,trial,layout,story){
   tracks.set(key,route);
   return route;
 }
-function fly(bodies,mode,trial=null,layout=null,story=false){
-  const route=track(mode,trial,layout,story);
+function fly(bodies,mode,trial=null,layout=null,story=false,rule=true){
+  const route=track(mode,trial,layout,story,rule);
   let gap=Infinity;
   for(const leg of route.legs){
     const forecast=D.forecast(leg.state,leg.time,leg.end-leg.time,mode,bodies);

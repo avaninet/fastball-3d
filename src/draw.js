@@ -336,11 +336,17 @@ const Visor = (() => {
     }
     ctx.restore();
   }
-  function encounterMarker(ctx,cam,hit,small,label,preview,age){
+  function encounterMarker(ctx,cam,hit,small,label,preview,age,w,h,covers){
     if(!hit)return;
     const q=cam.world(hit.contact);
-    if(q[2]<near)return;
-    const [x,y]=cam.screen(q),color=preview?'#e8b6ff':'#a9d9f5',size=small?4:6;
+    const point=q[2]>=near?cam.screen(q):null;
+    const color=preview?'#e8b6ff':'#a9d9f5',size=small?4:6;
+    if(!point || point[0]<8 || point[0]>w-8 || point[1]<8 || point[1]>h-8 ||
+       covers.some(b=>point[0]>=b.left && point[0]<=b.right && point[1]>=b.top && point[1]<=b.bottom)){
+      if(!small&&!preview)edgeMarker(ctx,q,w,h,label,hit.body.short.toUpperCase()+' HIT',color,Math.min(w*.18,h*.23,114));
+      return;
+    }
+    const [x,y]=point;
     ctx.save();
     for(const sign of [-1,1]){
       const a=[x-size,y-sign*size],b=[x+size,y+sign*size];
@@ -357,13 +363,16 @@ const Visor = (() => {
       if(small)return;
       if(!covers.some(box=>xy[0]>=box.left && xy[0]<box.right && xy[1]>=box.top && xy[1]<box.bottom))return;
     }
-    let x=q[0],y=-q[1];if(Math.hypot(x,y)<.001){x=0;y=-1;}
+    edgeMarker(ctx,q,w,h,label,'STN','#dcffe9',small?Infinity:Math.min(w*.13,h*.19,92));
+  }
+  function edgeMarker(ctx,q,w,h,label,text,color,radius){
+    let x=q[0],y=-q[1];if(Math.hypot(x,y)<.001){x=1;y=0;}
     const len=Math.hypot(x,y);x/=len;y/=len;
     // Keep the forward cue within the open aiming area, clear of the corner panels.
-    const t=Math.min((w/2-12)/(Math.abs(x)||.0001),(h/2-10)/(Math.abs(y)||.0001),small?Infinity:Math.min(w*.13,h*.19,92));
+    const t=Math.min((w/2-12)/(Math.abs(x)||.0001),(h/2-10)/(Math.abs(y)||.0001),radius);
     const ex=w/2+x*t,ey=h/2+y*t,angle=Math.atan2(y,x);
-    ctx.save();ctx.translate(ex,ey);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-5,-4);ctx.lineTo(-5,4);ctx.closePath();ctx.fillStyle='#a7dcc0';ctx.fill();ctx.restore();
-    label(clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),'STN','#dcffe9','center');
+    ctx.save();ctx.translate(ex,ey);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-5,-4);ctx.lineTo(-5,4);ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.restore();
+    label(clamp(ex-x*19,15,w-15),clamp(ey-y*12+3,12,h-5),text,color,'center');
   }
   function drawStars(ctx,cam,w,h,state,sceneHeight){
     // Inertial bearings rotate into the station frame as it follows its orbit.
@@ -404,8 +413,8 @@ const Visor = (() => {
     if(preview)course(ctx,cam,preview,small,w,h,label,true);
     course(ctx,cam,state,small,w,h,label);
     if(state.forecast.debris){
-      encounterMarker(ctx,cam,preview?.forecast.debris?.hit,small,label,true,0);
-      encounterMarker(ctx,cam,state.forecast.debris.hit,small,label,false,state.age);
+      encounterMarker(ctx,cam,preview?.forecast.debris?.hit,small,label,true,0,w,h,covers);
+      encounterMarker(ctx,cam,state.forecast.debris.hit,small,label,false,state.age,w,h,covers);
       if(coachAim){
         const q=cam.local(coachAim.dir);
         if(q[2]>.15){
@@ -418,11 +427,16 @@ const Visor = (() => {
     }
     const cx=w/2,cy=h/2,r=Math.min(w,h)*(small?.28:.34);
     const drift=cam.local(unit(state.pos.v));
-    if(drift[2]>.15 && norm(state.pos.v)>1e-6){
-      const [x,y]=cam.screen(drift);
+    const driftPoint=drift[2]>.15?cam.screen(drift):null;
+    const visibleDrift=driftPoint && driftPoint[0]>12 && driftPoint[0]<w-12 && driftPoint[1]>14 && driftPoint[1]<h-14 &&
+      !covers.some(b=>driftPoint[0]>=b.left && driftPoint[0]<=b.right && driftPoint[1]>=b.top && driftPoint[1]<=b.bottom);
+    if(visibleDrift && norm(state.pos.v)>1e-6){
+      const [x,y]=driftPoint;
       ctx.strokeStyle='#b0e6cc';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.stroke();
       stroke(ctx,[x-9,y],[x-4,y],'#b0e6cc');stroke(ctx,[x+4,y],[x+9,y],'#b0e6cc');stroke(ctx,[x,y-8],[x,y-4],'#b0e6cc');
       if(!small && x>15&&x<w-55&&y>30&&y<h-24)label(x+12,y+4,'DRIFT','#b0e6cc');
+    }else if(!small && norm(state.pos.v)>1e-6){
+      edgeMarker(ctx,drift,w,h,label,drift[2]<0?'DRIFT AFT':'DRIFT','#b0e6cc',Math.min(w*.21,h*.28,138));
     }
     if(!small){
       ctx.strokeStyle='#c1d7d530';ctx.lineWidth=.8;

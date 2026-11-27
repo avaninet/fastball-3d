@@ -1,6 +1,6 @@
 # Random Dodgeball seed catalog
 
-Random Dodgeball offers 4,096 openings, distributed evenly across eight pairs of debris starting positions. A DB2 code restores the service cover and bent frame to the same full-precision positions and velocities. Tommi starts at station-relative XYZ (13.67, −24.80, 8.33) m, with 600 seconds of oxygen. The same seed works in Straight-Line or Orbital flight, in manual or Story, with either capture rule.
+Random Dodgeball offers 4,096 openings, distributed evenly across eight pairs of debris starting positions. A DB2 code restores the service cover and bent frame to the same full-precision positions and velocities. Tommi starts at station-relative XYZ (13.67, −24.80, 8.33) m, with 600 seconds of oxygen. The same seed works in Straight-Line or Orbital flight, in manual or Story, with any grab rule. The [capture-speed playtest](capture-speed-playtest.md) compares the Firm and Soft limits on these same openings.
 
 ## Eight opening layouts
 

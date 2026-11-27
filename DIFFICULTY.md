@@ -1,8 +1,8 @@
 # Difficulty assessment for the ten-minute reserve
 
-This study covers Random drift. The debris routes and trial results for Random Dodgeball are documented in the [debris catalog study](reference/random-dodgeball-study.md).
+For the v0.4 cockpit and the matched 0.080 and 0.120 m/s playtest across all six scenarios, see the [capture-speed study](reference/capture-speed-playtest.md). This earlier study covers Random drift. The debris routes and trial results for Random Dodgeball are documented in the [debris catalog study](reference/random-dodgeball-study.md).
 
-**Playtest recommendation.** Keep the ten-minute clock and the directional hints. Trial a longer, faster opening specifically for **Random drift · Orbital · Manual · Require a soft capture**. On the current settings, the hint-following pilot rescued Tommi on 115 of 128 openings, usually with four tools and over four minutes of oxygen remaining. On a second set it won 121 of 128. A single straight-back battery throw is already a poor shortcut on these seeds. The forgiving part is how much room remains to read the miss and correct it.
+**Playtest recommendation.** Keep the ten-minute clock and the directional hints. Reserve the longer, faster opening for a separately seeded **any-speed Random drift** trial. A third-party study recorded two wins in 14,400 simulated soft flights in the 57–81 m band. The original soft-capture planner results below describe attainable routes. On the current settings, the hint-following pilot rescued Tommi on 115 of 128 openings, usually with four tools and over four minutes of oxygen remaining. On a second set it won 121 of 128. A single straight-back battery throw is already a poor shortcut on these seeds. The forgiving part is how much room remains to read the miss and correct it.
 
 ## How the modes compare today
 
@@ -37,13 +37,13 @@ All rows below use the second set of 128 seeds, the ten-minute clock, manual Orb
 | 54–77 m gap | 126 | 114 | 33 | 4 | 7:53 | 7 / 9:11 |
 | **57–81 m gap** | **121** | **102** | **25** | **5** | **8:21** | **7 / 9:33** |
 
-**Try the 57–81 m band first for the intended hard mode.** Multiply the current gap to the nearest bars by 2.65 and clamp it to that band. Multiply the starting velocity by 1.6 and add 0.055 m/s pointing away from the station center along the original bearing. This preserves different crossing directions. In the first sample it gave speeds of 0.057–0.217 m/s and a median angle of about 67° from directly outward. The gentler candidate uses a 2.45 distance multiplier, a 1.55 velocity multiplier and a 0.040 m/s outward addition.
+**Experimental 57–81 m geometry for a separate any-speed trial.** Multiply the current gap to the nearest bars by 2.65 and clamp it to that band. Multiply the starting velocity by 1.6 and add 0.055 m/s pointing away from the station center along the original bearing. This preserves different crossing directions. In the first sample it gave speeds of 0.057–0.217 m/s and a median angle of about 67° from directly outward. The gentler candidate uses a 2.45 distance multiplier, a 1.55 velocity multiplier and a 0.040 m/s outward addition.
 
 The harder candidate produced a useful spread. On the second set, 65 openings had a successful route but none under five throws in this search. On 31 of those, even the fastest route found finished in the last minute. The directional hint pilot won 25 times against one win for straight-back trims. On the first set, exact plans won 119 times, the imperfect pilot with a replan won 95, and the hint pilot won 14. Those results support a mostly reachable challenge. How often a practiced human gets home, and whether the losses feel fair, still need playtesting.
 
 ## Queued human playtest
 
-1. After cockpit review, compare the current geometry with both candidates on matched seeds. Alternate which geometry pilots see first. Give each pilot a replay so a second attempt can show what they learned. Keep the hint wording fixed for this comparison.
+1. Compare the current geometry with both candidates under any-speed capture on matched seeds. Alternate which geometry pilots see first. Give each pilot a replay so a second attempt can show what they learned. Keep the hint wording fixed for this comparison.
 2. Record capture, oxygen remaining, tools spent, recovered delta-v and grab speed. On a loss, ask when the pilot first saw the problem and what they expected the next throw to do. On a win, ask which decision saved the flight. A long coast after an obvious first pitch creates a different experience from choosing whether to spend the last light tool on a trim or save it for braking.
 3. Aim for a majority of practiced pilots to get home and for some wins to use six to eight tools with under a minute left. If players repeatedly recognize the right correction but cannot afford it, try the 54–77 m band. If success comes from repeating the words without reading range, time or drift, test delaying the directional hint until a course check. Keep the projected contact, miss and fast-entry warnings available.
 4. If a balance change ships, version the random opening or seed family so shared challenges keep their original geometry. Preserve the named starts and Story lesson for comparison.

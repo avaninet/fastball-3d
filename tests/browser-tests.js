@@ -37,7 +37,7 @@
   function configure(index,mode,soft=false,story=false){
     click('new');click('pick-'+index);
     document.querySelector('input[name=model][value="'+mode+'"]').checked=true;
-    el('soft').checked=soft;if(index===3)el('seed').value='00019919';
+    el('captureRule').value=soft==='firm'?'firm':soft?'soft':'none';if(index===3)el('seed').value='00019919';
     el('storyMode').checked=story;el('setupForm').requestSubmit();
   }
   function aim(az,elv){
@@ -50,7 +50,7 @@
     const original=yaw;keys('ArrowLeft');click('away');click('throw');set('power',10);
     eq(yaw===original&&power===95&&!flight.throws&&!started,'staged input');
     click('pause');eq(running&&started,'begin');
-    click('away');eq(original===yaw&&el('assists').hidden,'manual snap gated');
+    click('away');eq(original===yaw&&el('away').hidden,'manual snap gated');
     keys('ArrowLeft');eq(yaw!==original,'live aim');keys('p');eq(!running,'P pause');keys('p',false,visor,true);eq(!running,'P held');
   });
   test('Mouse, touch and keyboard gestures cannot cross a pause',()=>{
@@ -648,7 +648,7 @@
       eq(keys(' ',false,el(id))&&keyup(el(id),' '),'native Space on '+id);
     }
     click('new');
-    for(const [id,key] of [['seed','Backspace'],['storyMode',' '],['soft',' ']]){
+    for(const [id,key] of [['seed','Backspace'],['storyMode',' '],['captureRule',' ']]){
       const target=el(id);
       eq(keys(key,false,target)&&keys(key,false,target,true)&&keyup(target,key),'native repeat and release on '+id);
     }
@@ -742,8 +742,8 @@
   test('Pasted challenge imports once and keeps subsequent setup edits',()=>{
     configure(3,'Straight-Line');click('new');
     set('seed','Try this: https://example.test/#seed=E-ff&level=Orbital&goal=soft in Story.');
-    eq(el('seed').value==='E-000000FF' && setupRules().mode==='Orbital' && el('soft').checked,'imported pasted rules');
-    click('storyMode');click('soft');document.querySelector('[name=model][value="Straight-Line"]').click();
+    eq(el('seed').value==='E-000000FF' && setupRules().mode==='Orbital' && (el('captureRule').value==='soft'),'imported pasted rules');
+    click('storyMode');el('captureRule').value='none';document.querySelector('[name=model][value="Straight-Line"]').click();
     el('setupForm').requestSubmit();
     eq(flight.seed==='E-000000FF'&&flight.story&&!flight.soft&&flight.mode==='Straight-Line','manual changes take precedence');
     click('new');set('seed','a');keys('Enter',false,el('seed'));
@@ -845,8 +845,10 @@
   });
   function tick(seconds,multiplier){
     rate=multiplier;
-    while(seconds>1e-9&&!flight.done){
-      const dt=Math.min(seconds,multiplier/4);sync(lastTime+dt/multiplier*1000);seconds-=dt;
+    const targetTime=flight.time+seconds;
+    while(targetTime-flight.time>1e-7&&!flight.done&&running){
+      const remaining=targetTime-flight.time;
+      sync(lastTime+Math.min(250,remaining*1000/rate));
     }
   }
   test('A legacy mouse click consumes the matching completed gesture once',()=>{
@@ -916,6 +918,39 @@
     eq(running&&!flight.story&&norm(sub(flight.initial.p,position))>0,'manual retry uses standard geometry');
     const retried=JSON.stringify(flight.initial);click('new');el('setupForm').requestSubmit();
     eq(running&&JSON.stringify(flight.initial)===retried,'setup reproduces retry');
+  });
+  test('Firm capture, braking cues and manual aids survive the normal flight and replay controls',()=>{
+    for(const elevation of [90,-90]){
+      const hint=trimHint([.5,0,Math.sign(elevation)*.866],180,elevation);
+      eq(hint.includes('horizon') && !hint.includes(elevation>0?'up':'down'),'turn at pitch stop');
+    }
+    configure(5,'Orbital','firm');
+    eq(flight.soft==='firm'&&el('captureTag').textContent.includes('0.120'),'firm setup');
+    const seed=flight.seed;
+    start(5,'Orbital','firm',seed,false,null,{preview:true,coach:false});
+    pause();click('showPreview');click('dodgeCoach');click('dodgeCoach');click('prograde');
+    close(dot(Flight.direction(yaw,pitch),unit(flight.pos.v)),1);
+    const replay=Replays.parse(Replays.fragment(flight));
+    eq(replay.soft==='firm'&&replay.startingAids.preview&&!replay.startingAids.coach,'initial aid settings');
+    finish('capture');
+    for(const text of [el('endStats').textContent,FlightLog.card(flight)]){
+      eq(['Preview','Dodgeball Coach','Face drift'].every(label=>text.includes(label)),'persistent aid record');
+    }
+    click('viewLog');eq(el('logSummary').textContent.includes('Firm')&&el('logSummary').textContent.includes('Face drift'),'log records rule and aids');
+    el('flightLog').close();el('debrief').close();
+    for(const [rule,speed,ok] of [[true,.100,false],['firm',.100,true],['firm',.120,true],['firm',.12001,false]]){
+      fixture('Straight-Line',rule,[0,-4,0],[0,speed,0]);advance(25);
+      eq((flight.done==='capture')===ok,'inclusive boundary '+rule+' '+speed);
+      if(ok)el('debrief').close();
+    }
+    fixture('Straight-Line','firm',[0,-9,0],[0,.125,0]);
+    setClockStop(3);advance(30);
+    eq(rate===1&&flight.forecast.hits[0].t-flight.age>29,'brake cue recovers real reaction time');
+    instruments();eq(el('advice').textContent.includes('Brake now'),'late brake instruction');
+    eq(Readout.speed(.1200001,'firm')!=='0.120','firm overspeed precision');
+    const state={p:[0,-1.61,0],v:[0,.004,.120]};
+    const hits=Flight.entries(state,100,'Orbital',false,'firm');
+    eq(hits.length>=2&&!Flight.canGrab(hits[0],'firm')&&Flight.canGrab(hits[1],'firm')&&Flight.inside(hits[1].p),'in-volume firm slowdown');
   });
   test('Boundary values, singles and replay labels agree with the flight',()=>{
     fixture('Straight-Line',true,[0,-3,0],[0,.0803,0]);instruments();
@@ -1023,7 +1058,7 @@
     for(const seed of [0,0xffffffff,'D-00000000','D-FFFFFFFF','E-00000000','E-FFFFFFFF'])
       for(const mode of ['Straight-Line','Orbital'])for(const soft of [true,false])for(const story of [true,false]){
         const rules={seed,mode,soft,story},decoded=Replays.parse(Replays.fragment(rules));
-        eq(JSON.stringify(rules)===JSON.stringify(decoded),'seed and rules round trip');
+        eq(Object.keys(rules).every(key=>rules[key]===decoded[key]),'seed and rules round trip');
       }
     eq(Replays.parse('19',source).story&&Replays.parse('19',source).seed===25,'bare code keeps rules');
     start(0,'Straight-Line',false);
@@ -1037,7 +1072,7 @@
     click('new');el('seed').value='https://example.test/#seed=nope';click('loadSeed');
     eq(el('seed').getAttribute('aria-invalid')==='true'&&flight===current,'bad seed stays in setup');
     el('seed').value=web;click('loadSeed');
-    eq(el('seed').value===source.seed&&el('seedPreview').textContent.includes('m/s')&&el('soft').checked&&el('storyMode').checked,'load link with settings');
+    eq(el('seed').value===source.seed&&el('seedPreview').textContent.includes('m/s')&&(el('captureRule').value==='soft')&&el('storyMode').checked,'load link with settings');
     const savedCopy=Replays.copy;let copied;
     try{
       Replays.copy=text=>{copied=text;};click('copySetupSeed');
@@ -1330,7 +1365,7 @@
         calls.add(call);
         const credit=el('endCopy').querySelector('.attribution');
         eq(credit.textContent.startsWith('— ')&&getComputedStyle(credit).whiteSpace==='nowrap','unbroken radio credit');
-        eq(!el('upmassHero').hidden&&el('endCopy').nextElementSibling===el('upmassHero'),'original drill appends epilogue');
+        eq(!el('upmassHero').hidden&&el('hardGrab').nextElementSibling===el('upmassHero'),'original drill appends epilogue');
         el('debrief').close();
         configure(index,mode);
         click('tool4');click('throw');

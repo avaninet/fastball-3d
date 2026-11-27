@@ -142,8 +142,8 @@ function storyCorrection(){
   for(const i of rackOrder){
     if(!(flight.mask&(1<<i)))continue;
     const candidates=[];
-    if(flight.soft && (hit ? !Flight.softEnough(hit.speed) : Flight.inside(s.p))){
-      const magnitude=norm(s.v)-.068;
+    if(flight.soft && (hit ? !Flight.softEnough(hit.speed,flight.soft) : Flight.inside(s.p))){
+      const magnitude=norm(s.v)-(Flight.captureLimit(flight.soft)-.012);
       if(magnitude>0)candidates.push(scale(unit(s.v),-magnitude));
     }else{
       for(const f of [.75,.9,.6,.45,.3])for(const fraction of [.85,.55,0]){
@@ -204,7 +204,7 @@ el('skipLesson').onclick=()=>{
   if(!flight.story||flight.lesson===null||!canPitch())return;
   if(!sync()||flight.done)return;
   flight.lesson=null;flight.checkAt=null;flight.stagedPitch=null;flight.story=false;flight.skippedGuidance=true;
-  el('assists').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
+  el('away').hidden=el('toStation').hidden=true;el('storyTag').hidden=true;el('lesson').hidden=true;
   invalidateInput();if(!running)pause();
   setMsg('Guidance off. Each tool has one release left. This rescue counts as assisted. Retry for a manual score.');updateRack();instruments();
 };
